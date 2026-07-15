@@ -1,13 +1,11 @@
 import React from 'react'
-import Hero from './components/Hero'
-
 
 function page() {
-    return (
-        <>
-            <Hero />
-        </>
-    )
+  return (
+    <div>
+    <h1>ksjd</h1>
+    </div>
+  )
 }
 
 export default page

@@ -7,6 +7,8 @@ import HealthMetricsStrip from './homePageComponents/HealthMetricsStrip'
 import ServiceShortcuts from './homePageComponents/ServiceShortcuts'
 import HealthBanner from './homePageComponents/HealthBanner'
 import LabBookingBanner from './homePageComponents/LabBookingBanner'
+import DoctorShowcase from './homePageComponents/commonComponents/DoctorShowcase'
+import LabTestShowcase from './homePageComponents/commonComponents/LabTestShowcase'
 function page() {
   return (
     <>
@@ -16,7 +18,9 @@ function page() {
     <MiniCarePrograms />
     <LabBookingBanner/>
     <HealthMetricsStrip />
+    <DoctorShowcase />
     <HealthBanner />
+    <LabTestShowcase />
     <ServiceShortcuts />
     </>
   )
