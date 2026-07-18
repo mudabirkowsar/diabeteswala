@@ -1,10 +1,17 @@
 import React from 'react'
+import Hero from './components/Hero'
+import ClinicShowcase from '../homePageComponents/commonComponents/ClinicShowcase'
+import ClinicAdBanner from './components/ClinicAdBanner'
+import HowItWorks from './components/HowItWorks'
 
 function page() {
   return (
-    <div>
-    <h1>ksjd</h1>
-    </div>
+    <>
+    <Hero />
+    <ClinicShowcase />
+    <ClinicAdBanner />
+    <HowItWorks />
+    </>
   )
 }
 

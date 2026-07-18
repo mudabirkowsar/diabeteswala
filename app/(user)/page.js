@@ -9,11 +9,15 @@ import HealthBanner from './homePageComponents/HealthBanner'
 import LabBookingBanner from './homePageComponents/LabBookingBanner'
 import DoctorShowcase from './homePageComponents/commonComponents/DoctorShowcase'
 import LabTestShowcase from './homePageComponents/commonComponents/LabTestShowcase'
+import ClinicShowcase from './homePageComponents/commonComponents/ClinicShowcase'
+import MedicineShowcase from './homePageComponents/commonComponents/MedicineShowcase'
+
 function page() {
   return (
     <>
     <Hero />
-    <SomeMedicines />
+    {/* <SomeMedicines /> */}
+    <MedicineShowcase />
     {/* <CarePrograms /> */}
     <MiniCarePrograms />
     <LabBookingBanner/>
@@ -22,6 +26,7 @@ function page() {
     <HealthBanner />
     <LabTestShowcase />
     <ServiceShortcuts />
+    <ClinicShowcase />
     </>
   )
 }
