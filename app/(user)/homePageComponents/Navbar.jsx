@@ -29,8 +29,8 @@ const Navbar = () => {
     { name: 'Clinic', href: '/clinic' },
     { name: 'Labs', href: '/labs' },
     { name: 'Pharmacy', href: '/pharmacy' },
-    { name: 'Shop', href: '/shop', hasDropdown: true },
     { name: 'Food & Nutrition', href: '/food-nutrition' },
+    { name: 'Shop', href: '/shop', hasDropdown: true },
     { name: 'Care Program', href: '/care-program' },
     { name: 'Science', href: '/science' },
     { name: 'About Us', href: '/about' },
@@ -42,8 +42,8 @@ const Navbar = () => {
   }));
 
   // Primary links visible directly on Large viewports (others shift into the dropdown menu)
-  const primaryLinks = allNavLinks.slice(0, 5);
-  const secondaryLinks = allNavLinks.slice(5);
+  const primaryLinks = allNavLinks.slice(0, 6);
+  const secondaryLinks = allNavLinks.slice(6);
 
   return (
     <nav className={`w-full sticky top-0 z-50 transition-all duration-300 antialiased
@@ -132,11 +132,6 @@ const Navbar = () => {
 
         {/* --- 4. Right Side Interactive Hub --- */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Notifications Utility Button */}
-          {/* <button className="p-2 text-gray-500 hover:text-[#3d3f96] hover:bg-white/80 rounded-xl transition-all hidden sm:block relative">
-            <Bell size={20} strokeWidth={2} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
-          </button> */}
 
           {/* Main Workspace Profile Trigger */}
           <button className="flex items-center gap-2 p-1.5 sm:pl-1.5 sm:pr-3 sm:py-1.5 text-gray-700 hover:text-[#3d3f96] bg-white/40 border border-transparent hover:border-gray-200 hover:bg-white rounded-xl transition-all duration-200">
