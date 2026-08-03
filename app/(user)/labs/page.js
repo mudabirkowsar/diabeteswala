@@ -3,6 +3,7 @@ import Hero from './components/Hero'
 import LabTestShowcase from '../homePageComponents/commonComponents/LabTestShowcase'
 import EcosystemPromo from './components/EcosystemPromo'
 import NearbyLabs from './components/NearbyLabs'
+import LabScienceInsights from './components/LabScienceInsights'
 
 
 function page() {
@@ -12,6 +13,7 @@ function page() {
             <LabTestShowcase />
             <EcosystemPromo />
             <NearbyLabs />
+            <LabScienceInsights />
         </>
     )
 }
