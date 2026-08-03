@@ -11,13 +11,14 @@ import ClinicShowcase from './homePageComponents/commonComponents/ClinicShowcase
 import MedicineShowcase from './homePageComponents/commonComponents/MedicineShowcase'
 import DescriptionDiabetes from './homePageComponents/DescriptionDiabetes'
 import HarmoneScience from './homePageComponents/HormoneScience'
+import DiabetesScienceHub from './homePageComponents/DiabetesScienceHub'
 
 function page() {
   return (
     <>
     <Hero />
     <MedicineShowcase />
-    <MiniCarePrograms />
+    {/* <MiniCarePrograms /> */}
     <DescriptionDiabetes />
     <DoctorShowcase />
     <HealthBanner />
@@ -27,6 +28,7 @@ function page() {
     <HealthMetricsStrip />
     <ClinicShowcase />
     <LabBookingBanner/>
+    <DiabetesScienceHub />
     </>
   )
 }
