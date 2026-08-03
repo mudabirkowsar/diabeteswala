@@ -20,12 +20,15 @@ import {
   HelpCircle,
   Bell
 } from 'lucide-react';
+import { useNotification } from '../../context/NotificationContext';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isAccountSidebarOpen, setIsAccountSidebarOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Toggle this for testing
+  const [isLoggedIn, setIsLoggedIn] = useState(true); // Toggle this for testing
   const pathname = usePathname();
+
+  const { showNotification } = useNotification();
 
   const allNavLinks = [
     { name: 'Home', href: '/' },
@@ -54,10 +57,10 @@ const Navbar = () => {
     { name: 'My Orders', icon: <ShoppingBag size={20} />, href: '/orders' },
     { name: 'Lab Reports', icon: <FileText size={20} />, href: '/reports' },
     { name: 'My Prescriptions', icon: <FileText size={20} />, href: '/prescriptions' },
-    { name: 'Wishlist', icon: <Heart size={20} />, href: '/wishlist' },
-    { name: 'Notifications', icon: <Bell size={20} />, href: '/notifications' },
+    // { name: 'Wishlist', icon: <Heart size={20} />, href: '/wishlist' },
+    // { name: 'Notifications', icon: <Bell size={20} />, href: '/notifications' },
     { name: 'Settings', icon: <Settings size={20} />, href: '/settings' },
-    { name: 'Help & Support', icon: <HelpCircle size={20} />, href: '/support' },
+    // { name: 'Help & Support', icon: <HelpCircle size={20} />, href: '/support' },
   ];
 
   return (
@@ -210,7 +213,7 @@ const Navbar = () => {
             ))}
           </div>
           <div className="p-4 border-t border-gray-100">
-            <button onClick={() => {setIsLoggedIn(false); setIsAccountSidebarOpen(false)}} className="flex items-center justify-center gap-3 w-full py-4 bg-red-50 text-red-600 rounded-2xl font-black text-sm hover:bg-red-100 transition-colors">
+            <button onClick={() => {setIsLoggedIn(false); setIsAccountSidebarOpen(false); showNotification("You have been logged out.", "info");}} className="flex items-center justify-center gap-3 w-full py-4 bg-red-50 text-red-600 rounded-2xl font-black text-sm hover:bg-red-100 transition-colors">
               <LogOut size={20} /> Logout from Account
             </button>
           </div>
