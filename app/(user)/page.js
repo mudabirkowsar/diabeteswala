@@ -19,14 +19,14 @@ function page() {
     <MedicineShowcase />
     <MiniCarePrograms />
     <DescriptionDiabetes />
-    {/* <HealthMetricsStrip /> */}
     <DoctorShowcase />
     <HealthBanner />
     <LabTestShowcase />
-    <LabBookingBanner/>
     <ServiceShortcuts />
     <HarmoneScience />
+    <HealthMetricsStrip />
     <ClinicShowcase />
+    <LabBookingBanner/>
     </>
   )
 }
