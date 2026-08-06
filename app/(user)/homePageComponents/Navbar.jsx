@@ -3,23 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  Search, 
-  ChevronDown, 
-  User, 
-  Menu, 
-  X, 
-  LogOut, 
-  Settings, 
-  ClipboardList,
-  UserCircle,
-  LogIn,
-  ShoppingBag,
-  FileText,
-  Heart,
-  HelpCircle,
-  Bell
-} from 'lucide-react';
+import { Search, ChevronDown, User, Menu, X, LogOut, Settings, ClipboardList,UserCircle,LogIn,ShoppingBag,FileText,Heart,HelpCircle,Bell } from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
 
 const Navbar = () => {
@@ -161,7 +145,7 @@ const Navbar = () => {
             </div>
             <div className="p-4 border-b border-gray-100">
               {!isLoggedIn ? (
-                <Link href="/login" onClick={() => setIsOpen(false)} className="flex items-center justify-center gap-2 w-full py-3 bg-[#3d3f96] text-white rounded-xl font-bold text-sm">
+                <Link href="/authFiles/login" onClick={() => setIsOpen(false)} className="flex items-center justify-center gap-2 w-full py-3 bg-[#3d3f96] text-white rounded-xl font-bold text-sm">
                   <LogIn size={18} /> Login / Sign Up
                 </Link>
               ) : (
