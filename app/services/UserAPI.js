@@ -31,9 +31,24 @@ authApi.interceptors.request.use((config) => {
 
 const UserAPI = {
     getSciencePageHeroDetail: async () => {
-        const response = await publicApi.get('/api/homepage/science/')
+        const response = await publicApi.get('/api/homepage/science')
         return response.data;
     },
-    
+
+    getBlogsHeroContent: async () => {
+        const response = await publicApi.get('/api/homepage/blogs/user/get-hero')
+        return response.data;
+    },
+
+    getAllBlogs: async () => {
+        const response = await publicApi.get('/api/homepage/blogs/user/get')
+        return response.data;
+    },
+
+    getBlogDetail: async (id) => {
+        const response = await publicApi.get(`/api/homepage/blogs/user/get/${id}`)
+        return response.data;
+    },
+
 }
 export default UserAPI;
