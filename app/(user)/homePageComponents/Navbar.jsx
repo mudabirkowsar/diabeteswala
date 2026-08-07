@@ -3,15 +3,19 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, ChevronDown, User, Menu, X, LogOut, Settings, ClipboardList,UserCircle,LogIn,ShoppingBag,FileText,Heart,HelpCircle,Bell } from 'lucide-react';
+import { 
+  Search, ChevronDown, User, Menu, X, LogOut, Settings, 
+  ClipboardList, UserCircle, LogIn, ShoppingBag, FileText, 
+  Heart, HelpCircle, Bell, LayoutGrid, Package, Star, Sparkles, ChevronRight 
+} from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isAccountSidebarOpen, setIsAccountSidebarOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(true); // Toggle this for testing
+  const [isMobileShopOpen, setIsMobileShopOpen] = useState(false); 
+  const [isLoggedIn, setIsLoggedIn] = useState(true); 
   const pathname = usePathname();
-
   const { showNotification } = useNotification();
 
   const allNavLinks = [
@@ -21,7 +25,8 @@ const Navbar = () => {
     { name: 'Labs', href: '/labs' },
     { name: 'Pharmacy', href: '/pharmacy' },
     { name: 'Food & Nutrition', href: '/food-nutrition' },
-    { name: 'Shop', href: '/shop', hasDropdown: true },
+    // These will go into the "More" dropdown
+    { name: 'Shop', href: '/shop', isShop: true }, 
     { name: 'Care Program', href: '/care-program' },
     { name: 'Science', href: '/science' },
     { name: 'About Us', href: '/about' },
@@ -32,6 +37,15 @@ const Navbar = () => {
     active: pathname === link.href
   }));
 
+  // Shop Nested Options
+  const shopOptions = [
+    { name: 'By Category', href: '/shop/categories', icon: <LayoutGrid size={14} /> },
+    { name: 'By Products', href: '/shop/products', icon: <Package size={14} /> },
+    { name: 'Best Sellers', href: '/shop/best-sellers', icon: <Star size={14} /> },
+    { name: 'New Arrivals', href: '/shop/new', icon: <Sparkles size={14} /> },
+  ];
+
+  // First 6 links stay on the bar, the rest go into "More"
   const primaryLinks = allNavLinks.slice(0, 6);
   const secondaryLinks = allNavLinks.slice(6);
 
@@ -41,10 +55,7 @@ const Navbar = () => {
     { name: 'My Orders', icon: <ShoppingBag size={20} />, href: '/orders' },
     { name: 'Lab Reports', icon: <FileText size={20} />, href: '/reports' },
     { name: 'My Prescriptions', icon: <FileText size={20} />, href: '/prescriptions' },
-    // { name: 'Wishlist', icon: <Heart size={20} />, href: '/wishlist' },
-    // { name: 'Notifications', icon: <Bell size={20} />, href: '/notifications' },
     { name: 'Settings', icon: <Settings size={20} />, href: '/settings' },
-    // { name: 'Help & Support', icon: <HelpCircle size={20} />, href: '/support' },
   ];
 
   return (
@@ -72,28 +83,46 @@ const Navbar = () => {
               key={link.name}
               href={link.href}
               className={`text-[13px] font-bold px-3 py-2 rounded-lg transition-all duration-200 relative whitespace-nowrap
-                ${link.active 
-                  ? 'text-red-600 bg-red-50/60' 
-                  : 'text-gray-600 hover:text-[#3d3f96] hover:bg-white/60'
-                }`}
+                ${link.active ? 'text-red-600 bg-red-50/60' : 'text-gray-600 hover:text-[#3d3f96] hover:bg-white/60'}`}
             >
               {link.name}
               {link.active && <span className="absolute bottom-1 left-3 right-3 h-[2px] bg-red-500 rounded-full"></span>}
             </Link>
           ))}
 
-          {/* More Dropdown */}
+          {/* --- "MORE" DROPDOWN WITH NESTED SHOP --- */}
           <div className="relative group">
             <button className="text-[13px] font-bold px-3 py-2 rounded-lg text-gray-600 hover:text-[#3d3f96] hover:bg-white/60 flex items-center gap-1.5 transition-all">
               <span>More</span>
               <ChevronDown size={14} className="group-hover:rotate-180 transition-transform duration-300" />
             </button>
-            <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-gray-100 rounded-xl shadow-xl p-2 opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all origin-top-left flex flex-col gap-0.5">
+            
+            {/* Main "More" Dropdown */}
+            <div className="absolute top-full left-0 mt-1 w-52 bg-white border border-gray-100 rounded-xl shadow-xl p-2 opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all origin-top-left flex flex-col gap-0.5">
               {secondaryLinks.map((link) => (
-                <Link key={link.name} href={link.href} className={`text-[13px] font-semibold px-3 py-2.5 rounded-lg transition-colors flex items-center justify-between ${link.active ? 'text-red-600 bg-red-50/60' : 'text-gray-600 hover:text-[#3d3f96] hover:bg-slate-50'}`}>
-                  {link.name}
-                  {link.hasDropdown && <ChevronDown size={12} className="-rotate-90 text-gray-400" />}
-                </Link>
+                link.isShop ? (
+                  /* --- NESTED SHOP ITEM --- */
+                  <div key={link.name} className="relative group/shop">
+                    <div className={`text-[13px] font-semibold px-3 py-2.5 rounded-lg transition-colors flex items-center justify-between cursor-pointer ${link.active ? 'text-red-600 bg-red-50/60' : 'text-gray-600 hover:text-[#3d3f96] hover:bg-slate-50'}`}>
+                      <span>{link.name}</span>
+                      <ChevronRight size={14} className="text-gray-400" />
+                    </div>
+                    
+                    {/* Nested Side Menu (Appears on hover of Shop) */}
+                    <div className="absolute top-0 left-full ml-1 w-48 bg-white border border-gray-100 rounded-xl shadow-2xl p-2 opacity-0 scale-95 pointer-events-none group-hover/shop:opacity-100 group-hover/shop:scale-100 group-hover/shop:pointer-events-auto transition-all origin-left flex flex-col gap-0.5">
+                       {shopOptions.map((opt) => (
+                         <Link key={opt.name} href={opt.href} className="flex items-center gap-2 text-[12px] font-bold text-gray-600 px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-[#3d3f96] transition-colors">
+                           <span className="text-slate-400">{opt.icon}</span>
+                           {opt.name}
+                         </Link>
+                       ))}
+                    </div>
+                  </div>
+                ) : (
+                  <Link key={link.name} href={link.href} className={`text-[13px] font-semibold px-3 py-2.5 rounded-lg transition-colors flex items-center justify-between ${link.active ? 'text-red-600 bg-red-50/60' : 'text-gray-600 hover:text-[#3d3f96] hover:bg-slate-50'}`}>
+                    {link.name}
+                  </Link>
+                )
               ))}
             </div>
           </div>
@@ -110,25 +139,16 @@ const Navbar = () => {
         {/* --- 4. Auth Hub --- */}
         <div className="flex items-center gap-2 sm:gap-3">
           {!isLoggedIn ? (
-            <Link 
-              href="/authFiles/login"
-              className="flex items-center gap-2 px-4 py-2 bg-[#3d3f96] text-white rounded-xl hover:bg-[#2d2f75] transition-all shadow-md shadow-indigo-100 active:scale-95"
-            >
+            <Link href="/authFiles/login" className="flex items-center gap-2 px-4 py-2 bg-[#3d3f96] text-white rounded-xl hover:bg-[#2d2f75] transition-all shadow-md active:scale-95">
               <LogIn size={18} />
               <span className="text-xs font-bold hidden sm:inline">Login / Sign Up</span>
             </Link>
           ) : (
-            <button 
-              onClick={() => setIsAccountSidebarOpen(true)}
-              className="flex items-center gap-2 p-1.5 sm:pl-1.5 sm:pr-3 sm:py-1.5 border border-transparent hover:border-gray-200 hover:bg-white bg-white/40 rounded-xl transition-all duration-200"
-            >
-              <div className="bg-[#3d3f96] text-white p-1 rounded-lg">
-                <User size={18} strokeWidth={2.5} />
-              </div>
+            <button onClick={() => setIsAccountSidebarOpen(true)} className="flex items-center gap-2 p-1.5 sm:pl-1.5 sm:pr-3 sm:py-1.5 border border-transparent hover:border-gray-200 hover:bg-white bg-white/40 rounded-xl transition-all duration-200">
+              <div className="bg-[#3d3f96] text-white p-1 rounded-lg"><User size={18} strokeWidth={2.5} /></div>
               <span className="text-xs font-bold hidden sm:inline text-gray-700">My Account</span>
             </button>
           )}
-
           <button className="lg:hidden p-2 text-gray-600 hover:bg-white/80 rounded-xl" onClick={() => setIsOpen(true)}>
             <Menu size={24} strokeWidth={2.25} />
           </button>
@@ -160,10 +180,27 @@ const Navbar = () => {
             </div>
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
               {allNavLinks.map((link) => (
-                <Link key={link.name} href={link.href} onClick={() => setIsOpen(false)} className={`flex items-center justify-between px-3 py-3 rounded-xl text-sm font-bold ${link.active ? 'text-red-600 bg-red-50/60' : 'text-gray-600 hover:bg-gray-50'}`}>
-                  <span>{link.name}</span>
-                  {link.hasDropdown && <ChevronDown size={14} className="-rotate-90 text-gray-400" />}
-                </Link>
+                <div key={link.name}>
+                  {link.isShop ? (
+                    <div className="flex flex-col">
+                      <button onClick={() => setIsMobileShopOpen(!isMobileShopOpen)} className={`flex items-center justify-between px-3 py-3 rounded-xl text-sm font-bold ${link.active ? 'text-red-600 bg-red-50/60' : 'text-gray-600 hover:bg-gray-50'}`}>
+                        <span>{link.name}</span>
+                        <ChevronDown size={14} className={`transition-transform ${isMobileShopOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {isMobileShopOpen && (
+                        <div className="pl-6 mt-1 space-y-1 border-l-2 border-slate-100 ml-4">
+                          {shopOptions.map(opt => (
+                            <Link key={opt.name} href={opt.href} onClick={() => setIsOpen(false)} className="block px-3 py-2 text-xs font-bold text-slate-500 hover:text-[#3d3f96]">{opt.name}</Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <Link key={link.name} href={link.href} onClick={() => setIsOpen(false)} className={`flex items-center justify-between px-3 py-3 rounded-xl text-sm font-bold ${link.active ? 'text-red-600 bg-red-50/60' : 'text-gray-600 hover:bg-gray-50'}`}>
+                      <span>{link.name}</span>
+                    </Link>
+                  )}
+                </div>
               ))}
             </div>
         </div>

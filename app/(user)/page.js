@@ -3,15 +3,16 @@ import Hero from './homePageComponents/Hero'
 import MiniCarePrograms from './homePageComponents/MiniCarePrograms'
 import HealthMetricsStrip from './homePageComponents/HealthMetricsStrip'
 import ServiceShortcuts from './homePageComponents/ServiceShortcuts'
-import HealthBanner from './homePageComponents/HealthBanner'
+import DoctorPromotion from './homePageComponents/DoctorPromotion'
 import LabBookingBanner from './homePageComponents/LabBookingBanner'
 import DoctorShowcase from './homePageComponents/commonComponents/DoctorShowcase'
 import LabTestShowcase from './homePageComponents/commonComponents/LabTestShowcase'
 import ClinicShowcase from './homePageComponents/commonComponents/ClinicShowcase'
 import MedicineShowcase from './homePageComponents/commonComponents/MedicineShowcase'
-import DescriptionDiabetes from './homePageComponents/DescriptionDiabetes'
-import HarmoneScience from './homePageComponents/HormoneScience'
+import MedicinePromotion from './homePageComponents/MedicinePromotion'
+import LabPromotion from './homePageComponents/LabPromotion'
 import DiabetesScienceHub from './homePageComponents/DiabetesScienceHub'
+import WayChooseDiabetesWala from './homePageComponents/WayChooseDiabetesWala'
 
 function page() {
   return (
@@ -19,16 +20,17 @@ function page() {
     <Hero />
     <MedicineShowcase />
     {/* <MiniCarePrograms /> */}
-    <DescriptionDiabetes />
+    <MedicinePromotion />
     <DoctorShowcase />
-    <HealthBanner />
+    <DoctorPromotion />
     <LabTestShowcase />
-    <ServiceShortcuts />
-    <HarmoneScience />
-    <HealthMetricsStrip />
+    {/* <ServiceShortcuts /> */}
+    <WayChooseDiabetesWala />
+    {/* <HealthMetricsStrip /> */}
     <ClinicShowcase />
-    <LabBookingBanner/>
-    <DiabetesScienceHub />
+    <LabPromotion />
+    {/* <LabBookingBanner/> */}
+    {/* <DiabetesScienceHub /> */}
     </>
   )
 }
