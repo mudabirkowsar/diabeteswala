@@ -41,7 +41,7 @@ const Hero = () => {
 
   const categories = [
     { name: "Medicines", href: "/pharmacy", icon: <Pill size={18} />, color: "text-blue-600", bg: "bg-blue-50" },
-    { name: "CGM Devices", href: "/shop", icon: <Activity size={18} />, color: "text-orange-600", bg: "bg-orange-50" },
+    { name: "CGM Devices", href: "/shop/cgmdevices", icon: <Activity size={18} />, color: "text-orange-600", bg: "bg-orange-50" },
     { name: "Doctor", href: "/doctor", icon: <Stethoscope size={18} />, color: "text-purple-600", bg: "bg-purple-50" },
     { name: "Lab Tests", href: "/labs", icon: <ShieldCheck size={18} />, color: "text-emerald-600", bg: "bg-emerald-50" },
     { name: "Clinics", href: "/clinic", icon: <Building2 size={18} />, color: "text-indigo-600", bg: "bg-indigo-50" },
