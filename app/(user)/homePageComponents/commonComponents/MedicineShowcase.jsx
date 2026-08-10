@@ -9,6 +9,7 @@ import {
   Sparkles,
   ShieldAlert
 } from 'lucide-react';
+import Link from 'next/link';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -59,10 +60,10 @@ const MedicineShowcase = () => {
             <p className="text-slate-500 text-sm font-medium mt-2">Genuine diabetes medications batch-tested and storage-verified</p>
           </div>
           
-          <button className="group text-[#3d3f96] font-bold text-xs flex items-center gap-1.5 hover:text-[#2a2c7a] uppercase tracking-wider transition-colors shrink-0">
-            View All Pharmacy 
+          <Link href="/pharmacy/allmedicines" className="group text-[#3d3f96] font-bold text-xs flex items-center gap-1.5 hover:text-[#2a2c7a] uppercase tracking-wider transition-colors shrink-0">
+            View All Medicines 
             <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-          </button>
+          </Link>
         </div>
 
         {/* --- CAROUSEL WRAPPER WITH INVISIBLE SCROLL --- */}

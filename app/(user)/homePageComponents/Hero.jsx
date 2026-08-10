@@ -1,255 +1,227 @@
 "use client";
-
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  Search, 
-  UploadCloud, 
-  Truck, 
-  ShieldCheck, 
-  ArrowRight, 
-  Pill, 
-  Activity, 
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Search,
+  UploadCloud,
+  Truck,
+  ShieldCheck,
+  ArrowRight,
+  Pill,
+  Activity,
   Stethoscope,
   Percent,
-  MessageSquare,
-  Sparkles,
-  CheckCircle2,
-  Clock,
-  ChevronRight
+  Ambulance,
+  Apple,
+  Building2,
+  ChevronRight,
+  PhoneCall,
+  Star,
+  CheckCircle2
 } from 'lucide-react';
+import Link from 'next/link';
 
 const Hero = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentBg, setCurrentBg] = useState(0);
+
+  const bgImages = [
+    "https://www.shutterstock.com/image-photo/diabetes-concept-blood-sugar-meter-260nw-2464647841.jpg",
+    "https://images.unsplash.com/photo-1624454002429-40ed87a5ec04?q=80&w=1920&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=1920&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1511174511562-5f7f18b874f8?q=80&w=1920&auto=format&fit=crop"
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentBg((prev) => (prev + 1) % bgImages.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
 
   const categories = [
-    { 
-      name: "Medicines", 
-      count: "2,000+ items",
-      href: "/pharmacy",
-      icon: <Pill className="w-5 h-5 text-blue-600" />, 
-      color: "bg-blue-50/80 hover:bg-blue-100 text-blue-900 border-blue-100 hover:border-blue-300" 
-    },
-    { 
-      name: "CGM & Devices", 
-      count: "Top brands",
-      href: "/category/devices",
-      icon: <Activity className="w-5 h-5 text-amber-600" />, 
-      color: "bg-amber-50/80 hover:bg-amber-100 text-amber-900 border-amber-100 hover:border-amber-300" 
-    },
-    { 
-      name: "Consult Doctor", 
-      count: "Online 24/7",
-      href: "/doctor",
-      icon: <Stethoscope className="w-5 h-5 text-indigo-600" />, 
-      color: "bg-indigo-50/80 hover:bg-indigo-100 text-indigo-900 border-indigo-100 hover:border-indigo-300" 
-    },
-    { 
-      name: "Lab Tests", 
-      count: "Home pickup",
-      href: "/labs",
-      icon: <ShieldCheck className="w-5 h-5 text-emerald-600" />, 
-      color: "bg-emerald-50/80 hover:bg-emerald-100 text-emerald-900 border-emerald-100 hover:border-emerald-300" 
-    },
+    { name: "Medicines", href: "/pharmacy", icon: <Pill size={18} />, color: "text-blue-600", bg: "bg-blue-50" },
+    { name: "CGM Devices", href: "/shop", icon: <Activity size={18} />, color: "text-orange-600", bg: "bg-orange-50" },
+    { name: "Doctor", href: "/doctor", icon: <Stethoscope size={18} />, color: "text-purple-600", bg: "bg-purple-50" },
+    { name: "Lab Tests", href: "/labs", icon: <ShieldCheck size={18} />, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { name: "Clinics", href: "/clinic", icon: <Building2 size={18} />, color: "text-indigo-600", bg: "bg-indigo-50" },
+    { name: "Nutrition", href: "/food-nutrition", icon: <Apple size={18} />, color: "text-rose-600", bg: "bg-rose-50" },
   ];
 
   return (
-    <section className="relative w-full min-h-[90vh] bg-gradient-to-b from-slate-50/80 via-white to-white overflow-hidden flex items-center pt-24 pb-16 lg:py-0">
-      
-      {/* Background Lighting & Meshes */}
-      <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-indigo-50/60 via-indigo-50/20 to-transparent pointer-events-none hidden lg:block" />
-      <div className="absolute -top-32 left-1/4 w-96 h-96 bg-blue-100/50 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 right-10 w-[500px] h-[500px] bg-indigo-100/40 rounded-full blur-[140px] pointer-events-none" />
+    <section className="relative w-full min-h-[85vh] lg:min-h-screen flex items-center overflow-hidden bg-white">
 
-      <div className="max-w-[1400px] mx-auto px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center z-10 w-full">
-        
-        {/* --- LEFT COLUMN: CONTENT & SEARCH --- */}
-        <div className="lg:col-span-7 space-y-8">
-          
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="space-y-5"
-          >
-            {/* Promo Pill */}
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/5 border border-amber-200/60 px-3.5 py-1.5 rounded-full shadow-sm">
-              <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-              <Percent size={14} className="text-amber-600" />
-              <span className="text-xs font-bold text-amber-900 tracking-wide">
-                Flat 20% OFF + Free Express Delivery on First Order
-              </span>
-            </div>
-
-            {/* Main Headline */}
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-slate-900 leading-[1.08] tracking-tight">
-              Your Complete <br />
-              <span className="bg-gradient-to-r from-indigo-600 via-indigo-700 to-blue-600 bg-clip-text text-transparent">
-                Diabetes Store.
-              </span>
-            </h1>
-
-            <p className="text-base sm:text-lg text-slate-600 font-medium max-w-xl leading-relaxed">
-              Genuine insulin, CGMs, test strips, and specialized nutrition. Verified by licensed pharmacists and delivered cold-chain to your door.
-            </p>
-          </motion.div>
-
-          {/* --- SEARCH BAR SECTION --- */}
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="space-y-4"
-          >
-            <div className="relative max-w-2xl group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-[2rem] blur opacity-20 group-hover:opacity-40 group-focus-within:opacity-100 transition duration-300" />
-              
-              <div className="relative flex items-center bg-white rounded-[1.8rem] p-2 shadow-xl shadow-indigo-950/5 border border-slate-200/80">
-                <div className="pl-4 pr-2 text-slate-400 group-focus-within:text-indigo-600 transition-colors">
-                  <Search size={22} />
-                </div>
-                <input 
-                  type="text" 
-                  placeholder="Search Metformin, Freestyle Libre, Accu-Chek..." 
-                  className="w-full bg-transparent outline-none text-slate-800 placeholder:text-slate-400 font-medium text-sm sm:text-base py-3 px-2"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <button className="bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white px-7 py-3.5 rounded-[1.3rem] font-bold text-sm transition-all shadow-md shadow-indigo-600/20 hidden sm:flex items-center gap-2 whitespace-nowrap">
-                  <span>Search</span>
-                  <ArrowRight size={16} />
-                </button>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="flex flex-wrap items-center gap-4 sm:gap-6 px-2 text-xs sm:text-sm font-semibold">
-              <a 
-                href="/upload-prescription" 
-                className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 transition-colors bg-indigo-50/60 hover:bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100"
-              >
-                <UploadCloud size={16} />
-                <span>Upload Rx Prescription</span>
-              </a>
-              <div className="w-1 h-1 rounded-full bg-slate-300 hidden sm:block" />
-              <a 
-                href="/chat-pharmacist" 
-                className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 transition-colors"
-              >
-                <MessageSquare size={16} className="text-slate-400" />
-                <span>Consult Pharmacist</span>
-              </a>
-            </div>
-          </motion.div>
-
-          {/* --- CATEGORY CARDS (LINK ENABLED) --- */}
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl pt-2"
-          >
-            {categories.map((cat, i) => (
-              <motion.a
-                key={i}
-                href={cat.href}
-                whileHover={{ y: -4, scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ duration: 0.2 }}
-                className={`group relative p-3.5 rounded-2xl border transition-all shadow-sm hover:shadow-md flex flex-col justify-between h-24 ${cat.color}`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="p-2 bg-white/90 rounded-xl shadow-sm backdrop-blur-sm group-hover:bg-white transition-colors">
-                    {cat.icon}
-                  </div>
-                  <ChevronRight className="w-4 h-4 opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-current" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold leading-none">{cat.name}</h3>
-                  <p className="text-[10px] opacity-75 font-medium mt-1">{cat.count}</p>
-                </div>
-              </motion.a>
-            ))}
-          </motion.div>
-
-          {/* Trust Guarantees */}
-          <motion.div 
+      {/* --- 1. DYNAMIC BACKGROUND SLIDER --- */}
+      <div className="absolute inset-0 z-0">
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={currentBg}
+            src={bgImages[currentBg]}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex items-center gap-6 pt-4 border-t border-slate-100 text-slate-500 text-xs font-medium"
-          >
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 size={16} className="text-emerald-500" />
-              <span>Cold-Chain Maintained</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 size={16} className="text-emerald-500" />
-              <span>100% Genuine Guarantee</span>
-            </div>
-          </motion.div>
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.5 }}
+            className="w-full h-full object-cover"
+          />
+        </AnimatePresence>
+        {/* Professional Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/20 lg:block hidden" />
+        <div className="absolute inset-0 bg-white/90 lg:hidden block" />
+      </div>
 
-        </div>
+      <div className="max-w-[1440px] mx-auto px-6 lg:px-12 w-full z-10 relative py-10 lg:py-20">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
 
-        {/* --- RIGHT COLUMN: VISUAL STACK --- */}
-        <div className="lg:col-span-5 relative flex justify-center items-center mt-8 lg:mt-0">
-          
-          <div className="absolute w-[340px] h-[340px] sm:w-[420px] sm:h-[420px] bg-gradient-to-tr from-indigo-100/80 to-blue-50 rounded-full border border-indigo-100/50 -z-0 shadow-inner" />
+          {/* --- 2. LEFT CONTENT: REFINED & PROFESSIONAL --- */}
+          <div className="lg:col-span-8 xl:col-span-7 space-y-8">
 
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6 }}
-            className="relative z-10 w-full aspect-square max-w-[440px] flex items-center justify-center"
-          >
-            <img 
-              src="https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=1000&auto=format&fit=crop" 
-              alt="Diabetes Care Essentials" 
-              className="w-4/5 h-4/5 object-contain drop-shadow-[0_25px_30px_rgba(30,27,75,0.18)] hover:scale-105 transition-transform duration-500"
-            />
-          </motion.div>
-
-          {/* --- FLOATING OVERLAY CARDS --- */}
-          
-          <motion.div 
-            animate={{ y: [0, -8, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-4 left-0 sm:-left-4 z-20 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl shadow-xl shadow-slate-900/5 border border-white/80 flex items-center gap-3.5"
-          >
-            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 rounded-xl text-white shadow-md shadow-blue-500/20">
-              <Truck size={20} />
-            </div>
-            <div>
-              <div className="flex items-center gap-1">
-                <Clock size={12} className="text-emerald-600" />
-                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Fast Shipping</span>
+            {/* Minimalist Badges */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-wrap gap-3"
+            >
+              <div className="inline-flex items-center gap-2 bg-[#3d3f96]/10 text-[#3d3f96] px-3 py-1.5 rounded-full border border-[#3d3f96]/20 text-[10px] font-bold uppercase tracking-wider">
+                <Star size={12} className="fill-[#3d3f96]" />
+                India's Trusted Diabetes Platform
               </div>
-              <p className="text-xs font-bold text-slate-800">Express Delivery in 24h</p>
+              <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full border border-emerald-100 text-[10px] font-bold uppercase tracking-wider">
+                <Percent size={12} />
+                Flat 20% Off First Order
+              </div>
+            </motion.div>
+
+            {/* Professional Headline Scale */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="space-y-4"
+            >
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 leading-[1.1] tracking-tight">
+                Your Health, <br />
+                <span className="text-[#3d3f96]">Our Primary Mission.</span>
+              </h1>
+              <p className="text-base md:text-lg text-slate-600 font-medium max-w-xl leading-relaxed">
+                Access genuine medicines, 24/7 specialist consultations, and certified diagnostics. Join the movement for <span className="text-slate-900 font-bold">Diabetes Reversal.</span>
+              </p>
+            </motion.div>
+
+            {/* --- SEARCH & EMERGENCY ACTION --- */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="space-y-6"
+            >
+              <div className="flex flex-col md:flex-row gap-4 max-w-3xl">
+                {/* Clean Search Bar */}
+                <div className="relative flex-1 group">
+                  <div className="relative flex items-center bg-white border border-slate-200 group-focus-within:border-[#3d3f96] group-focus-within:ring-4 group-focus-within:ring-[#3d3f96]/5 rounded-2xl p-1.5 shadow-sm transition-all">
+                    <div className="pl-4 pr-2 text-slate-400">
+                      <Search size={20} />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Search Medicines, CGMs, Labs..."
+                      className="w-full bg-transparent outline-none text-slate-800 font-semibold text-sm py-3"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <button className="bg-[#3d3f96] hover:bg-[#2d2f75] text-white px-8 py-3 rounded-xl font-bold text-xs transition-all hidden sm:block">
+                      SEARCH
+                    </button>
+                  </div>
+                </div>
+
+                {/* AMBULANCE - High Visibility but Professional */}
+                <Link href='/ambulance' className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-3 shadow-lg shadow-red-100 transition-all active:scale-95 shrink-0">
+                  <Ambulance size={20} />
+                  BOOK AMBULANCE
+                </Link>
+              </div>
+
+              {/* Quick Links */}
+              <div className="flex flex-wrap items-center gap-6 px-2">
+                <button className="flex items-center gap-2 text-[#3d3f96] font-bold text-xs uppercase tracking-widest hover:underline">
+                  <UploadCloud size={18} />
+                  Upload Prescription
+                </button>
+                <div className="h-4 w-px bg-slate-200 hidden sm:block" />
+                <div className="flex items-center gap-2 text-slate-500 font-bold text-xs uppercase tracking-widest">
+                  <PhoneCall size={16} className="text-emerald-500" />
+                  Emergency: 1800-DIABETES
+                </div>
+              </div>
+            </motion.div>
+
+            {/* --- CATEGORY GRID (CLEAN & USER FRIENDLY) --- */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-4"
+            >
+              {categories.map((cat, i) => (
+                <Link key={i} href={cat.href}>
+                  <motion.div
+                    whileHover={{ y: -4 }}
+                    className="group bg-white border border-slate-100 p-4 rounded-2xl flex flex-col items-center justify-center gap-3 shadow-sm hover:shadow-md hover:border-[#3d3f96]/20 transition-all cursor-pointer"
+                  >
+                    <div className={`${cat.bg} ${cat.color} p-2.5 rounded-xl transition-colors group-hover:bg-[#3d3f96] group-hover:text-white`}>
+                      {cat.icon}
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-tight text-slate-700">{cat.name}</span>
+                  </motion.div>
+                </Link>
+              ))}
+            </motion.div>
+
+            {/* Trust Footer */}
+            <div className="pt-8 flex flex-wrap gap-8 border-t border-slate-100">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <CheckCircle2 size={14} className="text-emerald-500" /> 100% Genuine
+              </div>
+              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <Truck size={14} className="text-blue-500" /> 24h Delivery
+              </div>
+              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <ShieldCheck size={14} className="text-purple-500" /> NABL Certified
+              </div>
             </div>
-          </motion.div>
 
-          <motion.a 
-            href="/subscription"
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute bottom-6 right-0 sm:-right-2 z-20 bg-gradient-to-br from-slate-900 to-indigo-950 p-4 rounded-2xl shadow-2xl shadow-indigo-950/20 border border-slate-800 text-white min-w-[170px] group cursor-pointer"
-          >
-            <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-widest block mb-0.5">Subscription Plan</span>
-            <h4 className="text-xl font-extrabold text-amber-400 group-hover:translate-x-0.5 transition-transform">Save up to 25%</h4>
-            <p className="text-[11px] text-slate-300 mt-1 font-medium flex items-center gap-1">
-              Auto-refill monthly <ChevronRight size={12} className="text-amber-400 group-hover:translate-x-1 transition-transform" />
-            </p>
-          </motion.a>
+          </div>
 
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4 }}
-            className="absolute -bottom-2 left-10 z-20 bg-emerald-500 text-white px-3.5 py-1.5 rounded-full shadow-lg shadow-emerald-500/20 flex items-center gap-2 border border-emerald-400"
-          >
-            <ShieldCheck size={16} />
-            <span className="text-xs font-bold">100% Certified Pharmacy</span>
-          </motion.div>
+          {/* --- RIGHT SIDE: CLEAN STATS OVERLAY --- */}
+          <div className="hidden lg:col-span-4 xl:col-span-5 lg:flex flex-col items-end justify-center gap-6">
+            <motion.div
+              animate={{ y: [0, -8, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              className="bg-white/90 backdrop-blur-md p-5 rounded-3xl shadow-xl border border-white flex items-center gap-4 min-w-[220px]"
+            >
+              <div className="bg-blue-50 p-3 rounded-2xl text-[#3d3f96]">
+                <Activity size={24} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Active Care</p>
+                <p className="text-base font-black text-slate-800">50k+ Patients</p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              animate={{ y: [0, 8, 0] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+              className="bg-[#3d3f96] p-5 rounded-3xl shadow-xl flex items-center gap-4 min-w-[220px] text-white"
+            >
+              <div className="bg-white/10 p-3 rounded-2xl">
+                <Building2 size={24} className="text-blue-200" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-blue-200 uppercase">Network</p>
+                <p className="text-base font-black">25+ Premium Clinics</p>
+              </div>
+            </motion.div>
+          </div>
 
         </div>
       </div>

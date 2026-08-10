@@ -50,5 +50,20 @@ const UserAPI = {
         return response.data;
     },
 
+    getAboutUsDetails: async () => {
+        const response = await publicApi.get('/api/aboutus/get-about-us')
+        return response.data;
+    },
+
+    getAllYoutubeVideos: async () => {
+        const response = await publicApi.get('/upload-videos/get-youtube-links')
+        return response.data;
+    },
+
+    getAllLocalVideos: async () => {
+        const response = await publicApi.get('/upload-videos/getVideo')
+        return response.data;
+    }
+
 }
 export default UserAPI;
