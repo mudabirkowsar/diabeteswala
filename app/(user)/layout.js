@@ -2,6 +2,7 @@ import "../globals.css";
 import Navbar from "./homePageComponents/Navbar";
 import Footer from "./homePageComponents/Footer";
 import { NotificationProvider } from "../context/NotificationContext";
+import { AuthProvider } from "../context/AuthContext";
 
 // This sets the name of your website in the browser tab
 export const metadata = {
@@ -15,14 +16,16 @@ export default function RootLayout({ children }) {
       <body className="min-h-screen flex flex-col bg-white">
 
         <NotificationProvider>
-        <Navbar />
-        
-        {/* main tag with flex-grow ensures footer stays at the bottom */}
-        <main className="flex-grow">
-          {children}
-        </main>
+          <AuthProvider>
+            <Navbar />
 
-        <Footer />
+            {/* main tag with flex-grow ensures footer stays at the bottom */}
+            <main className="flex-grow">
+              {children}
+            </main>
+
+            <Footer />
+          </AuthProvider>
         </NotificationProvider>
       </body>
     </html>

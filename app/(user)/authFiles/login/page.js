@@ -4,38 +4,47 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  User, 
-  Stethoscope, 
-  Building2, 
-  Beaker, 
-  Pill, 
-  Apple, 
-  Mail, 
-  Lock, 
-  ArrowRight, 
-  Eye, 
-  EyeOff,
-  ShieldCheck
+  User, Stethoscope, Building2, Beaker, Pill, Apple, ShieldCheck 
 } from 'lucide-react';
+
+// Import the sub-components (Create these files in the same folder)
+import UserLogin from './components/UserLogin';
+// import DoctorLogin from './components/DoctorLogin';
+// import ClinicLogin from './components/ClinicLogin';
+// import LabsLogin from './components/LabsLogin';
+// import PharmacyLogin from './components/PharmacyLogin';
+// import ExpertLogin from './components/ExpertLogin';
 
 const LoginPage = () => {
   const [role, setRole] = useState('Home');
-  const [showPassword, setShowPassword] = useState(false);
 
   const roles = [
-    { id: 'Home', label: 'Home', icon: <User size={18} /> },
+    { id: 'Home', label: 'User', icon: <User size={18} /> },
     { id: 'Doctor', label: 'Doctor', icon: <Stethoscope size={18} /> },
     { id: 'Clinic', label: 'Clinic', icon: <Building2 size={18} /> },
     { id: 'Labs', label: 'Labs', icon: <Beaker size={18} /> },
     { id: 'Pharmacy', label: 'Pharmacy', icon: <Pill size={18} /> },
-    { id: 'Food & Nutrition', label: 'Food & Nutrition', icon: <Apple size={18} /> },
+    { id: 'Food & Nutrition', label: 'Expert', icon: <Apple size={18} /> },
   ];
+
+  // Component Mapping Logic
+  const renderLoginForm = () => {
+    switch (role) {
+      case 'Home': return <UserLogin />;
+      // case 'Doctor': return <DoctorLogin />;
+      // case 'Clinic': return <ClinicLogin />;
+      // case 'Labs': return <LabsLogin />;
+      // case 'Pharmacy': return <PharmacyLogin />;
+      // case 'Food & Nutrition': return <ExpertLogin />;
+      default: return <UserLogin />;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f0f7ff] flex items-center justify-center p-4 md:p-10">
       <div className="max-w-[1200px] w-full bg-white rounded-[3rem] shadow-2xl shadow-blue-100 overflow-hidden grid grid-cols-1 lg:grid-cols-2">
         
-        {/* --- LEFT SIDE: BRANDING --- */}
+        {/* --- LEFT SIDE: BRANDING (Static) --- */}
         <div className="hidden lg:flex flex-col justify-between bg-[#3d3f96] p-16 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
           
@@ -43,7 +52,7 @@ const LoginPage = () => {
             <Link href="/">
               <Image 
                 src="/logo/diabeteslogo.png" 
-                alt="Diabeteswala" 
+                alt="Logo" 
                 width={160} 
                 height={40} 
                 className="brightness-0 invert mb-12"
@@ -69,7 +78,7 @@ const LoginPage = () => {
           </div>
         </div>
 
-        {/* --- RIGHT SIDE: LOGIN FORM --- */}
+        {/* --- RIGHT SIDE: DYNAMIC CONTENT --- */}
         <div className="p-8 md:p-12 flex flex-col justify-center">
           <div className="mb-8">
             <h2 className="text-3xl font-black text-slate-900 mb-2">Login</h2>
@@ -98,64 +107,19 @@ const LoginPage = () => {
             ))}
           </div>
 
-          {/* --- FORM --- */}
-          <form className="space-y-5">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={role}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                {/* ID/Email Field */}
-                <div className="space-y-2 mb-5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                    {role} ID or Email
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      type="text" 
-                      placeholder={`Enter ${role} credentials`}
-                      className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-[#3d3f96] focus:ring-4 focus:ring-blue-50 transition-all"
-                    />
-                  </div>
-                </div>
+          {/* --- DYNAMIC FORM INJECTION --- */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={role}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {renderLoginForm()}
+            </motion.div>
+          </AnimatePresence>
 
-                {/* Password Field */}
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center px-1">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Password</label>
-                    <Link href="#" className="text-[11px] font-bold text-[#3d3f96] hover:underline">Forgot Password?</Link>
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      type={showPassword ? "text" : "password"} 
-                      placeholder="••••••••"
-                      className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-[#3d3f96] focus:ring-4 focus:ring-blue-50 transition-all"
-                    />
-                    <button 
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Login Button */}
-            <button className="w-full bg-[#3d3f96] hover:bg-[#2d2f75] text-white py-5 rounded-2xl font-black text-sm flex items-center justify-center gap-3 shadow-xl shadow-blue-100 transition-all active:scale-95 mt-6">
-              Login as {role}
-              <ArrowRight size={18} />
-            </button>
-          </form>
-
-          {/* Footer */}
           <div className="mt-8 text-center">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
               New to Diabeteswala? 
@@ -163,7 +127,6 @@ const LoginPage = () => {
             </p>
           </div>
         </div>
-
       </div>
     </div>
   );

@@ -36,7 +36,7 @@ const UserAPI = {
     },
     
     loginUser: async (credentials) => {
-        const response = await publicApi.post('/api/auth/login', credentials);
+        const response = await publicApi.post('/api/auth/user/login', credentials);
         return response.data;
     },
 

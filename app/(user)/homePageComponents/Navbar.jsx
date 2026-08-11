@@ -10,12 +10,14 @@ import {
   ChevronRight, MapPin, LocateFixed, Loader2
 } from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
+import { useAuth } from '../../context/AuthContext';
 
 const Navbar = () => {
+  // Use isLoggedIn and logout directly from context for instant UI updates
+  const { user, isLoggedIn, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isAccountSidebarOpen, setIsAccountSidebarOpen] = useState(false);
   const [isMobileShopOpen, setIsMobileShopOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
 
   // --- Location States ---
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
@@ -33,12 +35,11 @@ const Navbar = () => {
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
       );
       const data = await response.json();
-      // Extract city, town, or village
-      const city = data.address.city || data.address.town || data.address.village || data.address.state || "Unknown Location";
+      const city = data.address.city || data.address.town || data.address.village || data.address.state || "Patiala";
       return city;
     } catch (error) {
       console.error("Geocoding error:", error);
-      return "Location Found";
+      return "Patiala";
     }
   };
 
@@ -51,10 +52,8 @@ const Navbar = () => {
           const { latitude, longitude } = position.coords;
           const coords = { lat: latitude, lng: longitude };
 
-          // Get actual city name
           const cityName = await fetchCityName(latitude, longitude);
 
-          // Update State & LocalStorage
           setUserLocationName(cityName);
           localStorage.setItem('userCoords', JSON.stringify(coords));
           localStorage.setItem('userLocationName', cityName);
@@ -65,25 +64,24 @@ const Navbar = () => {
         },
         (error) => {
           setIsDetecting(false);
-          setUserLocationName("Select Location");
-          showNotification("Location access denied. Please select manually.", "warning");
+          setUserLocationName("Patiala");
+          showNotification("Location access denied. Defaulting to Patiala.", "warning");
         }
       );
     } else {
       setIsDetecting(false);
-      setUserLocationName("Select Location");
+      setUserLocationName("Patiala");
       showNotification("Geolocation not supported", "error");
     }
   };
 
   // 3. Auto-run on first visit
   useEffect(() => {
-    // handleDetectLocation();
     const savedLoc = localStorage.getItem('userLocationName');
     if (savedLoc) {
       setUserLocationName(savedLoc);
     } else {
-      handleDetectLocation(); // Auto-detect if new user
+      handleDetectLocation();
     }
   }, []);
 
@@ -193,19 +191,16 @@ const Navbar = () => {
             onClick={() => setIsLocationModalOpen(true)}
             className="relative w-full flex items-center gap-3 px-4 py-1.5 bg-white/60 backdrop-blur-md border border-slate-200 hover:border-[#3d3f96] hover:bg-white rounded-2xl transition-all duration-300 shadow-sm group overflow-hidden"
           >
-            {/* Animated Background Glow on Hover */}
             <div className="absolute inset-0 bg-gradient-to-r from-[#3d3f96]/0 via-[#3d3f96]/5 to-[#3d3f96]/0 opacity-0 group-hover:opacity-100 -translate-x-full group-hover:translate-x-full transition-all duration-1000" />
 
-            {/* Icon with dedicated container */}
             <div className="shrink-0 bg-[#3d3f96]/10 p-2 rounded-xl group-hover:bg-[#3d3f96] group-hover:text-white transition-all duration-300">
               {isDetecting ? (
                 <Loader2 size={16} className="animate-spin" />
               ) : (
-                <MapPin size={16} className={isDetecting ? "opacity-0" : "opacity-100"} />
+                <MapPin size={16} />
               )}
             </div>
 
-            {/* Text Hierarchy */}
             <div className="flex flex-col items-start overflow-hidden text-left">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] leading-none mb-1">
                 Deliver to
@@ -217,7 +212,6 @@ const Navbar = () => {
               </div>
             </div>
 
-            {/* Right Chevron */}
             <div className="ml-auto pl-2 border-l border-slate-100 group-hover:border-[#3d3f96]/20 transition-colors">
               <ChevronDown
                 size={14}
@@ -267,7 +261,7 @@ const Navbar = () => {
             ) : (
               <button onClick={() => { setIsOpen(false); setIsAccountSidebarOpen(true) }} className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl w-full text-left">
                 <div className="bg-[#3d3f96] text-white p-2 rounded-xl"><User size={20} /></div>
-                <div className="flex-1 min-w-0"><p className="text-sm font-black text-gray-800 truncate">John Doe</p></div>
+                <div className="flex-1 min-w-0"><p className="text-sm font-black text-gray-800 truncate">{user?.name || "John Doe"}</p></div>
               </button>
             )}
           </div>
@@ -308,10 +302,12 @@ const Navbar = () => {
           </div>
           <div className="p-6 bg-slate-50/50 border-b border-gray-100">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-[#3d3f96] text-white flex items-center justify-center text-2xl font-black shadow-lg shadow-indigo-100">JD</div>
+              <div className="w-16 h-16 rounded-2xl bg-[#3d3f96] text-white flex items-center justify-center text-2xl font-black shadow-lg shadow-indigo-100">
+                {user?.name?.charAt(0) || "U"}
+              </div>
               <div>
-                <h3 className="text-lg font-black text-gray-800">John Doe</h3>
-                <p className="text-xs font-bold text-gray-400">john.doe@example.com</p>
+                <h3 className="text-lg font-black text-gray-800">{user?.name || "User"}</h3>
+                <p className="text-xs font-bold text-gray-400">{user?.phone || user?.email}</p>
                 <Link href="/profile" onClick={() => setIsAccountSidebarOpen(false)} className="text-[10px] font-black text-[#3d3f96] uppercase tracking-widest mt-1 inline-block hover:underline">Edit Profile</Link>
               </div>
             </div>
@@ -326,7 +322,7 @@ const Navbar = () => {
             ))}
           </div>
           <div className="p-4 border-t border-gray-100">
-            <button onClick={() => { setIsLoggedIn(false); setIsAccountSidebarOpen(false); showNotification("You have been logged out.", "info"); }} className="flex items-center justify-center gap-3 w-full py-4 bg-red-50 text-red-600 rounded-2xl font-black text-sm hover:bg-red-100 transition-colors">
+            <button onClick={() => { logout(); setIsAccountSidebarOpen(false); showNotification("You have been logged out.", "info"); }} className="flex items-center justify-center gap-3 w-full py-4 bg-red-50 text-red-600 rounded-2xl font-black text-sm hover:bg-red-100 transition-colors">
               <LogOut size={20} /> Logout from Account
             </button>
           </div>
