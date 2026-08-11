@@ -14,7 +14,6 @@ import {
   Ambulance,
   Apple,
   Building2,
-  ChevronRight,
   PhoneCall,
   Star,
   CheckCircle2
@@ -22,14 +21,42 @@ import {
 import Link from 'next/link';
 
 const Hero = () => {
-  const [searchQuery, setSearchQuery] = useState("");
   const [currentBg, setCurrentBg] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const bgImages = [
     "https://www.shutterstock.com/image-photo/diabetes-concept-blood-sugar-meter-260nw-2464647841.jpg",
     "https://images.unsplash.com/photo-1624454002429-40ed87a5ec04?q=80&w=1920&auto=format&fit=crop",
     "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=1920&auto=format&fit=crop",
     "https://images.unsplash.com/photo-1511174511562-5f7f18b874f8?q=80&w=1920&auto=format&fit=crop"
+  ];
+
+  // Content that changes with the background
+  const contentData = [
+    {
+      badge: "India's Trusted Diabetes Platform",
+      title: "Your Health,",
+      titleAccent: "Our Primary Mission.",
+      description: "Access genuine medicines, 24/7 specialist consultations, and certified diagnostics. Join the movement for Diabetes Reversal."
+    },
+    {
+      badge: "Expert Medical Guidance",
+      title: "Consult Top",
+      titleAccent: "Endocrinologists.",
+      description: "Book video or in-clinic appointments with India's leading specialists. Personalized care plans tailored to your hormonal profile."
+    },
+    {
+      badge: "100% Genuine Pharmacy",
+      title: "Medicines Delivered",
+      titleAccent: "In 24 Hours.",
+      description: "Get authentic diabetes medications and CGMs delivered cold-chain to your doorstep. Flat 20% off on your first order."
+    },
+    {
+      badge: "NABL Accredited Labs",
+      title: "Accurate Lab",
+      titleAccent: "Diagnostics.",
+      description: "Book HbA1c and complete metabolic panels with free home sample collection. Get digital reports within 24 hours."
+    }
   ];
 
   useEffect(() => {
@@ -60,7 +87,7 @@ const Hero = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 2 }}
+            transition={{ duration: 1.5 }}
             className="w-full h-full object-cover"
           />
         </AnimatePresence>
@@ -72,40 +99,42 @@ const Hero = () => {
       <div className="max-w-[1440px] mx-auto px-6 lg:px-12 w-full z-10 relative py-10 lg:py-20">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
 
-          {/* --- 2. LEFT CONTENT: REFINED & PROFESSIONAL --- */}
+          {/* --- 2. LEFT CONTENT: DYNAMIC & PROFESSIONAL --- */}
           <div className="lg:col-span-8 xl:col-span-7 space-y-8">
+            
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentBg}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.5 }}
+                className="space-y-8"
+              >
+                {/* Minimalist Badges */}
+                <div className="flex flex-wrap gap-3">
+                  <div className="inline-flex items-center gap-2 bg-[#3d3f96]/10 text-[#3d3f96] px-3 py-1.5 rounded-full border border-[#3d3f96]/20 text-[10px] font-bold uppercase tracking-wider">
+                    <Star size={12} className="fill-[#3d3f96]" />
+                    {contentData[currentBg].badge}
+                  </div>
+                  <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full border border-emerald-100 text-[10px] font-bold uppercase tracking-wider">
+                    <Percent size={12} />
+                    Flat 20% Off First Order
+                  </div>
+                </div>
 
-            {/* Minimalist Badges */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex flex-wrap gap-3"
-            >
-              <div className="inline-flex items-center gap-2 bg-[#3d3f96]/10 text-[#3d3f96] px-3 py-1.5 rounded-full border border-[#3d3f96]/20 text-[10px] font-bold uppercase tracking-wider">
-                <Star size={12} className="fill-[#3d3f96]" />
-                India's Trusted Diabetes Platform
-              </div>
-              <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full border border-emerald-100 text-[10px] font-bold uppercase tracking-wider">
-                <Percent size={12} />
-                Flat 20% Off First Order
-              </div>
-            </motion.div>
-
-            {/* Professional Headline Scale */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-              className="space-y-4"
-            >
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 leading-[1.1] tracking-tight">
-                Your Health, <br />
-                <span className="text-[#3d3f96]">Our Primary Mission.</span>
-              </h1>
-              <p className="text-base md:text-lg text-slate-600 font-medium max-w-xl leading-relaxed">
-                Access genuine medicines, 24/7 specialist consultations, and certified diagnostics. Join the movement for <span className="text-slate-900 font-bold">Diabetes Reversal.</span>
-              </p>
-            </motion.div>
+                {/* Professional Headline Scale */}
+                <div className="space-y-4">
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 leading-[1.1] tracking-tight">
+                    {contentData[currentBg].title} <br />
+                    <span className="text-[#3d3f96]">{contentData[currentBg].titleAccent}</span>
+                  </h1>
+                  <p className="text-base md:text-lg text-slate-600 font-medium max-w-xl leading-relaxed">
+                    {contentData[currentBg].description}
+                  </p>
+                </div>
+              </motion.div>
+            </AnimatePresence>
 
             {/* --- SEARCH & EMERGENCY ACTION --- */}
             <motion.div
@@ -115,7 +144,6 @@ const Hero = () => {
               className="space-y-6"
             >
               <div className="flex flex-col md:flex-row gap-4 max-w-3xl">
-                {/* Clean Search Bar */}
                 <div className="relative flex-1 group">
                   <div className="relative flex items-center bg-white border border-slate-200 group-focus-within:border-[#3d3f96] group-focus-within:ring-4 group-focus-within:ring-[#3d3f96]/5 rounded-2xl p-1.5 shadow-sm transition-all">
                     <div className="pl-4 pr-2 text-slate-400">
@@ -134,7 +162,6 @@ const Hero = () => {
                   </div>
                 </div>
 
-                {/* AMBULANCE - High Visibility but Professional */}
                 <Link href='/ambulance' className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-3 shadow-lg shadow-red-100 transition-all active:scale-95 shrink-0">
                   <Ambulance size={20} />
                   BOOK AMBULANCE
@@ -155,7 +182,7 @@ const Hero = () => {
               </div>
             </motion.div>
 
-            {/* --- CATEGORY GRID (CLEAN & USER FRIENDLY) --- */}
+            {/* --- CATEGORY GRID --- */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

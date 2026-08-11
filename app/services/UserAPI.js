@@ -30,6 +30,16 @@ authApi.interceptors.request.use((config) => {
 });
 
 const UserAPI = {
+    registerUser: async (userData) => {
+        const response = await publicApi.post('/api/auth/user/register', userData);
+        return response.data;
+    },
+    
+    loginUser: async (credentials) => {
+        const response = await publicApi.post('/api/auth/login', credentials);
+        return response.data;
+    },
+
     getSciencePageHeroDetail: async () => {
         const response = await publicApi.get('/api/homepage/science')
         return response.data;

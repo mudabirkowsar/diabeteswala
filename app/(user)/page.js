@@ -13,6 +13,8 @@ import MedicinePromotion from './homePageComponents/MedicinePromotion'
 import LabPromotion from './homePageComponents/LabPromotion'
 import DiabetesScienceHub from './homePageComponents/DiabetesScienceHub'
 import WayChooseDiabetesWala from './homePageComponents/WayChooseDiabetesWala'
+import AmbulancesList from './homePageComponents/commonComponents/AmbulancesList'
+import AbulancePromoBanner from './homePageComponents/AmbulancePromoBanner'
 
 function page() {
   return (
@@ -23,6 +25,8 @@ function page() {
     <MedicinePromotion />
     <DoctorShowcase />
     <DoctorPromotion />
+    <AmbulancesList />
+    <AbulancePromoBanner />
     <LabTestShowcase />
     {/* <ServiceShortcuts /> */}
     <WayChooseDiabetesWala />
