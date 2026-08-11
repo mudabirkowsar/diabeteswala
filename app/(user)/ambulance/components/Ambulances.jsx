@@ -1,15 +1,15 @@
 "use client";
 import React from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Ambulance, 
-  ShieldCheck, 
-  Clock, 
-  MapPin, 
-  CheckCircle2, 
-  ArrowRight, 
-  HeartPulse, 
-  Wind, 
+import {
+  Ambulance,
+  ShieldCheck,
+  Clock,
+  MapPin,
+  CheckCircle2,
+  ArrowRight,
+  HeartPulse,
+  Wind,
   Zap,
   Navigation
 } from 'lucide-react';
@@ -62,7 +62,7 @@ function Ambulances() {
   return (
     <section className="py-20 bg-slate-50">
       <div className="max-w-[1400px] mx-auto px-6">
-        
+
         {/* --- Section Header --- */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
           <div className="max-w-2xl">
@@ -77,14 +77,14 @@ function Ambulances() {
               Choose the right level of care. All units are equipped with specialized diabetes emergency kits.
             </p>
           </div>
-          
+
           <div className="flex items-center gap-4 bg-white p-4 rounded-3xl shadow-sm border border-slate-100">
             <div className="bg-emerald-100 p-2 rounded-xl text-emerald-600">
-                <Navigation size={20} />
+              <Navigation size={20} />
             </div>
             <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase">Current Location</p>
-                <p className="text-sm font-bold text-slate-800">Detecting Nearby Units...</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase">Current Location</p>
+              <p className="text-sm font-bold text-slate-800">Detecting Nearby Units...</p>
             </div>
           </div>
         </div>
@@ -102,13 +102,13 @@ function Ambulances() {
             >
               {/* Image Section */}
               <div className="relative h-48 overflow-hidden">
-                <img 
-                  src={item.image} 
-                  alt={item.name} 
+                <img
+                  src={item.image}
+                  alt={item.name}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                
+
                 {/* ETA Badge */}
                 <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl flex items-center gap-2 shadow-lg">
                   <Clock size={14} className="text-red-500" />
@@ -122,7 +122,7 @@ function Ambulances() {
                 )}
 
                 <div className="absolute bottom-4 left-6">
-                    <p className="text-[10px] font-black text-blue-200 uppercase tracking-widest">{item.type}</p>
+                  <p className="text-[10px] font-black text-blue-200 uppercase tracking-widest">{item.type}</p>
                 </div>
               </div>
 
@@ -158,29 +158,29 @@ function Ambulances() {
 
         {/* --- Trust Footer --- */}
         <div className="mt-16 bg-white border border-slate-100 p-8 rounded-[3rem] flex flex-wrap justify-center lg:justify-between items-center gap-8 shadow-sm">
-            <div className="flex items-center gap-4">
-                <div className="bg-blue-50 p-3 rounded-2xl text-[#3d3f96]"><ShieldCheck size={24}/></div>
-                <div>
-                    <p className="text-sm font-black text-slate-800">MCI Certified Staff</p>
-                    <p className="text-xs font-medium text-slate-400">On-board medical professionals</p>
-                </div>
+          <div className="flex items-center gap-4">
+            <div className="bg-blue-50 p-3 rounded-2xl text-[#3d3f96]"><ShieldCheck size={24} /></div>
+            <div>
+              <p className="text-sm font-black text-slate-800">MCI Certified Staff</p>
+              <p className="text-xs font-medium text-slate-400">On-board medical professionals</p>
             </div>
-            <div className="h-10 w-px bg-slate-100 hidden lg:block"></div>
-            <div className="flex items-center gap-4">
-                <div className="bg-red-50 p-3 rounded-2xl text-red-600"><HeartPulse size={24}/></div>
-                <div>
-                    <p className="text-sm font-black text-slate-800">Advanced Cardiac Life Support</p>
-                    <p className="text-xs font-medium text-slate-400">Equipped for cardiac emergencies</p>
-                </div>
+          </div>
+          <div className="h-10 w-px bg-slate-100 hidden lg:block"></div>
+          <div className="flex items-center gap-4">
+            <div className="bg-red-50 p-3 rounded-2xl text-red-600"><HeartPulse size={24} /></div>
+            <div>
+              <p className="text-sm font-black text-slate-800">Advanced Cardiac Life Support</p>
+              <p className="text-xs font-medium text-slate-400">Equipped for cardiac emergencies</p>
             </div>
-            <div className="h-10 w-px bg-slate-100 hidden lg:block"></div>
-            <div className="flex items-center gap-4">
-                <div className="bg-emerald-50 p-3 rounded-2xl text-emerald-600"><CheckCircle2 size={24}/></div>
-                <div>
-                    <p className="text-sm font-black text-slate-800">NABL Accredited</p>
-                    <p className="text-xs font-medium text-slate-400">Standardized medical equipment</p>
-                </div>
+          </div>
+          <div className="h-10 w-px bg-slate-100 hidden lg:block"></div>
+          <div className="flex items-center gap-4">
+            <div className="bg-emerald-50 p-3 rounded-2xl text-emerald-600"><CheckCircle2 size={24} /></div>
+            <div>
+              <p className="text-sm font-black text-slate-800">NABL Accredited</p>
+              <p className="text-xs font-medium text-slate-400">Standardized medical equipment</p>
             </div>
+          </div>
         </div>
 
       </div>
