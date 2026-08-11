@@ -126,7 +126,7 @@ const Navbar = () => {
   const secondaryLinks = allNavLinks.slice(6);
 
   const accountLinks = [
-    { name: 'My Profile', icon: <UserCircle size={20} />, href: '/profile' },
+    { name: 'My Profile', icon: <UserCircle size={20} />, href: '/otherscreens/profile' },
     { name: 'My Appointments', icon: <ClipboardList size={20} />, href: '/appointments' },
     { name: 'My Orders', icon: <ShoppingBag size={20} />, href: '/orders' },
     { name: 'Lab Reports', icon: <FileText size={20} />, href: '/reports' },
@@ -308,7 +308,7 @@ const Navbar = () => {
               <div>
                 <h3 className="text-lg font-black text-gray-800">{user?.name || "User"}</h3>
                 <p className="text-xs font-bold text-gray-400">{user?.phone || user?.email}</p>
-                <Link href="/profile" onClick={() => setIsAccountSidebarOpen(false)} className="text-[10px] font-black text-[#3d3f96] uppercase tracking-widest mt-1 inline-block hover:underline">Edit Profile</Link>
+                <Link href="/otherscreens/profile" onClick={() => setIsAccountSidebarOpen(false)} className="text-[10px] font-black text-[#3d3f96] uppercase tracking-widest mt-1 inline-block hover:underline">Edit Profile</Link>
               </div>
             </div>
           </div>
