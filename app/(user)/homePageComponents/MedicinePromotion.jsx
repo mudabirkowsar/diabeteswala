@@ -114,7 +114,7 @@ const MedicinePromotion = () => {
             {/* Action Buttons */}
             <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
               <Link 
-                href="/pharmacy" 
+                href="/pharmacy/allproductsandmedicines" 
                 className="group bg-[#3d3f96] hover:bg-[#32347d] text-white font-black px-7 py-4 rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-3 shadow-lg shadow-indigo-900/20 transition-all active:scale-95"
               >
                 <ShoppingBag size={18} />
