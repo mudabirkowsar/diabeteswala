@@ -13,8 +13,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen flex flex-col bg-white">
+    // <html lang="en">
+      <div className="min-h-screen flex flex-col bg-white">
 
         <NotificationProvider>
           <AuthProvider>
@@ -29,7 +29,7 @@ export default function RootLayout({ children }) {
             <Footer />
           </AuthProvider>
         </NotificationProvider>
-      </body>
-    </html>
+      </div>
+    // </html>
   );
 }
