@@ -6,22 +6,8 @@ import {
   FaWallet, 
   FaInfoCircle, 
   FaCheckCircle, 
-  FaTimes,
-  FaClock,
-  FaUserInjured
+  FaTimes
 } from 'react-icons/fa';
-import {
-  AreaChart, Area,
-  BarChart, Bar,
-  Cell,
-  PieChart, Pie,
-  XAxis, YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer
-} from 'recharts';
-
-const PIE_COLORS = ['#10B981', '#EF4444']; // Net Earnings vs Admin Commission
 
 export default function ClinicRevenueMock() {
   const [mounted, setMounted] = useState(false);
@@ -38,17 +24,6 @@ export default function ClinicRevenueMock() {
     totalNetEarning: 30592, // ~80% Net
     totalAdminShare: 7648,  // ~20% Admin
     currentCutoff: 20,
-    revenueByDate: { 
-      "2026-07-17": 500, "2026-07-18": 800, "2026-07-19": 650, 
-      "2026-07-20": 1100, "2026-07-21": 950, "2026-07-22": 1300, "2026-07-23": 950 
-    },
-    netEarningByDate: { 
-      "2026-07-17": 400, "2026-07-18": 640, "2026-07-19": 520, 
-      "2026-07-20": 880, "2026-07-21": 760, "2026-07-22": 1040, "2026-07-23": 760 
-    },
-    monthlyRevenueData: { "Jan 2026": 4500, "Feb 2026": 5200, "Mar 2026": 6100, "Apr 2026": 5800, "May 2026": 7200, "Jun 2026": 9440 },
-    monthlyNetData: { "Jan 2026": 3600, "Feb 2026": 4160, "Mar 2026": 4880, "Apr 2026": 4640, "May 2026": 5760, "Jun 2026": 7552 },
-    monthlyAdminData: { "Jan 2026": 900, "Feb 2026": 1040, "Mar 2026": 1220, "Apr 2026": 1160, "May 2026": 1440, "Jun 2026": 1888 },
     recentOrders: [
       { orderId: "APPT-90412", displayDate: "7/23/2026", displayTime: "10:30 AM", doctorName: "Dr. Alok Sharma", customerName: "Nitish kumar", status: "completed", gross: 1500, admin: 300, net: 1200 },
       { orderId: "APPT-90415", displayDate: "7/22/2026", displayTime: "02:15 PM", doctorName: "Dr. Alok Sharma", customerName: "Aman Preet", status: "completed", gross: 1200, admin: 240, net: 960 },
@@ -83,18 +58,17 @@ export default function ClinicRevenueMock() {
     { createdAt: "2026-06-25T11:20:00", totalOrders: 5, totalAmount: 7200, status: "approved", transactionId: "TXN-87421102", adminNote: "Settle with manual adjustment" }
   ]);
 
-  // Premium Page Mounting Experience
   useEffect(() => {
     setMounted(true);
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 550); // Elegant simulated loading screen
+    }, 550);
     return () => clearTimeout(timer);
   }, []);
 
   const getStatusBadge = (status) => {
     const s = String(status).toLowerCase();
-    if (s === 'completed' || s === 'visited' || s === 'visited') {
+    if (s === 'completed' || s === 'visited') {
       return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">Visited</span>;
     }
     if (s === 'confirmed' || s === 'approved') {
@@ -115,7 +89,6 @@ export default function ClinicRevenueMock() {
     return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-200">Pending</span>;
   };
 
-  // --- INTERACTIVE SIMULATION LOGIC ---
   const submitPayoutRequest = () => {
     if(selectedOrderIds.length === 0) return;
     
@@ -125,11 +98,9 @@ export default function ClinicRevenueMock() {
       const selectedOrders = eligibleOrders.filter(o => selectedOrderIds.includes(o.id));
       const requestTotal = selectedOrders.reduce((sum, item) => sum + item.payableAmount, 0);
 
-      // 1. Update lists dynamically
       const remainingOrders = eligibleOrders.filter(o => !selectedOrderIds.includes(o.id));
       setEligibleOrders(remainingOrders);
 
-      // 2. Append mock pending request to transaction history
       const newRequest = {
         createdAt: new Date().toISOString(),
         totalOrders: selectedOrders.length,
@@ -140,7 +111,6 @@ export default function ClinicRevenueMock() {
       };
       setPayoutHistory([newRequest, ...payoutHistory]);
 
-      // 3. Update Payout overview values
       const newStatsAmount = remainingOrders.reduce((sum, item) => sum + item.payableAmount, 0);
       setPayoutStats({
         totalAmount: newStatsAmount,
@@ -154,8 +124,8 @@ export default function ClinicRevenueMock() {
 
       setSelectedOrderIds([]);
       setPayoutLoading(false);
-      setShowSuccessModal(true); // Popup confirmation
-    }, 800); // Quick elegant loading spinner delay
+      setShowSuccessModal(true);
+    }, 800);
   };
 
   const handleSelectAll = (e) => {
@@ -173,27 +143,6 @@ export default function ClinicRevenueMock() {
       .filter(o => selectedOrderIds.includes(o.id))
       .reduce((sum, current) => sum + current.payableAmount, 0);
   };
-
-  // --- CHART FORMATTING ---
-  const sortedMonthLabels = Object.keys(revenueData.monthlyRevenueData).sort((a,b)=>new Date(a)-new Date(b));
-  const lineChartSortedDates = Object.keys(revenueData.revenueByDate).sort();
-
-  const barData = sortedMonthLabels.map(m => ({
-    name: m,
-    "Net Earning": revenueData.monthlyNetData[m] || 0,
-    "Admin Share": revenueData.monthlyAdminData[m] || 0
-  }));
-
-  const lineData = lineChartSortedDates.map(d => ({
-    name: d,
-    "Gross": revenueData.revenueByDate[d] || 0,
-    "Net": revenueData.netEarningByDate[d] || 0
-  }));
-
-  const pieData = [
-    { name: 'Net Earning', value: revenueData.totalNetEarning || 0 },
-    { name: 'Admin Share', value: revenueData.totalAdminShare || 0 }
-  ];
 
   if (!mounted || loading) {
     return (
@@ -290,90 +239,6 @@ export default function ClinicRevenueMock() {
                 </h4>
               </div>
             ))}
-          </div>
-
-          {/* Chart visualizers */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
-            <div className="bg-white rounded-[2rem] border border-gray-100 p-6 md:p-8 shadow-sm">
-              <h3 className="text-lg font-black text-gray-800 mb-6">Settlement Distributions</h3>
-              <div className="h-80 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={barData} barSize={16}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-                    <XAxis dataKey="name" stroke="#94A3B8" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} />
-                    {/* Hover text white color override */}
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: "#1E293B", borderRadius: "12px", border: "none" }}
-                      labelStyle={{ color: "#FFF", fontSize: "11px", fontWeight: "bold" }}
-                      itemStyle={{ color: "#FFF", fontSize: "11px" }}
-                    />
-                    <Bar dataKey="Net Earning" fill="#10B981" radius={[8, 8, 0, 0]} />
-                    <Bar dataKey="Admin Share" fill="#EF4444" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-[2rem] border border-gray-100 p-6 md:p-8 shadow-sm flex flex-col justify-between">
-              <h3 className="text-lg font-black text-gray-800 mb-4">Cumulative Split Share</h3>
-              <div className="relative h-64 w-full flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={65} outerRadius={85} paddingAngle={6} dataKey="value">
-                      {pieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: "#1E293B", borderRadius: "12px", border: "none" }}
-                      itemStyle={{ color: "#FFF", fontSize: "11px" }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="absolute text-center">
-                  <span className="text-[9px] uppercase font-black text-gray-400 block tracking-widest">Share split</span>
-                  <span className="text-base font-black text-gray-800 block mt-0.5">₹{(revenueData.totalRevenue || 0).toFixed(0)}</span>
-                </div>
-              </div>
-              
-              <div className="flex gap-4 justify-center mt-4 text-xs font-bold text-gray-500">
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-emerald-500"></span> Net Earnings</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-rose-500"></span> Admin Share</span>
-              </div>
-            </div>
-
-          </div>
-
-          <div className="bg-white rounded-[2rem] border border-gray-100 p-6 md:p-8 shadow-sm">
-            <h3 className="text-lg font-black text-gray-800 mb-6">Gross vs Net Analytics (Weekly Trend)</h3>
-            <div className="h-80 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={lineData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorGross" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3D3F96" stopOpacity={0.25}/>
-                      <stop offset="95%" stopColor="#3D3F96" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorNet" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.25}/>
-                      <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-                  <XAxis dataKey="name" stroke="#94A3B8" fontSize={11} tickLine={false} />
-                  <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: "#1E293B", borderRadius: "12px", border: "none" }}
-                    labelStyle={{ color: "#FFF", fontSize: "11px", fontWeight: "bold" }}
-                    itemStyle={{ color: "#FFF", fontSize: "11px" }}
-                  />
-                  <Area type="monotone" dataKey="Gross" stroke="#3D3F96" strokeWidth={3} fill="url(#colorGross)" />
-                  <Area type="monotone" dataKey="Net" stroke="#10B981" strokeWidth={3} fill="url(#colorNet)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
           </div>
 
           {/* Recent sessions log */}
