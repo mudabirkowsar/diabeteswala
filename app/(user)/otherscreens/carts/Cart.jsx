@@ -3,6 +3,9 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, ArrowRight, Pill, FileText, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+// Import your Auth Context
+// import { useAuth } from '../../context/AuthContext'; 
+import { useAuth } from '../../../context/AuthContext'; // Adjust the path as necessary
 
 const menuVariants = {
     hidden: { opacity: 0, y: 30, scale: 0.95, pointerEvents: "none" },
@@ -34,6 +37,7 @@ const Cart = ({
     foodCount = 0,
     foodTotal = "0"
 }) => {
+    const { isLoggedIn } = useAuth(); // Get login status from context
     const [isHovered, setIsHovered] = useState(false);
 
     // Calculate aggregate totals
@@ -44,7 +48,9 @@ const Cart = ({
         parseFloat(foodTotal.replace(/,/g, ''))
     );
 
-    if (totalItems === 0) return null;
+    // --- AUTH & EMPTY CHECK ---
+    // If user is not logged in OR the cart is empty, return null (hide component)
+    if (!isLoggedIn || totalItems === 0) return null;
 
     const cartOptions = [
         {
@@ -95,7 +101,6 @@ const Cart = ({
                                     href={opt.href}
                                     className="flex items-center justify-between bg-white border border-slate-100 p-3 rounded-2xl shadow-xl hover:shadow-2xl hover:border-slate-200 transition-all duration-300 group/item w-full relative overflow-hidden"
                                 >
-                                    {/* Accent left border using brand color */}
                                     <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#EB333C] opacity-0 group-hover/item:opacity-100 transition-opacity" />
 
                                     <div className="flex items-center gap-3 min-w-0">
@@ -128,7 +133,6 @@ const Cart = ({
                     whileTap={{ scale: 0.98 }}
                     className="flex items-center gap-4 bg-[#3d3f96] text-white p-2 pl-6 rounded-[2rem] shadow-[0_20px_50px_rgba(61,63,150,0.3)] border border-white/10 cursor-pointer"
                 >
-                    {/* Cart Aggregation Info */}
                     <div className="flex flex-col pr-1">
                         <p className="text-[9px] font-black text-indigo-200 uppercase tracking-widest leading-none">
                             Total Cart
@@ -138,11 +142,9 @@ const Cart = ({
                         </p>
                     </div>
 
-                    {/* Trigger Icon */}
                     <div className="relative bg-white/10 p-4 rounded-2xl transition-all duration-300">
                         <ShoppingBag size={24} strokeWidth={2.5} />
 
-                        {/* Pulsing Total Count Badge using the #EB333C brand color */}
                         <span className="absolute -top-1 -right-1 flex h-5 w-5">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#EB333C] opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-5 w-5 bg-[#EB333C] text-[10px] font-black items-center justify-center border-2 border-[#3d3f96]">
@@ -151,7 +153,6 @@ const Cart = ({
                         </span>
                     </div>
 
-                    {/* Context Tooltip */}
                     <div className="absolute -top-10 right-0 bg-slate-900 text-white text-[9px] font-black px-3.5 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl border border-white/10 uppercase tracking-widest">
                         View Sub Carts <ArrowRight size={11} className="inline ml-1 text-[#EB333C]" />
                     </div>

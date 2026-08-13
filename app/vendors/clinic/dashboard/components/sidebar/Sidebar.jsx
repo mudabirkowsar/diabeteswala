@@ -30,16 +30,16 @@ export default function ClinicSidebar({ sidebarOpen }) {
 
     // Menu list exactly as shown in your screen layout
     const menuItems = [
-        { name: "Dashboard", route: "/vendors/clinic", icon: FaTachometerAlt },
-        { name: "Revenue", route: "/vendors/clinic/revanue", icon: FaRupeeSign },
-        { name: "Manage Bank Details", route: "/vendors/clinic/managebank", icon: FaUniversity },
-        { name: "Clinic Doctors", route: "/vendors/clinic/clinicdoctor", icon: FaUserMd },
-        { name: "Add New Doctor", route: "/vendors/clinic/addDoctors", icon: FaUserMd },
-        { name: "Appointments", route: "/vendors/clinic/appointments", icon: FaCalendarCheck },
-        { name: "Achievements", route: "/vendors/clinic/achievements", icon: FaTrophy },
-        { name: "Services", route: "/vendors/clinic/services", icon: FaHandHoldingMedical },
-        { name: "Clinic Timings", route: "/vendors/clinic/clinictiming", icon: FaClock },
-        { name: "Documents", route: "/vendors/clinic/documents", icon: FaFileMedical },
+        { name: "Dashboard", route: "/vendors/clinic/dashboard", icon: FaTachometerAlt },
+        { name: "Revenue", route: "/vendors/clinic/dashboard/revenue", icon: FaRupeeSign },
+        { name: "Manage Bank Details", route: "/vendors/clinic/dashboard/managebank", icon: FaUniversity },
+        { name: "Clinic Doctors", route: "/vendors/clinic/dashboard/clinicdoctor", icon: FaUserMd },
+        { name: "Add New Doctor", route: "/vendors/clinic/dashboard/addDoctors", icon: FaUserMd },
+        { name: "Appointments", route: "/vendors/clinic/dashboard/appointments", icon: FaCalendarCheck },
+        { name: "Achievements", route: "/vendors/clinic/dashboard/achievements", icon: FaTrophy },
+        { name: "Services", route: "/vendors/clinic/dashboard/services", icon: FaHandHoldingMedical },
+        { name: "Clinic Timings", route: "/vendors/clinic/dashboard/clinictiming", icon: FaClock },
+        { name: "Documents", route: "/vendors/clinic/dashboard/documents", icon: FaFileMedical },
     ];
 
     const isActive = (route) => pathname === route;
