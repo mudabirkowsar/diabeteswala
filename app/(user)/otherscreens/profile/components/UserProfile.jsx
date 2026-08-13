@@ -193,12 +193,12 @@ function UserProfile() {
           </div>
 
           <div className="mb-4">
-            <h1 className="text-3xl font-bold text-white">{profileData.name}</h1>
+            <h1 className="text-3xl font-bold text-white">{profileData?.name}</h1>
             <div className="flex items-center gap-2 mt-1">
               <span className="bg-emerald-100 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest">
-                {profileData.profileStatus}
+                {profileData?.profileStatus}
               </span>
-              <span className="text-slate-400 text-xs font-bold uppercase tracking-tighter">Member since {new Date(profileData.createdAt).getFullYear()}</span>
+              <span className="text-slate-400 text-xs font-bold uppercase tracking-tighter">Member since {new Date(profileData?.createdAt).getFullYear()}</span>
             </div>
           </div>
         </div>
@@ -311,7 +311,7 @@ function UserProfile() {
             </div>
 
             <div className="space-y-4">
-              {Object.entries(profileData.conditionStatus).map(([key, value]) => (
+              {Object.entries(profileData?.conditionStatus).map(([key, value]) => (
                 typeof value === 'boolean' && (
                   <div key={key} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
                     <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">{key}</span>

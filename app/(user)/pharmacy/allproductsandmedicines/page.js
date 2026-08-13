@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import AllMedicines from './components/AllMedicines';
 import PharmacyDetail from './components/PharmacyDetail'; // Make sure the path matches your setup
-import PharmacyCart from '../../otherscreens/carts/PharmacyCart';
 
 const PharmacyPage = () => {
     const [selectedPharmacy, setSelectedPharmacy] = useState(null);
@@ -69,7 +68,6 @@ const PharmacyPage = () => {
 
     return (
         <main className="min-h-screen lg:h-screen lg:overflow-hidden flex flex-col bg-[#f8fbff] pt-6 pb-6 lg:pb-8 antialiased">
-            <PharmacyCart />
 
             {/* Outer Grid Container */}
             <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 w-full flex flex-col lg:flex-1 lg:min-h-0">

@@ -7,7 +7,7 @@ import {
   ChevronDown, User, Menu, X, LogOut, Settings,
   ClipboardList, UserCircle, LogIn, ShoppingBag, FileText,
   LayoutGrid, Package, Star, Sparkles,
-  ChevronRight, MapPin, LocateFixed, Loader2
+  ChevronRight, MapPin, LocateFixed, Loader2, Pill
 } from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
@@ -221,8 +221,41 @@ const Navbar = () => {
           </button>
         </div>
 
-        {/* --- 4. Auth Hub --- */}
+        {/* --- 4. Auth Hub & Carts --- */}
         <div className="flex items-center gap-2 sm:gap-3">
+
+          {/* Desktop Hoverable Cart Menu */}
+          {/* <div className="relative group shrink-0 hidden sm:block">
+            <button className="flex items-center gap-2 p-1.5 sm:px-3.5 sm:py-2 border border-transparent hover:border-gray-200 hover:bg-white bg-white/40 rounded-xl transition-all duration-200">
+              <div className="bg-[#3d3f96]/10 text-[#3d3f96] p-1.5 rounded-lg group-hover:bg-[#3d3f96] group-hover:text-white transition-all duration-200">
+                <ShoppingBag size={16} strokeWidth={2.5} />
+              </div>
+              <span className="text-xs font-bold text-gray-700">Cart</span>
+              <ChevronDown size={12} className="text-slate-400 group-hover:rotate-180 transition-transform duration-300" />
+            </button>
+
+            <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-100 rounded-xl shadow-xl p-1.5 opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all origin-top-right flex flex-col gap-0.5 z-50">
+              <Link href="/otherscreens/carts/pharmacycart" className="flex items-center gap-2.5 text-[12px] font-bold text-gray-600 px-3 py-2.5 rounded-lg hover:bg-blue-50 hover:text-[#3d3f96] transition-colors">
+                <div className="p-1 bg-slate-50 text-[#3d3f96] rounded-md shrink-0">
+                  <Pill size={14} />
+                </div>
+                <span>Pharmacy Cart</span>
+              </Link>
+              <Link href="/otherscreens/carts/labcart" className="flex items-center gap-2.5 text-[12px] font-bold text-gray-600 px-3 py-2.5 rounded-lg hover:bg-blue-50 hover:text-[#3d3f96] transition-colors">
+                <div className="p-1 bg-slate-50 text-[#3d3f96] rounded-md shrink-0">
+                  <FileText size={14} />
+                </div>
+                <span>Lab Cart</span>
+              </Link>
+              <Link href="/food-nutrition/cart" className="flex items-center gap-2.5 text-[12px] font-bold text-gray-600 px-3 py-2.5 rounded-lg hover:bg-blue-50 hover:text-[#3d3f96] transition-colors">
+                <div className="p-1 bg-slate-50 text-[#3d3f96] rounded-md shrink-0">
+                  <ShoppingBag size={14} />
+                </div>
+                <span>Food Cart</span>
+              </Link>
+            </div>
+          </div> */}
+
           {!isLoggedIn ? (
             <Link href="/authFiles/login" className="flex items-center gap-2 px-4 py-2 bg-[#3d3f96] text-white rounded-xl hover:bg-[#2d2f75] transition-all shadow-md active:scale-95">
               <LogIn size={18} /> <span className="text-xs font-bold hidden sm:inline">Login / Sign Up</span>
