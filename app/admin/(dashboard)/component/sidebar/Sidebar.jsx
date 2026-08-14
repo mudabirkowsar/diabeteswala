@@ -116,7 +116,7 @@ export default function Sidebar({ sidebarOpen }) {
             {/* Logo Section */}
             <div className="flex justify-center items-center mb-6 transition-all duration-300 shrink-0">
                 <img
-                    src="/Diabetes.jpg"
+                    src="/logo/diabeteslogo.png"
                     alt="Logo"
                     className={`transition-all duration-300 object-contain ${isExpanded ? "h-[85px] w-auto" : "h-[35px] w-auto"
                         }`}

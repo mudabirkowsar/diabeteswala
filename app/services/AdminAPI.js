@@ -39,6 +39,33 @@ const AdminAPI = {
         const response = await publicApi.post('/api/auth/admin/login', credentials);
         return response.data;
     },
+    getAdminProfile: async () => {
+        const response = await authApi.get('/api/auth/admin/profile');
+        return response.data;
+    },
+    updateAdminProfile: async (profileData) => {
+        const response = await authApi.put('/api/auth/admin/update', profileData);
+        return response.data;
+    },
+
+
+    //Clinic Management APIs
+    getClinicsList: async (params) => {
+        const response = await authApi.get('/api/admin/clinic/list', { params });
+        return response.data;
+    },
+
+    approveRejectClinic: async (id, payload) => {
+        const response = await authApi.patch(`/api/admin/clinic/approve/${id}`, payload);
+        return response.data;
+    },
+
+    toggleClinicActive: async (id) => {
+        const response = await authApi.patch(`/api/admin/clinic/toggle-active/${id}`);
+        return response.data;
+    },
+
+
 }
 
 export default AdminAPI;

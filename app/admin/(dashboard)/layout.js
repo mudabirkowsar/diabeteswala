@@ -1,16 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import Sidebar from "./component/sidebar/Sidebar";
 import AdminTopbar from "./component/topbar/AdminTopbar";
 
 export default function AdminDashboardLayout({ children }) {
-  // Lifting state up to manage sidebar minimize from topbar button
+  const router = useRouter();
+  
+  // Authorization states to prevent content flashing
+  const [authorized, setAuthorized] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    // Perform client-side authentication check
+    const token = localStorage.getItem("adminToken");
+    
+    if (!token) {
+      router.push("/admin/login");
+    } else {
+      setAuthorized(true);
+    }
+  }, [router]);
 
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
   };
+
+  // Render a clean loading screen while validating the token
+  if (!authorized) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen w-full bg-slate-900 select-none">
+        <Loader2 className="animate-spin text-white mb-4" size={36} />
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+          Verifying clearance level...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-gray-50">
@@ -27,7 +55,7 @@ export default function AdminDashboardLayout({ children }) {
         <AdminTopbar heading="Dashboard" toggleSidebar={toggleSidebar} />
         
         {/* Scrollable Content Area */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 bg-gray-50">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 bg-gray-50">
           {children}
         </main>
 
