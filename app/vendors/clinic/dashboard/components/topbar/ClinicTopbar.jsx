@@ -4,11 +4,13 @@ import React, { useState, useRef, useEffect } from "react";
 import { FaUserEdit, FaSignOutAlt, FaUser } from "react-icons/fa";
 import { HiMenuAlt2 } from "react-icons/hi";
 import { Toaster } from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 const ClinicTopbar = ({ heading, toggleSidebar }) => {
     const [openProfile, setOpenProfile] = useState(false);
     const profileRef = useRef(null);
     const themeColor = "#3D3F96";
+    const router = useRouter();
 
     // Dynamic Clinic Vendor details based on your screenshot
     const clinicData = {
@@ -17,6 +19,13 @@ const ClinicTopbar = ({ heading, toggleSidebar }) => {
         role: "Clinic Vendor",
         initial: "D"
     };
+
+    const handleSignOut = () => {
+        // Clear clinic token from localStorage
+        localStorage.removeItem('clinicToken');
+        // Redirect to login page or any other action
+        window.location.href = '/authFiles/login'; // Adjust the path as needed
+    }
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -40,13 +49,13 @@ const ClinicTopbar = ({ heading, toggleSidebar }) => {
     return (
         <nav className="sticky top-0 z-40 w-full bg-white/90 backdrop-blur-md border-b border-gray-100 px-8 py-4 select-none">
             <Toaster position="top-right" />
-           
+
             <div className="flex items-center justify-between relative">
-               
+
                 {/* LEFT SECTION - Toggle Button & Dynamic Headings */}
                 <div className="flex items-center gap-4 min-w-[220px]">
-                    <button 
-                        onClick={toggleSidebar} 
+                    <button
+                        onClick={toggleSidebar}
                         className="p-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all text-gray-500 border border-gray-100 focus:outline-none"
                     >
                         <HiMenuAlt2 size={22} />
@@ -58,7 +67,7 @@ const ClinicTopbar = ({ heading, toggleSidebar }) => {
                         </p>
                     </div>
                 </div>
-         
+
                 {/* CENTER IDENTITY SECTION */}
                 <div className="absolute left-1/2 -translate-x-1/2 text-center hidden md:flex flex-col items-center">
                     <h3 className="text-base font-black text-gray-800 tracking-tight leading-none uppercase">
@@ -71,7 +80,7 @@ const ClinicTopbar = ({ heading, toggleSidebar }) => {
                         </p>
                     </div>
                 </div>
-         
+
                 {/* RIGHT SECTION - Date & Profile menu */}
                 <div className="flex items-center gap-6 min-w-[220px] justify-end" ref={profileRef}>
                     <div className="hidden sm:flex flex-col items-end">
@@ -89,21 +98,21 @@ const ClinicTopbar = ({ heading, toggleSidebar }) => {
                             </div>
                             <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">Account</span>
                         </button>
-         
+
                         {openProfile && (
                             <div className="absolute right-0 mt-4 w-64 bg-white rounded-[1.5rem] shadow-2xl border border-gray-100 py-3 transition-all duration-200">
                                 <div className="px-6 py-3 border-b border-gray-50 mb-2">
                                     <p className="text-xs font-black text-gray-800 truncate">{clinicData.name}</p>
                                     <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">{clinicData.email}</p>
                                 </div>
-                                <button 
-                                    onClick={() => { setOpenProfile(false); alert("Edit Profile Clicked"); }}
+                                <button
+                                    onClick={() => { router.push('/vendors/clinic/dashboard/profile'); setOpenProfile(false); }}
                                     className="w-full flex items-center gap-3 px-6 py-3 text-[10px] text-gray-600 hover:bg-gray-50 font-black uppercase tracking-widest transition-all text-left focus:outline-none"
                                 >
                                     <FaUserEdit className="text-[#3D3F96] text-sm" /> Edit Profile
                                 </button>
-                                <button 
-                                    onClick={() => { setOpenProfile(false); alert("Sign Out Clicked"); }}
+                                <button
+                                    onClick={handleSignOut}
                                     className="w-full flex items-center gap-3 px-6 py-3 text-[10px] text-red-500 hover:bg-red-50 font-black uppercase tracking-widest transition-all text-left focus:outline-none"
                                 >
                                     <FaSignOutAlt className="text-sm" /> Sign Out
@@ -116,5 +125,5 @@ const ClinicTopbar = ({ heading, toggleSidebar }) => {
         </nav>
     );
 };
-         
+
 export default ClinicTopbar;

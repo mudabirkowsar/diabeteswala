@@ -48,6 +48,11 @@ const ClinicAPI = {
         return response.data;
     },
 
+    getClinicProfile: async () => {
+        const response = await authApi.get('/api/auth/clinic/profile');
+        return response.data;
+    },
+
 }
 
 export default ClinicAPI;
