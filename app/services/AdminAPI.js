@@ -66,6 +66,27 @@ const AdminAPI = {
     },
 
 
+    // --- Get Labs List (With Search, Filter & Pagination) ---
+    getLabsList: async (params) => {
+        // params: { page, limit, status, isActive, search }
+        const response = await authApi.get('/admin/lab/list', { params });
+        return response.data;
+    },
+
+    // --- Approve or Reject Lab Profile (Unified API) ---
+    approveRejectLab: async (id, payload) => {
+        // payload: { status: "Approved" } OR { status: "Rejected", rejectionReason: "..." }
+        const response = await authApi.patch(`/admin/lab/approve/${id}`, payload);
+        return response.data;
+    },
+
+    // --- Toggle Lab Active/Inactive Status ---
+    toggleLabActive: async (id) => {
+        const response = await authApi.patch(`/admin/lab/toggle-active/${id}`);
+        return response.data;
+    },
+
+
 }
 
 export default AdminAPI;
