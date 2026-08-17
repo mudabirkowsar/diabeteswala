@@ -12,7 +12,7 @@ import UserLogin from './components/UserLogin';
 // import DoctorLogin from './components/DoctorLogin';
 import ClinicLogin from './components/ClinicLogin';
 import LabsLogin from './components/LabsLogin';
-// import PharmacyLogin from './components/PharmacyLogin';
+import PharmacyLogin from './components/PharmacyLogin';
 // import ExpertLogin from './components/ExpertLogin';
 
 const LoginPage = () => {
@@ -34,7 +34,7 @@ const LoginPage = () => {
       // case 'Doctor': return <DoctorLogin />;
       case 'Clinic': return <ClinicLogin />;
       case 'Labs': return <LabsLogin />;
-      // case 'Pharmacy': return <PharmacyLogin />;
+      case 'Pharmacy': return <PharmacyLogin />;
       // case 'Food & Nutrition': return <ExpertLogin />;
       default: return <UserLogin />;
     }
