@@ -50,7 +50,6 @@ export default function LabManagementPage() {
     const [zoomedImageUrl, setZoomedImageUrl] = useState('');
 
     // --- Base Server URL Helper for Images and Documents ---
-    // Defaults to the specified IP and port provided in your example
     const BASE_SERVER_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.3:5002";
 
     const getMediaUrl = (path) => {
@@ -58,20 +57,20 @@ export default function LabManagementPage() {
         if (path.startsWith("http://") || path.startsWith("https://")) {
             return path;
         }
-        
+
         // Convert Windows backslashes "public\\uploads\\..." to forward slashes "public/uploads/..."
         let cleanPath = path.replace(/\\/g, '/');
-        
+
         // Strip the leading "public/" segment since static folders are served from root
         if (cleanPath.startsWith("public/")) {
             cleanPath = cleanPath.substring(7);
         }
-        
+
         // Strip any remaining leading slashes
         if (cleanPath.startsWith("/")) {
             cleanPath = cleanPath.substring(1);
         }
-        
+
         return `${BASE_SERVER_URL}/${cleanPath}`;
     };
 
@@ -90,7 +89,7 @@ export default function LabManagementPage() {
                 ...(isActive !== "" && { isActive: isActive === 'true' })
             };
 
-            const response = await AdminAPI.getLabsList(params);
+            const response = await AdminAPI.getLabsApprovalList(params);
             if (response && response.success) {
                 setLabs(response.data || []);
                 setTotalPages(response.totalPages || 1);
@@ -152,12 +151,16 @@ export default function LabManagementPage() {
 
         setActionLoading(true);
         try {
-            const payload = {
-                status: verificationType,
-                ...(verificationType === 'Rejected' && { rejectionReason: rejectionReason.trim() })
-            };
+            let response;
+            if (verificationType === 'Approved') {
+                response = await AdminAPI.approveLabProfile(selectedLab._id);
+            } else {
+                const payload = {
+                    rejectionReason: rejectionReason.trim()
+                };
+                response = await AdminAPI.rejectLabProfile(selectedLab._id, payload);
+            }
 
-            const response = await AdminAPI.approveRejectLab(selectedLab._id, payload);
             if (response && response.success) {
                 toast.success(response.message || `Lab profile verification finalized as ${verificationType}.`);
                 setShowVerifyModal(false);
@@ -501,7 +504,7 @@ export default function LabManagementPage() {
                                 <div>
                                     <p className="text-[10px] font-black uppercase text-slate-400">Issuing Authority & State</p>
                                     <p className="text-xs font-bold text-slate-700 mt-0.5">
-                                        {selectedLab.documents?.issuingAuthority || "N/A"} 
+                                        {selectedLab.documents?.issuingAuthority || "N/A"}
                                         {selectedLab.documents?.documentState ? ` (${selectedLab.documents.documentState})` : ""}
                                     </p>
                                 </div>
@@ -555,7 +558,7 @@ export default function LabManagementPage() {
                                 {/* Attached Certification Docs */}
                                 <div className="space-y-2 pt-2">
                                     <p className="text-[10px] font-black uppercase text-slate-400">Attached Documents</p>
-                                    
+
                                     {/* Lab Certificates */}
                                     {selectedLab.documents?.labCertificates?.length > 0 ? (
                                         <a

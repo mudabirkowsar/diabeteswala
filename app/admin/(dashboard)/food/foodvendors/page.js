@@ -1,327 +1,729 @@
 "use client";
+import React, { useState, useEffect } from 'react';
+import {
+    Search,
+    Utensils,
+    MapPin,
+    Phone,
+    Mail,
+    FileText,
+    CheckCircle2,
+    XCircle,
+    AlertCircle,
+    ChevronLeft,
+    ChevronRight,
+    Loader2,
+    ToggleLeft,
+    ToggleRight,
+    Eye,
+    X,
+    RefreshCw,
+    Award,
+    CreditCard,
+    Check
+} from 'lucide-react';
+import { toast, Toaster } from 'react-hot-toast';
 
-import { useState, useMemo } from "react";
-import { 
-    FaUtensils, FaSearch, FaFilter, FaUndo, FaSync, 
-    FaGlobeAmericas, FaMapMarkerAlt, FaCity, FaEye, 
-    FaUserCheck, FaUserSlash, FaChevronLeft, FaChevronRight, FaCheckCircle, FaBan 
-} from "react-icons/fa";
+// Import your API service functions
+import AdminAPI from '../../../../services/AdminAPI';
 
-export default function AllFoodVendors() {
-    // 1. Standalone Mock Data with exactly 4 realistic food vendors
-    const [foodVendors, setFoodVendors] = useState([
-        { id: 1, name: "zomato", email: "zomato@yopmail.com", country: "India", state: "Himachal Pradesh", city: "Kangra", image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=100&auto=format&fit=crop", isActive: true },
-        { id: 2, name: "Dominos", email: "dominos@yopmail.com", country: "India", state: "Chandigarh", city: "Chandigarh", image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=100&auto=format&fit=crop", isActive: true },
-        { id: 3, name: "Swiggy", email: "swiggy@yopmail.com", country: "India", state: "Punjab", city: "Ludhiana", image: "https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=100&auto=format&fit=crop", isActive: true },
-        { id: 4, name: "Pizza Hut", email: "pizzahut@yopmail.com", country: "India", state: "Delhi", city: "New Delhi", image: "https://images.unsplash.com/photo-1590947132387-155cc02f3212?w=100&auto=format&fit=crop", isActive: false }
-    ]);
+export default function FoodPartnerManagementPage() {
+    // --- Core States ---
+    const [partners, setPartners] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [actionLoading, setActionLoading] = useState(false);
 
-    // Filter, Search, and Status States
-    const [searchTerm, setSearchTerm] = useState("");
-    const [statusFilter, setStatusFilter] = useState("All");
-    const [countryFilter, setCountryFilter] = useState("All");
-    const [stateFilter, setStateFilter] = useState("All");
-    const [cityFilter, setCityFilter] = useState("All");
+    // --- Filtering & Pagination States ---
+    const [search, setSearch] = useState("");
+    const [status, setStatus] = useState(""); // '', 'Incomplete', 'Pending', 'Approved', 'Rejected'
+    const [isActive, setIsActive] = useState(""); // '', 'true', 'false'
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalDocs, setTotalDocs] = useState(0);
 
-    // Theme Color Tokens based on #3D3F96
-    const themeBg = "bg-[#3D3F96]";
-    const themeText = "text-[#3D3F96]";
-    const themeHoverBg = "hover:bg-[#2C2D75]";
-    const themeShadow = "shadow-[#3D3F96]/20";
-    const themeRing = "focus:ring-[#3D3F96]/30";
+    // --- Modal & Detail States ---
+    const [selectedPartner, setSelectedPartner] = useState(null);
+    const [showVerifyModal, setShowVerifyModal] = useState(false);
+    const [verificationType, setVerificationType] = useState('Approved'); // 'Approved' or 'Rejected'
+    const [rejectionReason, setRejectionReason] = useState('');
+    const [isImageZoomed, setIsImageZoomed] = useState(false);
+    const [zoomedImageUrl, setZoomedImageUrl] = useState('');
 
-    // Dynamic filtering logic using useMemo (Location + Search + Status)
-    const filteredVendors = useMemo(() => {
-        return foodVendors.filter(vendor => {
-            const matchesSearch = 
-                vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                vendor.email.toLowerCase().includes(searchTerm.toLowerCase());
-            
-            const matchesCountry = countryFilter === "All" || vendor.country === countryFilter;
-            const matchesState = stateFilter === "All" || vendor.state === stateFilter;
-            const matchesCity = cityFilter === "All" || vendor.city === cityFilter;
+    // --- Base Server URL Helper for Images and Documents ---
+    const BASE_SERVER_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.3:5002";
 
-            let matchesStatus = true;
-            if (statusFilter === "Active") matchesStatus = vendor.isActive === true;
-            if (statusFilter === "Inactive") matchesStatus = vendor.isActive === false;
+    const getMediaUrl = (path) => {
+        if (!path) return null;
+        if (path.startsWith("http://") || path.startsWith("https://")) {
+            return path;
+        }
+        
+        // Convert Windows backslashes "public\\uploads\\..." to forward slashes "public/uploads/..."
+        let cleanPath = path.replace(/\\/g, '/');
+        
+        // Strip the leading "public/" segment since static folders are served from root
+        if (cleanPath.startsWith("public/")) {
+            cleanPath = cleanPath.substring(7);
+        }
+        
+        // Strip any remaining leading slashes
+        if (cleanPath.startsWith("/")) {
+            cleanPath = cleanPath.substring(1);
+        }
+        
+        return `${BASE_SERVER_URL}/${cleanPath}`;
+    };
 
-            return matchesSearch && matchesCountry && matchesState && matchesCity && matchesStatus;
-        });
-    }, [foodVendors, searchTerm, countryFilter, stateFilter, cityFilter, statusFilter]);
+    // Default placeholder image if partner profile image fails to load
+    const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1556910103-1c02745aae4d?q=80&w=150";
 
-    // Handler to toggle active/disabled state dynamically
-    const toggleVendorStatus = (id) => {
-        setFoodVendors(prev => prev.map(vendor => 
-            vendor.id === id ? { ...vendor, isActive: !vendor.isActive } : vendor
-        ));
+    // --- Fetch Food Partners ---
+    const fetchPartners = async () => {
+        setLoading(true);
+        try {
+            const params = {
+                page: currentPage,
+                limit: 8,
+                ...(search.trim() && { search: search.trim() }),
+                ...(status && { status }),
+                ...(isActive !== "" && { isActive: isActive === 'true' })
+            };
+
+            const response = await AdminAPI.getFoodApprovalList(params);
+            if (response && response.success) {
+                setPartners(response.data || []);
+                setTotalPages(response.totalPages || 1);
+                setTotalDocs(response.totalDocs || 0);
+            } else {
+                toast.error("Failed to load food partners list.");
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error(err.response?.data?.message || "Error fetching food partners database.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Trigger search and filters resetting pagination to page 1
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [search, status, isActive]);
+
+    useEffect(() => {
+        fetchPartners();
+    }, [currentPage, status, isActive]);
+
+    const handleSearchKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            fetchPartners();
+        }
+    };
+
+    // --- Toggle Partner Active/Inactive Status ---
+    const handleToggleActive = async (id) => {
+        setActionLoading(true);
+        try {
+            const response = await AdminAPI.toggleFoodPartnerActive(id);
+            if (response && response.success) {
+                toast.success(response.message || "Food partner status updated.");
+                fetchPartners(); // Refresh view
+            } else {
+                toast.error("Failed to update status.");
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error(err.response?.data?.message || "Error updating status.");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    // --- Submit Verification Decision (Approve / Reject) ---
+    const handleVerifySubmit = async (e) => {
+        e.preventDefault();
+        if (!selectedPartner) return;
+
+        if (verificationType === 'Rejected' && !rejectionReason.trim()) {
+            toast.error("Please enter a rejection reason.");
+            return;
+        }
+
+        setActionLoading(true);
+        try {
+            let response;
+            if (verificationType === 'Approved') {
+                response = await AdminAPI.approveFoodPartner(selectedPartner._id);
+            } else {
+                const payload = {
+                    reason: rejectionReason.trim()
+                };
+                response = await AdminAPI.rejectFoodPartner(selectedPartner._id, payload);
+            }
+
+            if (response && response.success) {
+                toast.success(response.message || `Kitchen profile verification finalized as ${verificationType}.`);
+                setShowVerifyModal(false);
+                setRejectionReason('');
+                setSelectedPartner(null);
+                fetchPartners();
+            } else {
+                toast.error("Failed to process kitchen profile verification.");
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error(err.response?.data?.message || "Error processing profile validation.");
+        } finally {
+            setActionLoading(false);
+        }
     };
 
     const handleResetFilters = () => {
-        setSearchTerm("");
-        setStatusFilter("All");
-        setCountryFilter("All");
-        setStateFilter("All");
-        setCityFilter("All");
+        setSearch("");
+        setStatus("");
+        setIsActive("");
+        setCurrentPage(1);
+    };
+
+    const triggerImageZoom = (path) => {
+        const url = getMediaUrl(path) || PLACEHOLDER_IMAGE;
+        setZoomedImageUrl(url);
+        setIsImageZoomed(true);
     };
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto px-4 py-8 select-none animate-fadeIn">
-            
-            {/* 1. DYNAMIC REGIONAL LOCATION FILTERS */}
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 rounded-xl bg-[#3D3F96]/10 text-[#3D3F96] flex items-center justify-center">
-                        <FaFilter className="text-lg" />
-                    </div>
-                    <div>
-                        <h2 className="text-lg font-bold text-gray-800 leading-snug">Active Location Filters</h2>
-                        <p className="text-xs text-gray-400">Filter registered food vendors by country, state, and city</p>
-                    </div>
+        <main className="min-h-screen py-0 px-0 sm:px-6 lg:px-0 antialiased select-none">
+            <Toaster position="top-right" />
+
+            {/* --- PAGE HEADER --- */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                <div>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                        <Utensils className="text-[#3d3f96]" /> Kitchen Management
+                    </h1>
+                    <p className="text-slate-500 font-semibold text-xs mt-1">Review meal-prep facility registrations, inspect FSSAI certifications, and control active listings.</p>
                 </div>
+                <button
+                    onClick={fetchPartners}
+                    disabled={loading}
+                    className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm text-xs font-bold transition-all duration-200 disabled:opacity-50 cursor-pointer"
+                >
+                    <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh List
+                </button>
+            </div>
 
-                {/* Dropdowns Filters Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1"><FaGlobeAmericas className="text-[#3D3F96]" /> Country</label>
-                        <select 
-                            value={countryFilter}
-                            onChange={(e) => setCountryFilter(e.target.value)}
-                            className={`bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-700 outline-none focus:border-[#3D3F96] focus:ring-1 ${themeRing} transition-all`}
+            {/* --- FILTER & SEARCH BAR --- */}
+            <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm mb-6 flex flex-col gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+
+                    {/* Search Box */}
+                    <div className="md:col-span-5 relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                        <input
+                            type="text"
+                            placeholder="Search by kitchen name or email... (Press Enter)"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            onKeyDown={handleSearchKeyPress}
+                            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-[#3d3f96] focus:bg-white transition-all"
+                        />
+                    </div>
+
+                    {/* Profile Validation Filter */}
+                    <div className="md:col-span-3">
+                        <select
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold text-slate-500 outline-none focus:border-[#3d3f96] focus:bg-white transition-all cursor-pointer"
                         >
-                            <option value="All">All Countries</option>
-                            <option value="India">India</option>
+                            <option value="">Verification Status (All)</option>
+                            <option value="Incomplete">Incomplete</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
                         </select>
                     </div>
 
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1"><FaMapMarkerAlt className="text-[#3D3F96]" /> State</label>
-                        <select 
-                            value={stateFilter}
-                            onChange={(e) => setStateFilter(e.target.value)}
-                            className={`bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-700 outline-none focus:border-[#3D3F96] focus:ring-1 ${themeRing} transition-all`}
+                    {/* Platform Active Toggle Filter */}
+                    <div className="md:col-span-3">
+                        <select
+                            value={isActive}
+                            onChange={(e) => setIsActive(e.target.value)}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold text-slate-500 outline-none focus:border-[#3d3f96] focus:bg-white transition-all cursor-pointer"
                         >
-                            <option value="All">All States</option>
-                            <option value="Himachal Pradesh">Himachal Pradesh</option>
-                            <option value="Chandigarh">Chandigarh</option>
-                            <option value="Punjab">Punjab</option>
-                            <option value="Delhi">Delhi</option>
+                            <option value="">Visibility (All)</option>
+                            <option value="true">Active Only</option>
+                            <option value="false">Inactive Only</option>
                         </select>
                     </div>
 
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1"><FaCity className="text-[#3D3F96]" /> City</label>
-                        <select 
-                            value={cityFilter}
-                            onChange={(e) => setCityFilter(e.target.value)}
-                            className={`bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-700 outline-none focus:border-[#3D3F96] focus:ring-1 ${themeRing} transition-all`}
-                        >
-                            <option value="All">All Cities</option>
-                            <option value="Kangra">Kangra</option>
-                            <option value="Chandigarh">Chandigarh</option>
-                            <option value="Ludhiana">Ludhiana</option>
-                            <option value="New Delhi">New Delhi</option>
-                        </select>
-                    </div>
-
-                    {/* Filter Controlling Buttons */}
-                    <div className="flex gap-2">
-                        <button 
+                    {/* Reset Action */}
+                    <div className="md:col-span-1 flex items-center justify-center">
+                        <button
                             onClick={handleResetFilters}
-                            className="flex-1 flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl text-sm transition-all focus:outline-none"
+                            className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all text-center cursor-pointer"
                         >
-                            <FaUndo className="text-xs" /> Reset
-                        </button>
-                        <button 
-                            className={`flex-1 flex items-center justify-center gap-2 text-white font-bold py-2.5 rounded-xl text-sm transition-all focus:outline-none ${themeBg} ${themeHoverBg} ${themeShadow} shadow-lg`}
-                        >
-                            <FaSync className="text-xs animate-spin-slow" /> Refresh
+                            Reset
                         </button>
                     </div>
+
                 </div>
             </div>
 
-            {/* 2. ALL FOOD VENDORS LIST CARD */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.015)] overflow-hidden">
-                
-                {/* Table Header Section with Search and Dropdown Status */}
-                <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-[#3D3F96]/5 flex-wrap gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-[#3D3F96]/15 text-[#3D3F96] flex items-center justify-center">
-                            <FaUtensils className="text-lg" />
-                        </div>
-                        <h2 className="text-lg font-black tracking-tight text-gray-800">
-                            All Food Vendors
-                            <span className="ml-2.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#3D3F96]/15 text-[#3D3F96]">
-                                {filteredVendors.length} Registered
-                            </span>
-                        </h2>
-                    </div>
-
-                    <div className="flex items-center gap-3 flex-wrap">
-                        {/* Search Input */}
-                        <div className="relative">
-                            <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400" />
-                            <input 
-                                type="text" 
-                                placeholder="Search by name, email..." 
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-9 pr-4 py-2 rounded-xl bg-white border border-gray-200 text-xs font-semibold outline-none focus:border-[#3D3F96] focus:ring-1 focus:ring-[#3D3F96]/30 transition-all w-56"
-                            />
-                        </div>
-
-                        {/* Status Filter Dropdown */}
-                        <select 
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className={`bg-white border border-gray-200 rounded-xl px-4 py-2 text-xs font-semibold text-gray-700 outline-none focus:border-[#3D3F96] focus:ring-1 ${themeRing} transition-all`}
-                        >
-                            <option value="All">All Status</option>
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                        </select>
-                    </div>
+            {/* --- FOOD DATA TABLE --- */}
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                    <Loader2 className="animate-spin text-[#3d3f96] mb-3" size={36} />
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Loading Kitchen Database...</p>
                 </div>
+            ) : partners.length > 0 ? (
+                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm min-w-[1000px] table-auto align-middle">
+                            <thead>
+                                <tr className="text-[11px] font-black uppercase tracking-wider text-slate-400 bg-slate-50/50 border-b border-slate-100">
+                                    <th className="text-center px-6 py-4 w-16">S No.</th>
+                                    <th className="text-center px-6 py-4 w-24">Profile</th>
+                                    <th className="text-left px-6 py-4">Kitchen Identity</th>
+                                    <th className="text-left px-6 py-4">Contact Details</th>
+                                    <th className="text-left px-6 py-4">Location</th>
+                                    <th className="text-center px-6 py-4">Verification</th>
+                                    <th className="text-center px-6 py-4 w-28">Directory Status</th>
+                                    <th className="text-center px-6 py-4 w-28">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {partners.map((partner, index) => (
+                                    <tr key={partner._id} className="hover:bg-slate-50/40 transition-colors duration-150">
 
-                {/* Table Scrollable Wrapper */}
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm min-w-[900px] table-auto align-middle">
-                        <thead>
-                            <tr className="text-[11px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50/50 border-b border-gray-100">
-                                <th className="text-center px-6 py-4 w-16">S.No</th>
-                                <th className="text-center px-6 py-4 w-20">Image</th>
-                                <th className="text-left px-6 py-4">Vendor Name</th>
-                                <th className="text-left px-6 py-4">Email</th>
-                                <th className="text-center px-6 py-4">Country</th>
-                                <th className="text-center px-6 py-4">State</th>
-                                <th className="text-center px-6 py-4">City</th>
-                                <th className="text-center px-6 py-4">Status</th>
-                                <th className="text-center px-6 py-4">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                            {filteredVendors.length > 0 ? (
-                                filteredVendors.map((vendor, index) => (
-                                    <tr 
-                                        key={vendor.id} 
-                                        className="hover:bg-gray-50/60 transition-colors duration-150"
-                                    >
-                                        {/* S.No */}
-                                        <td className="px-6 py-4 text-center font-bold text-gray-400 text-xs">
-                                            {index + 1}
+                                        {/* Serial Number */}
+                                        <td className="px-6 py-4 text-center font-bold text-slate-400 text-xs">
+                                            {String((currentPage - 1) * 8 + index + 1).padStart(2, "0")}
                                         </td>
 
-                                        {/* Image */}
+                                        {/* Profile Picture */}
                                         <td className="px-6 py-4 text-center">
-                                            <div className="inline-block relative w-9 h-9 rounded-lg overflow-hidden border border-gray-100 shadow-sm shrink-0">
-                                                <img 
-                                                    src={vendor.image} 
-                                                    alt={vendor.name} 
+                                            <div className="inline-flex w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden shadow-sm">
+                                                <img
+                                                    src={getMediaUrl(partner.profileImage) || PLACEHOLDER_IMAGE}
+                                                    alt={partner.name}
+                                                    onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
                                                     className="w-full h-full object-cover"
                                                 />
                                             </div>
                                         </td>
 
-                                        {/* Vendor Name */}
-                                        <td className="px-6 py-4 font-bold text-gray-800 tracking-tight capitalize">
-                                            {vendor.name}
-                                        </td>
-
-                                        {/* Email */}
-                                        <td className="px-6 py-4 text-gray-500 font-semibold">
-                                            {vendor.email}
-                                        </td>
-
-                                        {/* Country */}
-                                        <td className="px-6 py-4 text-center text-gray-600 font-bold">
-                                            {vendor.country}
-                                        </td>
-
-                                        {/* State */}
-                                        <td className="px-6 py-4 text-center text-gray-600 font-semibold">
-                                            {vendor.state}
-                                        </td>
-
-                                        {/* City */}
-                                        <td className="px-6 py-4 text-center text-gray-600 font-semibold">
-                                            {vendor.city}
-                                        </td>
-
-                                        {/* Status Badge */}
-                                        <td className="px-6 py-4 text-center">
-                                            {vendor.isActive ? (
-                                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-wide">
-                                                    <FaCheckCircle className="text-[9px]" /> Active
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-100 uppercase tracking-wide">
-                                                    <FaBan className="text-[9px]" /> Inactive
-                                                </span>
-                                            )}
-                                        </td>
-
-                                        {/* Action Buttons */}
+                                        {/* Kitchen Identity */}
                                         <td className="px-6 py-4">
+                                            <h3 className="font-bold text-slate-800 tracking-tight leading-tight">{partner.name || "Unnamed Kitchen"}</h3>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide mt-1.5 truncate max-w-[200px]">
+                                                {partner.about || "Meal Prep Facility"}
+                                            </p>
+                                        </td>
+
+                                        {/* Contact Details */}
+                                        <td className="px-6 py-4 space-y-1">
+                                            <div className="flex items-center gap-1.5 text-xs text-slate-600 font-bold">
+                                                <Phone size={11} className="text-slate-350 shrink-0" />
+                                                <span>{partner.phone || "--"}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-semibold truncate max-w-[200px]">
+                                                <Mail size={11} className="text-slate-350 shrink-0" />
+                                                <span className="select-all">{partner.email}</span>
+                                            </div>
+                                        </td>
+
+                                        {/* Location */}
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-1.5 text-xs text-slate-600 font-bold truncate max-w-[150px]">
+                                                <MapPin size={13} className="text-rose-500 shrink-0" />
+                                                <span>{partner.city ? `${partner.city}, ${partner.state}` : "Unspecified"}</span>
+                                            </div>
+                                        </td>
+
+                                        {/* Profile Status */}
+                                        <td className="px-6 py-4 text-center">
+                                            <span className={`inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md border ${partner.profileStatus === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                                partner.profileStatus === 'Pending' ? 'bg-amber-50 text-amber-700 border-amber-100 animate-pulse' :
+                                                    partner.profileStatus === 'Rejected' ? 'bg-red-50 text-red-700 border-red-100' :
+                                                        'bg-slate-50 text-slate-500 border-slate-200'
+                                                }`}>
+                                                {partner.profileStatus}
+                                            </span>
+                                        </td>
+
+                                        {/* Directory Toggle Status */}
+                                        <td className="px-6 py-4 text-center">
                                             <div className="flex items-center justify-center gap-2">
-                                                {/* Enable/Disable status toggle */}
                                                 <button
-                                                    onClick={() => toggleVendorStatus(vendor.id)}
-                                                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all focus:outline-none ${
-                                                        vendor.isActive 
-                                                            ? "bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100" 
-                                                            : "bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-100"
-                                                    }`}
+                                                    onClick={() => handleToggleActive(partner._id)}
+                                                    disabled={actionLoading}
+                                                    className="focus:outline-none transition-colors duration-200"
+                                                    title={partner.isActive ? "Set Inactive" : "Set Active"}
                                                 >
-                                                    {vendor.isActive ? (
-                                                        <><FaUserSlash /> Disable</>
+                                                    {partner.isActive ? (
+                                                        <ToggleRight className="text-[#3d3f96]" size={28} />
                                                     ) : (
-                                                        <><FaUserCheck /> Enable</>
+                                                        <ToggleLeft className="text-slate-300" size={28} />
                                                     )}
-                                                </button>
-                                                
-                                                {/* View Button */}
-                                                <button
-                                                    onClick={() => alert(`View details of ${vendor.name} (Mock Mode)`)}
-                                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-200 transition-all focus:outline-none"
-                                                >
-                                                    <FaEye /> View
                                                 </button>
                                             </div>
                                         </td>
+
+                                        {/* View Details Action */}
+                                        <td className="px-6 py-4 text-center">
+                                            <button
+                                                onClick={() => { setSelectedPartner(partner); }}
+                                                className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200/60 transition-all inline-flex items-center justify-center"
+                                                title="Inspect Kitchen Details"
+                                            >
+                                                <Eye size={14} />
+                                            </button>
+                                        </td>
+
                                     </tr>
-                                ))
-                            ) : (
-                                /* Empty Filter Results State */
-                                <tr>
-                                    <td colSpan={9} className="px-6 py-16 text-center text-slate-400 font-semibold text-xs">
-                                        No registered food vendors match the chosen filters.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+            ) : (
+                <div className="py-24 text-center bg-white rounded-3xl border border-slate-100 shadow-sm">
+                    <Utensils size={48} className="mx-auto text-slate-200 mb-4" />
+                    <p className="text-slate-500 font-bold px-4">No kitchens matched your filter requirements.</p>
+                </div>
+            )}
 
-                {/* 3. PREMIUM PAGINATION CONTROLS */}
-                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 flex-wrap gap-4">
-                    <button 
-                        disabled
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-gray-400 text-xs font-bold uppercase tracking-wider cursor-not-allowed"
+            {/* --- PAGINATION WRAPPER --- */}
+            {totalPages > 1 && (
+                <div className="mt-8 flex items-center justify-center gap-4">
+                    <button
+                        onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                        disabled={currentPage === 1 || loading}
+                        className="p-2 bg-white rounded-xl border border-slate-200 text-slate-600 disabled:opacity-50 hover:bg-slate-50 transition-all cursor-pointer"
                     >
-                        <FaChevronLeft className="text-[10px]" /> Previous
+                        <ChevronLeft size={16} />
                     </button>
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
-                        Page 1 of 1
-                    </span>
-                    <button 
-                        disabled
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-gray-400 text-xs font-bold uppercase tracking-wider cursor-not-allowed"
+                    <span className="text-xs font-bold text-slate-500">Page {currentPage} of {totalPages}</span>
+                    <button
+                        onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                        disabled={currentPage === totalPages || loading}
+                        className="p-2 bg-white rounded-xl border border-slate-200 text-slate-600 disabled:opacity-50 hover:bg-slate-50 transition-all cursor-pointer"
                     >
-                        Next <FaChevronRight className="text-[10px]" />
+                        <ChevronRight size={16} />
                     </button>
                 </div>
-            </div>
+            )}
 
-        </div>
+            {/* --- KITCHEN INSPECTION MODAL --- */}
+            {selectedPartner && !showVerifyModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedPartner(null)} />
+
+                    <div className="bg-white rounded-[2.5rem] max-w-4xl w-full p-6 sm:p-8 shadow-2xl relative z-10 border border-slate-100 max-h-[85vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        <button onClick={() => setSelectedPartner(null)} className="absolute top-6 right-6 p-2 bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 rounded-full transition-all">
+                            <X size={18} />
+                        </button>
+
+                        <h2 className="text-xl font-black text-slate-800 tracking-tight mb-6 flex items-center gap-2">
+                            <Utensils className="text-[#3d3f96]" size={20} /> Kitchen Credentials & Info
+                        </h2>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                            {/* Left Column: Core Identity & Offerings */}
+                            <div className="md:col-span-1 space-y-4 border-r border-slate-100 pr-0 md:pr-6">
+                                <div className="h-40 w-full rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden relative cursor-zoom-in group">
+                                    <img
+                                        src={getMediaUrl(selectedPartner.profileImage) || PLACEHOLDER_IMAGE}
+                                        alt={selectedPartner.name}
+                                        onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+                                        className="w-full h-full object-cover transition-transform group-hover:scale-[1.02]"
+                                        onClick={() => triggerImageZoom(selectedPartner.profileImage)}
+                                    />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase text-slate-400">Kitchen Name</p>
+                                    <p className="text-sm font-black text-slate-800 mt-0.5">{selectedPartner.name || "Incomplete Details"}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase text-slate-400">Email Address</p>
+                                    <p className="text-xs font-bold text-slate-700 mt-0.5 select-all">{selectedPartner.email}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase text-slate-400">Contact Number</p>
+                                    <p className="text-xs font-bold text-slate-700 mt-0.5">{selectedPartner.phone || "--"}</p>
+                                </div>
+
+                                {/* Specialities */}
+                                <div className="pt-2 border-t border-slate-50 space-y-2">
+                                    <p className="text-[10px] font-black uppercase text-slate-400">Cuisine Specialties</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {selectedPartner.cuisineSpecialities && selectedPartner.cuisineSpecialities.length > 0 ? (
+                                            selectedPartner.cuisineSpecialities.map((spec, idx) => (
+                                                <span key={idx} className="inline-flex items-center gap-1 bg-slate-50 text-slate-600 border border-slate-100 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider">
+                                                    {spec}
+                                                </span>
+                                            ))
+                                        ) : (
+                                            <span className="text-xs text-slate-400 font-semibold italic">No specialties specified</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Middle Column: Registration & Certification Details */}
+                            <div className="md:col-span-1 space-y-4 border-r border-slate-100 pr-0 md:pr-6">
+                                <div>
+                                    <p className="text-[10px] font-black uppercase text-slate-400">FSSAI License Number</p>
+                                    <p className="text-xs font-bold text-slate-700 mt-0.5">{selectedPartner.documents?.fssaiNumber || "Not Provided"}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase text-slate-400">GST Registration Number</p>
+                                    <p className="text-xs font-bold text-slate-700 mt-0.5">{selectedPartner.documents?.gstNumber || "Not Provided"}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase text-slate-400">Issuing Authority & State</p>
+                                    <p className="text-xs font-bold text-slate-700 mt-0.5">
+                                        {selectedPartner.documents?.issuingAuthority || "N/A"} 
+                                        {selectedPartner.documents?.documentState ? ` (${selectedPartner.documents.documentState})` : ""}
+                                    </p>
+                                </div>
+                                <div className="pt-2 border-t border-slate-50">
+                                    <p className="text-[10px] font-black uppercase text-slate-400 font-bold">Physical Kitchen Address</p>
+                                    <p className="text-xs font-semibold text-slate-700 mt-1 leading-relaxed">
+                                        {selectedPartner.city ? `${selectedPartner.city}, ${selectedPartner.state}, ${selectedPartner.country}` : "Not Listed"}
+                                    </p>
+                                </div>
+                                {selectedPartner.about && (
+                                    <div className="pt-2 border-t border-slate-50">
+                                        <p className="text-[10px] font-black uppercase text-slate-400">Kitchen Summary</p>
+                                        <p className="text-xs font-semibold text-slate-500 mt-1 leading-relaxed max-h-32 overflow-y-auto [&::-webkit-scrollbar]:hidden">
+                                            {selectedPartner.about}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Right Column: Bank Details & Uploaded Certificates */}
+                            <div className="md:col-span-1 space-y-4">
+                                {/* Bank Details sub-card */}
+                                <div className="bg-slate-50 border border-slate-100/80 p-4 rounded-2xl">
+                                    <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
+                                        <CreditCard size={12} className="text-[#3d3f96]" /> Settlement Bank Details
+                                    </h4>
+                                    {selectedPartner.bankDetails ? (
+                                        <div className="space-y-2 text-xs">
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400 font-semibold">Bank Name:</span>
+                                                <span className="font-bold text-slate-700 truncate max-w-[120px]">{selectedPartner.bankDetails.bankName || "N/A"}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400 font-semibold">Holder:</span>
+                                                <span className="font-bold text-slate-700 truncate max-w-[120px]">{selectedPartner.bankDetails.accountHolderName || "N/A"}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400 font-semibold">A/C Number:</span>
+                                                <span className="font-bold text-slate-700">{selectedPartner.bankDetails.accountNumber || "N/A"}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400 font-semibold">IFSC Code:</span>
+                                                <span className="font-bold text-slate-700">{selectedPartner.bankDetails.ifscCode || "N/A"}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400 font-semibold">Type:</span>
+                                                <span className="font-bold text-slate-700">{selectedPartner.bankDetails.accountType || "N/A"}</span>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <p className="text-[11px] font-semibold text-slate-400 text-center py-2">Bank details not set up yet.</p>
+                                    )}
+                                </div>
+
+                                {/* Attached Certification Docs */}
+                                <div className="space-y-2 pt-2">
+                                    <p className="text-[10px] font-black uppercase text-slate-400">Attached Documents</p>
+                                    
+                                    {/* FSSAI Certificates */}
+                                    {selectedPartner.documents?.fssaiCertificates?.length > 0 ? (
+                                        <a
+                                            href={getMediaUrl(selectedPartner.documents.fssaiCertificates[0])}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 p-2.5 bg-indigo-50/40 hover:bg-indigo-50 border border-indigo-100/50 text-[#3d3f96] rounded-xl text-xs font-bold transition-all w-full justify-between group"
+                                        >
+                                            <span className="flex items-center gap-1.5"><FileText size={13} /> FSSAI Certificate</span>
+                                            <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-all" />
+                                        </a>
+                                    ) : null}
+
+                                    {/* GST Certificates */}
+                                    {selectedPartner.documents?.gstCertificates?.length > 0 ? (
+                                        <a
+                                            href={getMediaUrl(selectedPartner.documents.gstCertificates[0])}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 p-2.5 bg-indigo-50/40 hover:bg-indigo-50 border border-indigo-100/50 text-[#3d3f96] rounded-xl text-xs font-bold transition-all w-full justify-between group"
+                                        >
+                                            <span className="flex items-center gap-1.5"><FileText size={13} /> GST Certificate File</span>
+                                            <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-all" />
+                                        </a>
+                                    ) : null}
+
+                                    {/* Kitchen Images */}
+                                    {selectedPartner.documents?.kitchenImages?.length > 0 ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => triggerImageZoom(selectedPartner.documents.kitchenImages[0])}
+                                            className="inline-flex items-center gap-2 p-2.5 bg-indigo-50/40 hover:bg-indigo-50 border border-indigo-100/50 text-[#3d3f96] rounded-xl text-xs font-bold transition-all w-full justify-between group cursor-pointer"
+                                        >
+                                            <span className="flex items-center gap-1.5"><FileText size={13} /> Facility Layout Image</span>
+                                            <Eye size={13} className="group-hover:scale-105 transition-all text-indigo-400" />
+                                        </button>
+                                    ) : null}
+
+                                    {/* Other Certificates */}
+                                    {selectedPartner.documents?.otherCertificates?.length > 0 ? (
+                                        <a
+                                            href={getMediaUrl(selectedPartner.documents.otherCertificates[0])}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 p-2.5 bg-indigo-50/40 hover:bg-indigo-50 border border-indigo-100/50 text-[#3d3f96] rounded-xl text-xs font-bold transition-all w-full justify-between group"
+                                        >
+                                            <span className="flex items-center gap-1.5"><FileText size={13} /> Other Documents</span>
+                                            <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-all" />
+                                        </a>
+                                    ) : null}
+
+                                    {/* Fallback Notice */}
+                                    {(!selectedPartner.documents?.fssaiCertificates?.length &&
+                                        !selectedPartner.documents?.gstCertificates?.length &&
+                                        !selectedPartner.documents?.kitchenImages?.length &&
+                                        !selectedPartner.documents?.otherCertificates?.length) && (
+                                            <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-center text-xs font-semibold text-slate-400">
+                                                No onboarding documents registered yet.
+                                            </div>
+                                        )}
+                                </div>
+                            </div>
+
+                        </div>
+
+                        {/* Rejection Notification Indicator */}
+                        {selectedPartner.profileStatus === 'Rejected' && selectedPartner.rejectionReason && (
+                            <div className="mt-6 p-4 bg-red-50/60 rounded-2xl border border-red-100/50 flex items-start gap-2 text-left">
+                                <AlertCircle size={14} className="text-red-500 shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-[10px] font-black text-red-700 uppercase tracking-wide">Previously Stated Rejection Reason</p>
+                                    <p className="text-[12px] text-red-600 font-semibold mt-0.5">{selectedPartner.rejectionReason}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Verification controls */}
+                        {selectedPartner.profileStatus !== 'Approved' && (
+                            <div className="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3">
+                                <button
+                                    onClick={() => { setVerificationType('Rejected'); setShowVerifyModal(true); }}
+                                    className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                >
+                                    Reject Application
+                                </button>
+                                <button
+                                    onClick={() => { setVerificationType('Approved'); setShowVerifyModal(true); }}
+                                    className="px-5 py-2.5 bg-[#3d3f96] hover:bg-[#2d2f75] text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                >
+                                    Approve Application
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Full-Screen Image Zoom View Overlay */}
+                    {isImageZoomed && (
+                        <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm">
+                            <button
+                                type="button"
+                                onClick={() => setIsImageZoomed(false)}
+                                className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all cursor-pointer"
+                            >
+                                <X size={24} />
+                            </button>
+                            <img
+                                src={zoomedImageUrl}
+                                alt="Zoomed document"
+                                className="max-w-full max-h-[90vh] object-contain rounded-lg"
+                            />
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* --- APPROVAL / REJECTION CONFIRMATION MODAL --- */}
+            {showVerifyModal && selectedPartner && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => { setShowVerifyModal(false); setRejectionReason(''); }} />
+
+                    <form
+                        onSubmit={handleVerifySubmit}
+                        className="bg-white rounded-[2rem] max-w-md w-full p-6 shadow-2xl border border-slate-100 relative z-10 text-center"
+                    >
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 mx-auto ${verificationType === 'Approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-[#EB333C]'
+                            }`}>
+                            {verificationType === 'Approved' ? <CheckCircle2 size={24} /> : <XCircle size={24} />}
+                        </div>
+
+                        <h3 className="text-base font-black text-slate-900">
+                            Confirm {verificationType === 'Approved' ? 'Approval' : 'Rejection'}
+                        </h3>
+                        <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
+                            {verificationType === 'Approved'
+                                ? `Are you sure you want to verify and approve "${selectedPartner.name || "this kitchen"}"? This will allow them to launch services and accept food orders.`
+                                : `Are you sure you want to reject the application for "${selectedPartner.name || "this kitchen"}"? This action requires a mandatory explanation.`}
+                        </p>
+
+                        {/* Mandate Rejection Reason Field if rejecting */}
+                        {verificationType === 'Rejected' && (
+                            <div className="mt-4 text-left space-y-1">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Rejection Reason</label>
+                                <textarea
+                                    rows={4}
+                                    placeholder="Enter specific reasons (e.g. FSSAI licensing certificates are blurry or expired)..."
+                                    value={rejectionReason}
+                                    onChange={(e) => setRejectionReason(e.target.value)}
+                                    className="w-full p-3 bg-slate-50 border border-slate-150 rounded-2xl text-xs font-semibold text-slate-700 outline-none focus:border-[#EB333C] focus:bg-white transition-all resize-none"
+                                    required
+                                />
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-2 gap-3 w-full mt-6">
+                            <button
+                                type="button"
+                                onClick={() => { setShowVerifyModal(false); setRejectionReason(''); }}
+                                className="py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-[10px] uppercase tracking-wider transition-all cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={actionLoading}
+                                className={`py-3 text-white font-bold rounded-xl text-[10px] uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${verificationType === 'Approved'
+                                    ? 'bg-emerald-600 hover:bg-emerald-700'
+                                    : 'bg-[#EB333C] hover:bg-red-700'
+                                    }`}
+                            >
+                                {actionLoading ? (
+                                    <Loader2 size={12} className="animate-spin" />
+                                ) : (
+                                    <span>Submit Decision</span>
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
+
+        </main>
     );
 }

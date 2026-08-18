@@ -221,23 +221,18 @@ export default function Sidebar({ sidebarOpen }) {
                         {openMenu === "vendors" && isExpanded && (
                             <div className="flex flex-col gap-1 mt-1 mb-1 pl-4 border-l-2 border-gray-100 transition-all duration-200">
                                 {hasAccess() && (
+                                    <Link href="/admin/pharmacy/managepharmacy" className={`p-2 px-3 rounded-lg text-xs transition-all duration-200 flex items-center gap-2 ${isActive("/admin/pharmacy/managepharmacy") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                        <FaPills className="text-xs shrink-0" style={{ color: isActive("/admin/pharmacy/managepharmacy") ? theme.primary : "#9CA3AF" }} /> Manage Pharmacies
+                                    </Link>
+                                )}
+                                {hasAccess() && (
                                     <Link href="/admin/pharmacy/approvemedicine" className={`p-2 px-3 rounded-lg text-xs transition-all duration-200 flex items-center gap-2 ${isActive("/admin/pharmacy/approvemedicine") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                         <FaPills className="text-xs shrink-0" style={{ color: isActive("/admin/pharmacy/approvemedicine") ? theme.primary : "#9CA3AF" }} /> Approve Medicine
                                     </Link>
                                 )}
                                 {hasAccess() && (
-                                    <Link href="/admin/pharmacy/approveproducts" className={`p-2 px-3 rounded-lg text-xs transition-all duration-200 flex items-center gap-2 ${isActive("/admin/pharmacy/approveproducts") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
-                                        <FaFlask className="text-xs shrink-0" style={{ color: isActive("/admin/pharmacy/approveproducts") ? theme.primary : "#9CA3AF" }} /> Approve Product
-                                    </Link>
-                                )}
-                                {hasAccess() && (
                                     <Link href="/admin/pharmacy/managemedicine" className={`p-2 px-3 rounded-lg text-xs transition-all duration-200 flex items-center gap-2 ${isActive("/admin/pharmacy/managemedicine") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                         <FaFlask className="text-xs shrink-0" style={{ color: isActive("/admin/pharmacy/managemedicine") ? theme.primary : "#9CA3AF" }} /> Manage Medicines
-                                    </Link>
-                                )}
-                                {hasAccess() && (
-                                    <Link href="/admin/pharmacy/manageproduct" className={`p-2 px-3 rounded-lg text-xs transition-all duration-200 flex items-center gap-2 ${isActive("/admin/pharmacy/manageproduct") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
-                                        <FaFlask className="text-xs shrink-0" style={{ color: isActive("/admin/pharmacy/manageproduct") ? theme.primary : "#9CA3AF" }} /> Manage Products
                                     </Link>
                                 )}
                                 {hasAccess() && (

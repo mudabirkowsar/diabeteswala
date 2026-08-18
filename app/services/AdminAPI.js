@@ -67,13 +67,18 @@ const AdminAPI = {
 
 
     //Lab Management APIs
-    getLabsList: async (params) => {
-        const response = await authApi.get('/admin/lab/list', { params });
+    getLabsApprovalList: async (params) => {
+        const response = await authApi.get('/api/admin/approval/lab', { params });
         return response.data;
     },
 
-    approveRejectLab: async (id, payload) => {
-        const response = await authApi.patch(`/admin/lab/approve/${id}`, payload);
+    approveLabProfile: async (id) => {
+        const response = await authApi.patch(`/api/admin/approval/lab/approve/${id}`);
+        return response.data;
+    },
+
+    rejectLabProfile: async (id, payload) => {
+        const response = await authApi.patch(`/api/admin/approval/lab/reject/${id}`, payload);
         return response.data;
     },
 
@@ -81,6 +86,103 @@ const AdminAPI = {
         const response = await authApi.patch(`/admin/lab/toggle-active/${id}`);
         return response.data;
     },
+
+    // ==========================================
+    // --- PHARMACY APPROVAL WORKFLOW APIS -----
+    // ==========================================
+    getPharmaciesList: async (params) => {
+        const response = await authApi.get('/api/admin/approval/pharmacy', { params });
+        return response.data;
+    },
+
+    approvePharmacy: async (id) => {
+        const response = await authApi.patch(`/api/admin/approval/pharmacy/approve/${id}`);
+        return response.data;
+    },
+ 
+    rejectPharmacy: async (id, payload) => {
+        const response = await authApi.patch(`/api/admin/approval/pharmacy/reject/${id}`, payload);
+        return response.data;
+    },
+
+    togglePharmacyActive: async (id) => {
+        const response = await authApi.patch(`/admin/pharmacy/status/active-inactive/${id}`);
+        return response.data;
+    },
+
+    // ==========================================
+    // --- MEDICINE MANAGEMENT APIS -------------
+    // ==========================================
+
+    bulkUploadMedicines: async (formData) => {
+        const response = await authApi.post('/admin/pharmacy/medicine/upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    createMedicine: async (medicineData) => {
+        const response = await authApi.post('/admin/pharmacy/medicine/create', medicineData);
+        return response.data;
+    },
+
+    getMedicinesList: async (params) => {
+        const response = await authApi.get('/admin/pharmacy/medicine/list', { params });
+        return response.data;
+    },
+
+    getMedicineDetails: async (id) => {
+        const response = await authApi.get(`/admin/pharmacy/medicine/details/${id}`);
+        return response.data;
+    },
+
+    searchMedicines: async (searchData) => {
+        const response = await authApi.post('/admin/pharmacy/medicine/search', searchData);
+        return response.data;
+    },
+
+    updateMedicine: async (id, medicineData) => {
+        const response = await authApi.put(`/admin/pharmacy/medicine/update/${id}`, medicineData);
+        return response.data;
+    },
+
+    deleteMedicine: async (id) => {
+        const response = await authApi.delete(`/admin/pharmacy/medicine/delete/${id}`);
+        return response.data;
+    },
+
+    // ============================================
+    // --- FOOD PARTNER APPROVAL WORKFLOW APIS ----
+    // ============================================
+
+    // --- 1. Get Food Partners List (Paginated & Filtered) ---
+    getFoodApprovalList: async (params) => {
+        // params: { status, page, limit, search, country, state, city }
+        const response = await authApi.get('/api/admin/approval/food', { params });
+        return response.data;
+    },
+
+    // --- 2. Approve Food Partner Profile ---
+    approveFoodPartner: async (id) => {
+        // id: The MongoDB Object ID (_id) of the food document to approve
+        const response = await authApi.patch(`/api/admin/approval/food/approve/${id}`);
+        return response.data;
+    },
+
+    // --- 3. Reject Food Partner Profile ---
+    rejectFoodPartner: async (id, payload) => {
+        // id: The MongoDB Object ID (_id) of the food document to reject
+        // payload: { reason: "The uploaded FSSAI registration certificate is..." }
+        const response = await authApi.patch(`/api/admin/approval/food/reject/${id}`, payload);
+        return response.data;
+    },
+    toggleFoodPartnerActive: async (id) => {
+        const response = await authApi.patch(`/admin/food/toggle-active/${id}`);
+        return response.data;
+    },
+
 
 
 
