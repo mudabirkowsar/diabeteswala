@@ -1,28 +1,12 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import {
-  Star,
-  ShieldCheck,
-  AlertCircle,
-  ArrowLeft,
-  Clock,
-  Truck,
-  MapPin,
-  ShoppingBag,
-  Loader2,
-  CheckCircle,
-  Info,
-  HelpCircle,
-  Activity,
-  FileText,
-  Bookmark,
-  Plus,
-  Minus,
-  Store
-} from 'lucide-react';
+import { ShieldCheck, AlertCircle, ArrowLeft, Loader2, HelpCircle, Activity, FileText, Bookmark } from 'lucide-react';
 import UserAPI from '../../../../services/UserAPI'; // Adjust based on your folder structure
 import { useNotification } from '../../../../context/NotificationContext'; // Adjust based on your folder structure
+
+// Import Sellers List & Cart Controller Sub-Component
+import SellersAndCartSection from '../components/SellersAndCartSection'; // Adjust based on your folder structure
 
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 const STATIC_PRODUCT_FALLBACK_GALLERY = [
@@ -44,11 +28,8 @@ const ProductDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Selected Seller State
+  // Selected Seller State (Shared state passed to child section)
   const [selectedSeller, setSelectedSeller] = useState(null);
-
-  // Central Quantity Counter
-  const [globalQuantity, setGlobalQuantity] = useState(1);
 
   // Gallery and Tab States
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -141,23 +122,6 @@ const ProductDetailPage = () => {
         tag: parts[3] || "Comparable Formulation"
       };
     });
-  };
-
-  // Central Global Add to Cart Handler
-  const handleGlobalAddToCart = () => {
-    if (!selectedSeller) {
-      if (showNotification) {
-        showNotification("Please select a pharmacy seller first.", "error");
-      }
-      return;
-    }
-
-    if (showNotification) {
-      showNotification(
-        `Added ${globalQuantity} item(s) from "${selectedSeller.name}" to your cart.`,
-        "success"
-      );
-    }
   };
 
   if (loading) {
@@ -319,165 +283,13 @@ const ProductDetailPage = () => {
         </div>
 
         {/* --- SECTION 2: LOCAL PHARMACY SELLER LIST & CART CONTROLLER --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12 items-start">
-
-          {/* Left: Pixel-Matched Pharmacy Sellers List */}
-          <div className="lg:col-span-7 bg-white rounded-[2.5rem] border border-slate-100 p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-6 px-1">
-              <div className="flex items-center gap-2.5">
-                <Store size={18} className="text-slate-600" />
-                <h2 className="text-lg font-black text-slate-800 tracking-tight">Available Sellers</h2>
-              </div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                {sellers.length} Near You
-              </span>
-            </div>
-
-            {sellers.length > 0 ? (
-              <div className="space-y-4">
-                {sellers.map((seller) => {
-                  const isSelected = selectedSeller?.pharmacyId === seller.pharmacyId;
-                  const itemDiscount = seller.discount || 0;
-
-                  return (
-                    <div
-                      key={seller.pharmacyId}
-                      onClick={() => {
-                        setSelectedSeller(seller);
-                        setGlobalQuantity(1); // Reset qty stepper to 1 on select
-                      }}
-                      className={`w-full flex items-center justify-between p-4 rounded-3xl transition-all duration-300 border cursor-pointer ${isSelected
-                        ? 'border-emerald-500 bg-white shadow-sm ring-1 ring-emerald-500/20'
-                        : 'border-slate-100 bg-white hover:border-slate-200 shadow-sm'
-                        }`}
-                    >
-                      {/* Left Logo and Address Info */}
-                      <div className="flex items-center">
-                        <div className="w-12 h-12 rounded-2xl overflow-hidden shrink-0 border border-slate-100 bg-slate-50 flex items-center justify-center">
-                          <img
-                            src={getSanitizedImageUrl(seller.image)}
-                            alt={seller.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="flex flex-col items-start ml-4 text-left min-w-0">
-                          <p className="font-black text-sm text-slate-800 truncate leading-snug">
-                            {seller.name}
-                          </p>
-                          <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-400 mt-1 truncate">
-                            <MapPin size={10} className="text-emerald-500 fill-emerald-50 shrink-0" />
-                            <span>{seller.distance} km • {seller.address}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Right Pricing details */}
-                      <div className="flex flex-col items-end shrink-0">
-                        <p className="font-black text-base text-slate-900 leading-none">
-                          ₹{seller.price}
-                        </p>
-                        {itemDiscount > 0 && (
-                          <span className="text-[10px] font-black bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-lg mt-1 tracking-wide select-none">
-                            {itemDiscount}% OFF
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="bg-slate-50 border-2 border-dashed border-slate-100 p-8 text-center rounded-[2rem]">
-                <p className="text-sm font-bold text-slate-500">This medicine is currently out of stock near you.</p>
-              </div>
-            )}
-          </div>
-
-          {/* Right: Unified Single Cart Controller Section */}
-          <div className="lg:col-span-5 bg-white rounded-[2.5rem] border border-slate-100 p-6 shadow-sm space-y-5">
-            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2.5">
-              Order Settings
-            </p>
-
-            {selectedSeller ? (
-              <div className="space-y-5">
-                {/* Selected Store Details Card */}
-                <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100/60">
-                  <p className="text-[10px] font-black text-indigo-700/80 uppercase tracking-wider">
-                    Active Selected Seller
-                  </p>
-                  <p className="text-sm font-black text-slate-800 mt-1">{selectedSeller.name}</p>
-                  <p className="text-[11px] text-slate-400 font-bold mt-0.5">{selectedSeller.address}</p>
-
-                  <div className="flex justify-between items-center mt-3.5 pt-3.5 border-t border-slate-100">
-                    <span className="text-xs text-slate-500 font-bold flex items-center gap-1">
-                      <Truck size={12} className="text-[#3d3f96]" />
-                      {selectedSeller.isHomeDelivery ? "Home Delivery" : "Store Pickup Only"}
-                    </span>
-                    <span className="text-[11px] text-slate-400 font-bold">
-                      Stock: {selectedSeller.stock} available
-                    </span>
-                  </div>
-                </div>
-
-                {/* Dynamic Price Calculation Summary */}
-                <div className="flex justify-between items-end bg-[#3d3f96]/5 border border-[#3d3f96]/10 p-4 rounded-2xl">
-                  <div>
-                    <span className="text-[10px] text-[#3d3f96] font-black uppercase tracking-wider">
-                      Subtotal Amount
-                    </span>
-                    <p className="text-2xl font-black text-slate-900 mt-1 leading-none">
-                      ₹{selectedSeller.price * globalQuantity}
-                    </p>
-                  </div>
-                  <span className="text-[11px] font-bold text-slate-400">
-                    ₹{selectedSeller.price} × {globalQuantity} strip{globalQuantity > 1 ? 's' : ''}
-                  </span>
-                </div>
-
-                {/* Stepper & Add To Cart Horizontal Block */}
-                <div className="flex flex-col sm:flex-row gap-3">
-                  {/* Stepper controls */}
-                  <div className="flex items-center justify-between border border-[#3d3f96]/20 rounded-2xl p-1 bg-indigo-50/20 w-full sm:w-max shrink-0">
-                    <button
-                      onClick={() => setGlobalQuantity(prev => Math.max(1, prev - 1))}
-                      disabled={globalQuantity <= 1}
-                      className="p-3 bg-white text-[#3d3f96] hover:bg-indigo-50 rounded-xl shadow-sm transition-all disabled:opacity-50"
-                    >
-                      <Minus size={14} className="stroke-[2.5]" />
-                    </button>
-
-                    <span className="text-sm font-black text-slate-800 px-5 select-none">
-                      {globalQuantity}
-                    </span>
-
-                    <button
-                      onClick={() => setGlobalQuantity(prev => prev + 1)}
-                      disabled={globalQuantity >= selectedSeller.stock}
-                      className="p-3 bg-white text-[#3d3f96] hover:bg-indigo-50 rounded-xl shadow-sm transition-all disabled:opacity-50"
-                    >
-                      <Plus size={14} className="stroke-[2.5]" />
-                    </button>
-                  </div>
-
-                  {/* Unified Add to Cart button */}
-                  <button
-                    onClick={handleGlobalAddToCart}
-                    className="w-full flex-1 py-4 bg-[#3d3f96] hover:bg-[#2d2f75] text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 transition-all active:scale-95"
-                  >
-                    <ShoppingBag size={16} />
-                    <span>Add To Cart</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="py-6 text-center">
-                <p className="text-xs font-bold text-slate-400">Select an available partner pharmacy on the left to set order options.</p>
-              </div>
-            )}
-          </div>
-
-        </div>
+        <SellersAndCartSection
+          productId={productId}
+          sellers={sellers}
+          selectedSeller={selectedSeller}
+          setSelectedSeller={setSelectedSeller}
+          getSanitizedImageUrl={getSanitizedImageUrl}
+        />
 
         {/* --- SECTION 3: TABBED CLINICAL MONOGRAPHS & GUIDES --- */}
         <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm">

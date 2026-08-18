@@ -3,9 +3,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, ArrowRight, Pill, FileText, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-// Import your Auth Context
-// import { useAuth } from '../../context/AuthContext'; 
 import { useAuth } from '../../../context/AuthContext'; // Adjust the path as necessary
+import { useCart } from '../../../context/CartContext'; // Adjust the path as necessary
 
 const menuVariants = {
     hidden: { opacity: 0, y: 30, scale: 0.95, pointerEvents: "none" },
@@ -29,54 +28,61 @@ const itemVariants = {
     visible: { opacity: 1, y: 0 }
 };
 
-const Cart = ({ 
-    pharmacyCount = 2, 
-    pharmacyTotal = "1,230",
-    labCount = 1,
-    labTotal = "450",
-    foodCount = 0,
-    foodTotal = "0"
-}) => {
-    const { isLoggedIn } = useAuth(); // Get login status from context
+const Cart = () => {
+    const { isLoggedIn } = useAuth(); // Get login status from auth context
+    const { 
+        pharmacyCart, 
+        pharmacyCartTotal, 
+        labCart, 
+        labCartTotal 
+    } = useCart(); // Get real-time cart states from context
+
     const [isHovered, setIsHovered] = useState(false);
 
-    // Calculate aggregate totals
+    // --- DYNAMIC CALCULATIONS ---
+    const pharmacyCount = pharmacyCart?.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+    const pharmacyTotalVal = pharmacyCartTotal || 0;
+
+    const labCount = labCart?.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+    const labTotalVal = labCartTotal || 0;
+
+    const foodCount = 0; // Set to zero unless integrated with a dynamic Food Context
+    const foodTotalVal = 0;
+
+    // Aggregate totals
     const totalItems = pharmacyCount + labCount + foodCount;
-    const aggregateTotal = (
-        parseFloat(pharmacyTotal.replace(/,/g, '')) + 
-        parseFloat(labTotal.replace(/,/g, '')) + 
-        parseFloat(foodTotal.replace(/,/g, ''))
-    );
+    const aggregateTotal = pharmacyTotalVal + labTotalVal + foodTotalVal;
 
     // --- AUTH & EMPTY CHECK ---
-    // If user is not logged in OR the cart is empty, return null (hide component)
+    // If user is not logged in OR the cart is completely empty, hide the floating component
     if (!isLoggedIn || totalItems === 0) return null;
 
+    // Build cart items dynamically. Only show sub-carts that currently contain items.
     const cartOptions = [
-        {
+        ...(pharmacyCount > 0 ? [{
             name: "Pharmacy Cart",
             count: pharmacyCount,
-            total: pharmacyTotal,
+            total: pharmacyTotalVal.toLocaleString(),
             href: "/otherscreens/carts/pharmacycart",
             icon: <Pill size={16} className="text-[#3d3f96]" />,
             bgLight: "bg-indigo-50/60"
-        },
-        {
+        }] : []),
+        ...(labCount > 0 ? [{
             name: "Lab Cart",
             count: labCount,
-            total: labTotal,
+            total: labTotalVal.toLocaleString(),
             href: "/labs/cart",
             icon: <FileText size={16} className="text-[#3d3f96]" />,
             bgLight: "bg-indigo-50/60"
-        },
-        {
+        }] : []),
+        ...(foodCount > 0 ? [{
             name: "Food Cart",
             count: foodCount,
-            total: foodTotal,
+            total: foodTotalVal.toLocaleString(),
             href: "/food-nutrition/cart",
             icon: <ShoppingBag size={16} className="text-[#3d3f96]" />,
             bgLight: "bg-indigo-50/60"
-        }
+        }] : [])
     ];
 
     return (
@@ -87,7 +93,7 @@ const Cart = ({
         >
             {/* --- SLIDE-UP CART OPTIONS --- */}
             <AnimatePresence>
-                {isHovered && (
+                {isHovered && cartOptions.length > 0 && (
                     <motion.div
                         variants={menuVariants}
                         initial="hidden"
