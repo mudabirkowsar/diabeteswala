@@ -1,9 +1,30 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ShieldCheck, AlertCircle, ArrowLeft, Loader2, HelpCircle, Activity, FileText, Bookmark } from 'lucide-react';
+import {
+  Star,
+  ShieldCheck,
+  AlertCircle,
+  ArrowLeft,
+  Clock,
+  Truck,
+  MapPin,
+  ShoppingBag,
+  Loader2,
+  CheckCircle,
+  Info,
+  HelpCircle,
+  Activity,
+  FileText,
+  Bookmark,
+  Plus,
+  Minus,
+  Store,
+  Trash2
+} from 'lucide-react';
 import UserAPI from '../../../../services/UserAPI'; // Adjust based on your folder structure
 import { useNotification } from '../../../../context/NotificationContext'; // Adjust based on your folder structure
+import { useCart } from '../../../../context/CartContext'; // Adjust based on your folder structure
 
 // Import Sellers List & Cart Controller Sub-Component
 import SellersAndCartSection from '../components/SellersAndCartSection'; // Adjust based on your folder structure
@@ -19,6 +40,14 @@ const ProductDetailPage = () => {
   const params = useParams();
   const router = useRouter();
   const { showNotification } = useNotification();
+  const { 
+    pharmacyCart, 
+    addToPharmacyCart, 
+    updatePharmacyItemQuantity, 
+    removePharmacyItem,
+    clearPharmacyCart,
+    loading: cartLoading 
+  } = useCart();
 
   const productId = params?.id;
 
@@ -34,6 +63,9 @@ const ProductDetailPage = () => {
   // Gallery and Tab States
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState("uses");
+
+  // State to track which alternative brand is currently loading/querying
+  const [searchingBrand, setSearchingBrand] = useState(null);
 
   useEffect(() => {
     if (!productId) return;
@@ -122,6 +154,36 @@ const ProductDetailPage = () => {
         tag: parts[3] || "Comparable Formulation"
       };
     });
+  };
+
+  // Queries alternate brand information and redirects on success [4]
+  const handleAlternativeBrandClick = async (name) => {
+    if (!name) return;
+    setSearchingBrand(name);
+    try {
+      const res = await UserAPI.searchAlternativeBrand(name);
+      if (res && (res.success || res.Success)) {
+        const detailsId = res.data?.details?._id || res.Data?.details?._id;
+        if (detailsId) {
+          router.push(`/buymedicine/singleproductdetail/${detailsId}`);
+        } else {
+          if (showNotification) {
+            showNotification("Medicine details not found for this alternative.", "error");
+          }
+        }
+      } else {
+        if (showNotification) {
+          showNotification("Medicine details not found for this alternative.", "error");
+        }
+      }
+    } catch (err) {
+      console.error("Error navigating to alternative brand:", err);
+      if (showNotification) {
+        showNotification("Failed to load alternative brand details.", "error");
+      }
+    } finally {
+      setSearchingBrand(null);
+    }
   };
 
   if (loading) {
@@ -298,8 +360,7 @@ const ProductDetailPage = () => {
             {[
               { id: "uses", label: "Uses & Benefits", icon: Activity },
               { id: "how", label: "How to Use & Workings", icon: HelpCircle },
-              { id: "safety", label: "Safety & Dosage", icon: ShieldCheck },
-              { id: "alternatives", label: "Comparable Brands", icon: FileText }
+              { id: "safety", label: "Safety & Dosage", icon: ShieldCheck }
             ].map((tab) => {
               const TabIcon = tab.icon;
               return (
@@ -395,37 +456,98 @@ const ProductDetailPage = () => {
               </div>
             )}
 
-            {/* Tab 4: Alternatives */}
-            {activeTab === "alternatives" && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider mb-2">Alternative Formulation Equivalents</h3>
-                  <p className="text-xs font-bold text-slate-400 mb-4">Please verify the molecule strength with your primary healthcare physician before shifting brands.</p>
-                </div>
-
-                {alternativeBrands.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {alternativeBrands.map((brand, i) => (
-                      <div key={i} className="bg-slate-50/50 border border-slate-100 p-4 rounded-2xl flex items-center justify-between">
-                        <div>
-                          <p className="font-black text-sm text-slate-800">{brand.name}</p>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{brand.company}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-black text-[#3d3f96]">{brand.price}</p>
-                          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wide">{brand.tag}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm font-bold text-slate-400">No equivalent products mapped for this formulation.</p>
-                )}
-              </div>
-            )}
-
           </div>
         </div>
+
+        {/* --- SECTION 4: STANDALONE CLINICALLY DESIGNED ALTERNATIVE BRANDS LIST --- */}
+        {alternativeBrands.length > 0 && (
+          <div className="mt-8 bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.015)] p-6 md:p-8 space-y-6">
+            
+            {/* Section Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-5 border-b border-slate-100">
+              <div>
+                <h3 className="text-lg md:text-xl font-black text-[#3d3f96] tracking-tight flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Alternative Brands
+                </h3>
+                <p className="text-xs md:text-sm text-slate-400 font-medium mt-0.5">Other medications with equivalent therapeutic effects</p>
+              </div>
+              <span className="self-start md:self-auto text-[10px] font-bold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100/50 uppercase tracking-wider">
+                {alternativeBrands.length} Options
+              </span>
+            </div>
+
+            {/* Interactive List Wrapper */}
+            <div className="divide-y divide-slate-100">
+              {alternativeBrands.map((brand, index) => {
+                const isSearchingThis = searchingBrand === brand.name;
+                const isCostlier = brand.tag?.toLowerCase().includes('costlier') || brand.tag?.toLowerCase().includes('expensive');
+
+                return (
+                  <div
+                    key={index}
+                    onClick={() => !searchingBrand && handleAlternativeBrandClick(brand.name)}
+                    className={`group relative py-4 px-3 -mx-3 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer transition-all duration-300 hover:bg-slate-50/80
+                      ${searchingBrand && !isSearchingThis ? 'opacity-40 pointer-events-none' : ''}`}
+                  >
+                    {/* Left Side: Product Information */}
+                    <div className="flex items-start gap-3">
+                      {/* Micro-Icon */}
+                      <div className="w-10 h-10 rounded-xl bg-[#F8FAFC] border border-slate-100 flex items-center justify-center shrink-0 group-hover:bg-white group-hover:border-[#3d3f96]/30 transition-colors">
+                        <svg className="w-5 h-5 text-slate-400 group-hover:text-[#3d3f96] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                        </svg>
+                      </div>
+                      <div className="space-y-0.5">
+                        <h4 className="font-extrabold text-sm md:text-base text-slate-900 group-hover:text-[#3d3f96] transition-colors tracking-tight">
+                          {brand.name}
+                        </h4>
+                        <p className="text-[10px] md:text-xs text-slate-400 font-semibold flex items-center gap-1">
+                          by <span className="text-slate-600 font-bold">{brand.company}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Right Side: Price, Badges, & Action Trigger */}
+                    <div className="flex items-center justify-between sm:justify-end gap-6 shrink-0">
+                      <div className="text-left sm:text-right space-y-1">
+                        <p className="text-xs md:text-sm font-black text-slate-900">{brand.price}</p>
+                        {brand.tag && (
+                          <div className="flex items-center sm:justify-end">
+                            <span className={`inline-flex items-center gap-1.5 text-[9px] md:text-[10px] font-extrabold px-2.5 py-1 rounded-xl shadow-sm border ${isCostlier
+                                ? 'text-rose-600 bg-rose-50/60 border-rose-100/50'
+                                : 'text-emerald-700 bg-emerald-50/80 border-emerald-100/50'
+                              }`}>
+                              <span className={`w-1 h-1 rounded-full ${isCostlier ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+                              {brand.tag}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Action Indicator */}
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-50/50 group-hover:bg-white group-hover:shadow-sm border border-transparent group-hover:border-slate-100 transition-all shrink-0">
+                        {isSearchingThis ? (
+                          <div className="w-4 h-4 border-2 border-[#3d3f96] border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <svg
+                            className="w-4 h-4 text-slate-400 group-hover:text-slate-700 transition-all transform group-hover:translate-x-0.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+          </div>
+        )}
 
       </div>
     </main>
