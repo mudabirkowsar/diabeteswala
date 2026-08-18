@@ -1,65 +1,29 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    X, 
-    Phone, 
-    Clock, 
-    ShieldCheck, 
-    Truck, 
-    MapPin, 
-    Star, 
-    Loader2 
+import {
+    X,
+    Phone,
+    Clock,
+    ShieldCheck,
+    Truck,
+    MapPin,
+    Star,
+    Loader2,
+    Mail,
+    FileText,
+    Image as ImageIcon,
+    Building,
+    CheckCircle
 } from 'lucide-react';
+import UserAPI from '../../../../services/UserAPI'; // Adjust relative path based on setup
+
+const BASE_URL = "http://192.168.1.3:5002";
 
 const PharmacyDetail = ({ pharmacyId, isOpen, onClose }) => {
     const [pharmacy, setPharmacy] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-
-    // Simulated local database for mock API responses
-    const mockDb = {
-        1: { 
-            name: "DiabetesWala Central", 
-            location: "Sector 15, Gurgaon", 
-            rating: 4.9, 
-            image: "https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=400&auto=format&fit=crop",
-            phone: "+91 98765 01234",
-            hours: "8:00 AM - 11:00 PM",
-            license: "DL-12053-GUR",
-            delivery: "Instant delivery in 2 hours"
-        },
-        2: { 
-            name: "Apollo Pharmacy", 
-            location: "DLF Phase 3", 
-            rating: 4.7, 
-            image: "https://images.unsplash.com/photo-1631549916768-4119b255f926?q=80&w=400&auto=format&fit=crop",
-            phone: "+91 98765 56789",
-            hours: "Open 24 Hours",
-            license: "DL-99432-DLF",
-            delivery: "Free home delivery on orders above ₹499"
-        },
-        3: { 
-            name: "Wellness Forever", 
-            location: "MG Road, Delhi", 
-            rating: 4.8, 
-            image: "https://images.unsplash.com/photo-1576602976047-174e57a47881?q=80&w=400&auto=format&fit=crop",
-            phone: "+91 98765 11122",
-            hours: "Open 24 Hours",
-            license: "DL-44810-DEL",
-            delivery: "Same-day delivery inside Delhi"
-        },
-        4: { 
-            name: "Guardian Life", 
-            location: "Noida Sec 62", 
-            rating: 4.6, 
-            image: "https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?q=80&w=400&auto=format&fit=crop",
-            phone: "+91 98765 33344",
-            hours: "9:00 AM - 10:00 PM",
-            license: "DL-77321-NOI",
-            delivery: "Next-day standard delivery"
-        }
-    };
 
     useEffect(() => {
         if (!pharmacyId || !isOpen) return;
@@ -68,22 +32,14 @@ const PharmacyDetail = ({ pharmacyId, isOpen, onClose }) => {
             setLoading(true);
             setError(null);
             try {
-                // Simulate network latency (e.g., 800ms)
-                await new Promise((resolve) => setTimeout(resolve, 800));
-
-                /* 
-                   Replace this mock block with your real API request:
-                   const response = await fetch(`/api/pharmacy/${pharmacyId}`);
-                   const data = await response.json();
-                   setPharmacy(data);
-                */
-                const data = mockDb[pharmacyId];
-                if (data) {
-                    setPharmacy(data);
+                const response = await UserAPI.getPharmacyProfileDetails(pharmacyId);
+                if (response && response.success) {
+                    setPharmacy(response.data);
                 } else {
-                    setError("Pharmacy details not found");
+                    setError("Store information could not be retrieved");
                 }
             } catch (err) {
+                console.error("Error loading pharmacy details:", err);
                 setError("Failed to load pharmacy details");
             } finally {
                 setLoading(false);
@@ -93,12 +49,25 @@ const PharmacyDetail = ({ pharmacyId, isOpen, onClose }) => {
         fetchPharmacyDetails();
     }, [pharmacyId, isOpen]);
 
+    // Sanitizes and formats media URLs with the correct host prefix
+    const getFullImageUrl = (path) => {
+        if (!path) return "https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=400&auto=format&fit=crop";
+        if (path.startsWith('http://') || path.startsWith('https://')) return path;
+
+        let cleanPath = path.replace(/\\/g, '/');
+        cleanPath = cleanPath.replace(/^public\//, '');
+        if (cleanPath.startsWith('/')) {
+            cleanPath = cleanPath.substring(1);
+        }
+        return `${BASE_URL}/${cleanPath}`;
+    };
+
     return (
         <AnimatePresence>
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    {/* Backdrop */}
-                    <motion.div 
+                    {/* Backdrop Overlay */}
+                    <motion.div
                         className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -107,116 +76,276 @@ const PharmacyDetail = ({ pharmacyId, isOpen, onClose }) => {
                     />
 
                     {/* Modal Box */}
-                    <motion.div 
-                        className="bg-white rounded-[2.5rem] max-w-md w-full overflow-hidden shadow-2xl border border-slate-100 relative z-10 min-h-[350px] flex flex-col justify-between"
+                    <motion.div
+                        className="bg-white rounded-[2.5rem] max-w-2xl w-full overflow-hidden shadow-2xl border border-slate-100 relative z-10 max-h-[90vh] flex flex-col"
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
                         transition={{ type: "spring", duration: 0.5 }}
                     >
                         {/* Close Button */}
-                        <button 
+                        <button
                             onClick={onClose}
-                            className="absolute top-4 right-4 z-20 bg-white/80 backdrop-blur-md text-slate-700 hover:bg-white p-2 rounded-full border border-slate-100 shadow-md transition-colors"
+                            className="absolute top-4 right-4 z-20 bg-white/85 backdrop-blur-md text-slate-700 hover:bg-white p-2.5 rounded-full border border-slate-100 shadow-md transition-colors"
                         >
                             <X size={18} />
                         </button>
 
                         {loading ? (
                             /* Loading Spinner State */
-                            <div className="flex-1 flex flex-col items-center justify-center p-12">
+                            <div className="flex-1 flex flex-col items-center justify-center py-20">
                                 <Loader2 className="animate-spin text-[#3d3f96] mb-3" size={36} />
-                                <p className="text-slate-400 text-sm font-semibold">Retrieving store information...</p>
+                                <p className="text-slate-400 text-sm font-semibold">Retrieving store details...</p>
                             </div>
                         ) : error ? (
                             /* Error Handling State */
-                            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                            <div className="flex-1 flex flex-col items-center justify-center py-20 px-8 text-center">
                                 <p className="text-red-500 font-bold mb-2">{error}</p>
                                 <button onClick={onClose} className="text-xs font-bold text-slate-500 hover:underline">
-                                    Go Back
+                                    Close Window
                                 </button>
                             </div>
                         ) : pharmacy ? (
                             /* Data Rendered State */
                             <>
-                                <div>
-                                    {/* Pharmacy Header Image */}
-                                    <div className="relative h-48 bg-slate-100">
-                                        <img src={pharmacy.image} alt={pharmacy.name} className="w-full h-full object-cover" />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                                        <div className="absolute bottom-4 left-6 right-6 text-white">
-                                            <div className="flex items-center gap-1 bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-lg w-max mb-2 border border-white/10">
+                                <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+
+                                    {/* --- HERO IMAGE & PRIMARY BADGES --- */}
+                                    <div className="relative h-56 bg-slate-100 shrink-0">
+                                        <img
+                                            src={getFullImageUrl(pharmacy.profileImage)}
+                                            alt={pharmacy.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+
+                                        {/* Status & Rating Badges */}
+                                        <div className="absolute top-4 left-6 flex gap-2">
+                                            {/* Rating */}
+                                            <div className="flex items-center gap-1 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-xl shadow-sm border border-slate-100/50">
                                                 <Star size={12} className="fill-yellow-400 text-yellow-400" />
-                                                <span className="text-xs font-black">{pharmacy.rating}</span>
+                                                <span className="text-[11px] font-black text-slate-800">{pharmacy.rating || "4.8"}</span>
+                                                {pharmacy.totalReviews > 0 && (
+                                                    <span className="text-[9px] text-slate-400 font-bold">({pharmacy.totalReviews})</span>
+                                                )}
                                             </div>
-                                            <h2 className="text-2xl font-black">{pharmacy.name}</h2>
+
+                                            {/* Online Status */}
+                                            <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-xl shadow-sm border border-slate-100/50">
+                                                <span className={`h-2 w-2 rounded-full ${pharmacy.isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                                                <span className="text-[10px] font-black text-slate-800 uppercase tracking-wider">
+                                                    {pharmacy.isOnline ? 'Online' : 'Offline'}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Store Name & Location */}
+                                        <div className="absolute bottom-5 left-6 right-6 text-white">
+                                            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">{pharmacy.name}</h2>
+                                            <p className="text-white/80 text-xs font-bold mt-1.5 flex items-center gap-1">
+                                                <MapPin size={12} className="text-indigo-300" />
+                                                {[pharmacy.city, pharmacy.state, pharmacy.country].filter(Boolean).join(', ')}
+                                            </p>
                                         </div>
                                     </div>
 
-                                    {/* Details List */}
-                                    <div className="p-6 space-y-5">
-                                        {/* Location */}
-                                        <div className="flex items-start gap-3.5">
-                                            <div className="p-2.5 bg-[#3d3f96]/5 text-[#3d3f96] rounded-xl">
-                                                <MapPin size={18} />
+                                    {/* --- MAIN DETAILS CONTAINER --- */}
+                                    <div className="p-6 sm:p-8 space-y-8">
+
+                                        {/* About Segment */}
+                                        {pharmacy.about && (
+                                            <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100">
+                                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">About Store</p>
+                                                <p className="text-xs font-bold text-slate-600 mt-1.5 leading-relaxed">
+                                                    {pharmacy.about}
+                                                </p>
                                             </div>
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Location</p>
-                                                <p className="text-sm font-bold text-slate-700 mt-0.5">{pharmacy.location}</p>
+                                        )}
+
+                                        {/* Two Column Grid */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                                            {/* Left Column: Operations & Contact */}
+                                            <div className="space-y-5">
+                                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Operations & Contact</p>
+
+                                                {/* Hours & 24x7 Status */}
+                                                <div className="flex items-start gap-3.5">
+                                                    <div className="p-2.5 bg-[#3d3f96]/5 text-[#3d3f96] rounded-xl shrink-0">
+                                                        <Clock size={18} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Business Hours</p>
+                                                        <p className="text-sm font-bold text-slate-700 mt-0.5">
+                                                            {pharmacy.is24x7 ? "Open 24 Hours / 7 Days" : "8:00 AM - 11:00 PM"}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Delivery Options */}
+                                                <div className="flex items-start gap-3.5">
+                                                    <div className="p-2.5 bg-[#3d3f96]/5 text-[#3d3f96] rounded-xl shrink-0">
+                                                        <Truck size={18} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Delivery Logistics</p>
+                                                        <p className="text-sm font-bold text-slate-700 mt-0.5">
+                                                            {pharmacy.isHomeDeliveryAvailable ? "Home Delivery Available" : "Store Pickup Only"}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Contact Phone */}
+                                                <div className="flex items-start gap-3.5">
+                                                    <div className="p-2.5 bg-[#3d3f96]/5 text-[#3d3f96] rounded-xl shrink-0">
+                                                        <Phone size={18} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Telephone Number</p>
+                                                        <p className="text-sm font-bold text-slate-700 mt-0.5">{pharmacy.phone}</p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Contact Email */}
+                                                {pharmacy.email && (
+                                                    <div className="flex items-start gap-3.5">
+                                                        <div className="p-2.5 bg-[#3d3f96]/5 text-[#3d3f96] rounded-xl shrink-0">
+                                                            <Mail size={18} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Email Address</p>
+                                                            <p className="text-sm font-bold text-slate-700 mt-0.5 break-all">{pharmacy.email}</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Right Column: Credentials & Status */}
+                                            <div className="space-y-5">
+                                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2">Store Credentials</p>
+
+                                                {/* GST Register Details */}
+                                                {pharmacy.documents?.gstNumber && (
+                                                    <div className="flex items-start gap-3.5">
+                                                        <div className="p-2.5 bg-indigo-50/60 text-[#3d3f96] rounded-xl shrink-0">
+                                                            <FileText size={18} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">GSTIN Identifier</p>
+                                                            <p className="text-sm font-bold text-slate-700 mt-0.5">{pharmacy.documents.gstNumber}</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Drug License Details */}
+                                                {pharmacy.documents?.drugLicenseType && (
+                                                    <div className="flex items-start gap-3.5">
+                                                        <div className="p-2.5 bg-indigo-50/60 text-[#3d3f96] rounded-xl shrink-0">
+                                                            <ShieldCheck size={18} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Drug License Class</p>
+                                                            <p className="text-sm font-bold text-slate-700 mt-0.5">{pharmacy.documents.drugLicenseType} License</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Document issuing details */}
+                                                {pharmacy.documents?.issuingAuthority && (
+                                                    <div className="flex items-start gap-3.5">
+                                                        <div className="p-2.5 bg-indigo-50/60 text-[#3d3f96] rounded-xl shrink-0">
+                                                            <Building size={18} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Issuing Authority</p>
+                                                            <p className="text-sm font-bold text-slate-700 mt-0.5">{pharmacy.documents.issuingAuthority}</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* State Jurisdiction */}
+                                                {pharmacy.documents?.documentState && (
+                                                    <div className="flex items-start gap-3.5">
+                                                        <div className="p-2.5 bg-indigo-50/60 text-[#3d3f96] rounded-xl shrink-0">
+                                                            <CheckCircle size={18} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Document Jurisdictional State</p>
+                                                            <p className="text-sm font-bold text-slate-700 mt-0.5">{pharmacy.documents.documentState}</p>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
 
-                                        {/* Hours */}
-                                        <div className="flex items-start gap-3.5">
-                                            <div className="p-2.5 bg-[#3d3f96]/5 text-[#3d3f96] rounded-xl">
-                                                <Clock size={18} />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Business Hours</p>
-                                                <p className="text-sm font-bold text-slate-700 mt-0.5">{pharmacy.hours}</p>
-                                            </div>
-                                        </div>
+                                        {/* --- GALLERY & DOCUMENTS SECTION --- */}
+                                        {(pharmacy.documents?.pharmacyImages?.length > 0 ||
+                                            pharmacy.documents?.pharmacyLicenses?.length > 0 ||
+                                            pharmacy.documents?.pharmacyCertificates?.length > 0) && (
+                                                <div className="space-y-4 pt-2 border-t border-slate-100">
+                                                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Verified Media & Certificates</p>
+                                                    <div className="flex flex-col gap-4">
 
-                                        {/* Phone */}
-                                        <div className="flex items-start gap-3.5">
-                                            <div className="p-2.5 bg-[#3d3f96]/5 text-[#3d3f96] rounded-xl">
-                                                <Phone size={18} />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Contact Number</p>
-                                                <p className="text-sm font-bold text-slate-700 mt-0.5">{pharmacy.phone}</p>
-                                            </div>
-                                        </div>
+                                                        {/* Store Images */}
+                                                        {pharmacy.documents?.pharmacyImages?.length > 0 && (
+                                                            <div>
+                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mb-2">
+                                                                    <ImageIcon size={10} /> Store Gallery
+                                                                </span>
+                                                                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none select-none">
+                                                                    {pharmacy.documents.pharmacyImages.map((imgUrl, i) => (
+                                                                        <a key={i} href={getFullImageUrl(imgUrl)} target="_blank" rel="noreferrer" className="shrink-0 group relative rounded-2xl overflow-hidden border border-slate-100 h-20 w-28 bg-slate-50 shadow-sm block">
+                                                                            <img src={getFullImageUrl(imgUrl)} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" alt="Store Preview" />
+                                                                        </a>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
 
-                                        {/* License */}
-                                        <div className="flex items-start gap-3.5">
-                                            <div className="p-2.5 bg-[#3d3f96]/5 text-[#3d3f96] rounded-xl">
-                                                <ShieldCheck size={18} />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">License Number</p>
-                                                <p className="text-sm font-bold text-slate-700 mt-0.5">{pharmacy.license}</p>
-                                            </div>
-                                        </div>
+                                                        {/* Licenses Preview */}
+                                                        {pharmacy.documents?.pharmacyLicenses?.length > 0 && (
+                                                            <div>
+                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mb-2">
+                                                                    <ShieldCheck size={10} /> Operating Licenses
+                                                                </span>
+                                                                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none select-none">
+                                                                    {pharmacy.documents.pharmacyLicenses.map((licenseUrl, i) => (
+                                                                        <a key={i} href={getFullImageUrl(licenseUrl)} target="_blank" rel="noreferrer" className="shrink-0 group relative rounded-2xl overflow-hidden border border-slate-100 h-20 w-28 bg-slate-50 shadow-sm block">
+                                                                            <img src={getFullImageUrl(licenseUrl)} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" alt="License Preview" />
+                                                                        </a>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
 
-                                        {/* Delivery Info */}
-                                        <div className="flex items-start gap-3.5">
-                                            <div className="p-2.5 bg-[#3d3f96]/5 text-[#3d3f96] rounded-xl">
-                                                <Truck size={18} />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Delivery Details</p>
-                                                <p className="text-sm font-bold text-slate-700 mt-0.5">{pharmacy.delivery}</p>
-                                            </div>
-                                        </div>
+                                                        {/* Certificates Preview */}
+                                                        {pharmacy.documents?.pharmacyCertificates?.length > 0 && (
+                                                            <div>
+                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mb-2">
+                                                                    <FileText size={10} /> Registration Certificates
+                                                                </span>
+                                                                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none select-none">
+                                                                    {pharmacy.documents.pharmacyCertificates.map((certUrl, i) => (
+                                                                        <a key={i} href={getFullImageUrl(certUrl)} target="_blank" rel="noreferrer" className="shrink-0 group relative rounded-2xl overflow-hidden border border-slate-100 h-20 w-28 bg-slate-50 shadow-sm block">
+                                                                            <img src={getFullImageUrl(certUrl)} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" alt="Certificate Preview" />
+                                                                        </a>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                    </div>
+                                                </div>
+                                            )}
+
                                     </div>
                                 </div>
 
                                 {/* Modal Footer */}
-                                <div className="px-6 pb-6 pt-2">
-                                    <button 
+                                <div className="p-6 bg-slate-50 border-t border-slate-100 shrink-0 flex gap-4">
+                                    <button
                                         onClick={onClose}
-                                        className="w-full py-3.5 bg-[#3d3f96] hover:bg-[#2d2f75] text-white font-bold rounded-2xl shadow-lg shadow-indigo-100 transition-colors"
+                                        className="w-full py-4 bg-[#3d3f96] hover:bg-[#2d2f75] text-white font-black text-sm rounded-2xl shadow-lg shadow-indigo-100/40 transition-all duration-300 active:scale-95 text-center"
                                     >
                                         Close Details
                                     </button>

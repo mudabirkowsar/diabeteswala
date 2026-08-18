@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Store,
@@ -9,62 +9,107 @@ import {
     LayoutGrid,
     Info,
     Clock,
-    Truck
+    Truck,
+    Loader2,
+    AlertCircle
 } from 'lucide-react';
 import AllMedicines from './components/AllMedicines';
-import PharmacyDetail from './components/PharmacyDetail'; // Make sure the path matches your setup
+import PharmacyDetail from './components/PharmacyDetail'; // Adjust path if needed
+import UserAPI from '../../../services/UserAPI'; // Adjust path based on your structure
 
 const PharmacyPage = () => {
+    const [pharmacies, setPharmacies] = useState([]);
     const [selectedPharmacy, setSelectedPharmacy] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const pharmacies = [
-        {
-            id: 1,
-            name: "DiabetesWala Central",
-            location: "Sector 15, Gurgaon",
-            rating: 4.9,
-            image: "https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=400&auto=format&fit=crop",
-            phone: "+91 98765 01234",
-            hours: "8:00 AM - 11:00 PM",
-            license: "DL-12053-GUR",
-            delivery: "Instant delivery in 2 hours"
-        },
-        {
-            id: 2,
-            name: "Apollo Pharmacy",
-            location: "DLF Phase 3",
-            rating: 4.7,
-            image: "https://images.unsplash.com/photo-1631549916768-4119b255f926?q=80&w=400&auto=format&fit=crop",
-            phone: "+91 98765 56789",
-            hours: "Open 24 Hours",
-            license: "DL-99432-DLF",
-            delivery: "Free delivery over ₹499"
-        },
-        {
-            id: 3,
-            name: "Wellness Forever",
-            location: "MG Road, Delhi",
-            rating: 4.8,
-            image: "https://images.unsplash.com/photo-1576602976047-174e57a47881?q=80&w=400&auto=format&fit=crop",
-            phone: "+91 98765 11122",
-            hours: "Open 24 Hours",
-            license: "DL-44810-DEL",
-            delivery: "Same-day delivery"
-        },
-        {
-            id: 4,
-            name: "Guardian Life",
-            location: "Noida Sec 62",
-            rating: 4.6,
-            image: "https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?q=80&w=400&auto=format&fit=crop",
-            phone: "+91 98765 33344",
-            hours: "9:00 AM - 10:00 PM",
-            license: "DL-77321-NOI",
-            delivery: "Next-day standard delivery"
-        },
-    ];
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+
+    // Fetch partners based on coordinates stored in localStorage
+    useEffect(() => {
+        const fetchPharmacies = async () => {
+            try {
+                setLoading(true);
+                setError(false);
+                let lat = null;
+                let lng = null;
+                // Get coordinates from localStorage
+                if (typeof window !== "undefined") {
+                    const savedCords = localStorage.getItem("userCoords");
+                    if (savedCords) {
+                        try {
+                            const parsed = JSON.parse(savedCords);
+                            lat = parsed.lat;
+                            lng = parsed.lng;
+                            console.log("Latitude:", lat);
+                            console.log("Longitude:", lng);
+                        } catch (e) {
+                            console.error(
+                                "Error reading stored user coordinates:",
+                                e
+                            );
+                        }
+                    }
+                }
+                // Send exact coordinates to backend
+                const searchPayload = {
+                    lat: lat,
+                    lng: lng,
+                    search: "",
+                };
+                console.log("Payload:", searchPayload);
+                const response = await UserAPI.getAllPharmacies(searchPayload);
+                if (response?.success) {
+                    setPharmacies(response.data || []);
+                } else {
+                    setError(true);
+                }
+            } catch (err) {
+                console.error("Failed to load pharmacies:", err);
+                setError(true);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPharmacies();
+    }, []);
+
+    // Helper to format/sanitize node backslash upload paths and prefix the base URL
+    const getPharmacyImage = (ph) => {
+        const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+        if (ph.profileImage) {
+            // Replace backslashes with forward slashes
+            let cleanPath = ph.profileImage.replace(/\\/g, '/');
+            // Remove 'public/' prefix from path if returned by backend
+            cleanPath = cleanPath.replace(/^public\//, '');
+            // Prevent double-slashes by ensuring path doesn't start with a slash
+            if (cleanPath.startsWith('/')) {
+                cleanPath = cleanPath.substring(1);
+            }
+            return `${BASE_URL}/${cleanPath}`;
+        }
+
+        if (ph.documents?.pharmacyImages?.length > 0) {
+            let cleanPath = ph.documents.pharmacyImages[0].replace(/\\/g, '/');
+            cleanPath = cleanPath.replace(/^public\//, '');
+            if (cleanPath.startsWith('/')) {
+                cleanPath = cleanPath.substring(1);
+            }
+            return `${BASE_URL}/${cleanPath}`;
+        }
+
+        // Return static high-quality fallback image if none exist
+        return "https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=400&auto=format&fit=crop";
+    };
+
+    // Stable mock ratings mapping for clean layout aesthetics
+    const getPharmacyRating = (index) => {
+        const ratings = [4.9, 4.8, 4.7, 4.6];
+        return ratings[index % ratings.length];
+    };
 
     return (
         <main className="min-h-screen lg:h-screen lg:overflow-hidden flex flex-col bg-[#f8fbff] pt-6 pb-6 lg:pb-8 antialiased">
@@ -80,7 +125,9 @@ const PharmacyPage = () => {
                         </h1>
                         <div className="flex flex-wrap items-center gap-3 mt-2">
                             <p className="text-slate-500 font-medium text-sm">
-                                {selectedPharmacy ? `Browsing products from ${selectedPharmacy.location}` : "Order genuine medicines from verified partners"}
+                                {selectedPharmacy
+                                    ? `Browsing products from ${selectedPharmacy.city || selectedPharmacy.state}`
+                                    : "Order genuine medicines from verified partners"}
                             </p>
                             {selectedPharmacy && (
                                 <button
@@ -117,10 +164,14 @@ const PharmacyPage = () => {
 
                         {/* Pharmacy List with Scrollbars Hidden */}
                         <div className="flex lg:flex-col overflow-x-auto lg:overflow-y-auto lg:overflow-x-visible gap-4 pb-4 lg:pb-2 lg:flex-1 lg:pr-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+
                             {/* "All Products" Toggle */}
                             <button
                                 onClick={() => setSelectedPharmacy(null)}
-                                className={`flex-shrink-0 w-72 lg:w-full flex items-center gap-4 p-4 rounded-3xl border-2 transition-all duration-300 shrink-0 ${!selectedPharmacy ? 'bg-[#3d3f96] border-[#3d3f96] text-white shadow-xl shadow-indigo-100' : 'bg-white border-white text-slate-600 hover:border-slate-200 shadow-sm'}`}
+                                className={`flex-shrink-0 w-72 lg:w-full flex items-center gap-4 p-4 rounded-3xl border-2 transition-all duration-300 shrink-0 ${!selectedPharmacy
+                                    ? 'bg-[#3d3f96] border-[#3d3f96] text-white shadow-xl shadow-indigo-100'
+                                    : 'bg-white border-white text-slate-600 hover:border-slate-200 shadow-sm'
+                                    }`}
                             >
                                 <div className={`p-2 rounded-xl ${!selectedPharmacy ? 'bg-white/20' : 'bg-slate-100'}`}>
                                     <LayoutGrid size={20} />
@@ -128,44 +179,99 @@ const PharmacyPage = () => {
                                 <span className="font-bold text-sm whitespace-nowrap">All Medicines</span>
                             </button>
 
-                            {pharmacies.map((pharmacy) => (
-                                <button
-                                    key={pharmacy.id}
-                                    onClick={() => setSelectedPharmacy(pharmacy)}
-                                    className={`flex-shrink-0 w-72 lg:w-full flex flex-col gap-3 p-4 rounded-3xl border-2 transition-all duration-300 text-left shrink-0 ${selectedPharmacy?.id === pharmacy.id ? 'bg-[#3d3f96] border-[#3d3f96] text-white shadow-xl shadow-indigo-100' : 'bg-white border-white text-slate-600 hover:border-slate-200 shadow-sm'}`}
-                                >
-                                    {/* Header Info: Image, Name, Rating */}
-                                    <div className="flex items-start gap-3 w-full">
-                                        <div className="w-12 h-12 rounded-2xl overflow-hidden shrink-0 border-2 border-white/20">
-                                            <img src={pharmacy.image} alt={pharmacy.name} className="w-full h-full object-cover" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-bold text-sm truncate">{pharmacy.name}</p>
-                                            <div className="flex items-center gap-1 mt-0.5">
-                                                <Star size={10} className="fill-yellow-400 text-yellow-400" />
-                                                <span className={`text-[10px] font-bold ${selectedPharmacy?.id === pharmacy.id ? "text-blue-100" : "text-slate-400"}`}>{pharmacy.rating}</span>
-                                                <span className="mx-1 text-[10px] opacity-30">•</span>
-                                                <span className={`text-[10px] font-medium truncate ${selectedPharmacy?.id === pharmacy.id ? "text-indigo-150" : "text-slate-400"}`}>{pharmacy.location.split(',')[0]}</span>
+                            {/* LOADING STATE - SKELETONS */}
+                            {loading && (
+                                [1, 2, 3].map((num) => (
+                                    <div key={num} className="flex-shrink-0 w-72 lg:w-full bg-white border border-slate-100 p-4 rounded-3xl animate-pulse space-y-3">
+                                        <div className="flex gap-3">
+                                            <div className="w-12 h-12 bg-slate-100 rounded-2xl" />
+                                            <div className="flex-1 space-y-2">
+                                                <div className="h-4 bg-slate-100 rounded w-2/3" />
+                                                <div className="h-3 bg-slate-100 rounded w-1/2" />
                                             </div>
                                         </div>
                                     </div>
+                                ))
+                            )}
 
-                                    {/* Divider */}
-                                    <div className={`h-[1px] w-full ${selectedPharmacy?.id === pharmacy.id ? 'bg-white/15' : 'bg-slate-100'}`} />
+                            {/* ERROR STATE */}
+                            {!loading && error && (
+                                <div className="p-4 bg-rose-50 border border-rose-100 rounded-3xl text-center">
+                                    <AlertCircle className="mx-auto text-rose-500 mb-2" size={20} />
+                                    <p className="text-xs font-bold text-slate-600">Failed to load local partners</p>
+                                </div>
+                            )}
 
-                                    {/* Simplified Metadata Block */}
-                                    <div className="space-y-1 w-full text-[11px]">
-                                        <div className="flex items-center gap-2">
-                                            <Clock size={12} className={selectedPharmacy?.id === pharmacy.id ? "text-indigo-200" : "text-slate-400"} />
-                                            <span className={`font-medium ${selectedPharmacy?.id === pharmacy.id ? "text-indigo-100" : "text-slate-500"}`}>{pharmacy.hours}</span>
+                            {/* EMPTY STATE */}
+                            {!loading && !error && pharmacies.length === 0 && (
+                                <div className="p-6 bg-slate-50 rounded-3xl text-center border-2 border-dashed border-slate-100">
+                                    <p className="text-xs font-bold text-slate-500">No partner stores found nearby</p>
+                                </div>
+                            )}
+
+                            {/* POPULATED STORE CARDS */}
+                            {!loading && !error && pharmacies.map((pharmacy, index) => {
+                                const rating = getPharmacyRating(index);
+                                const isSelected = selectedPharmacy?._id === pharmacy._id;
+                                const is24hr = pharmacy.is24x7 ?? false;
+                                const openStatusString = pharmacy.openStatus || (is24hr ? "Open 24 Hours" : "Open Now");
+                                const deliveryDetails = pharmacy.isHomeDeliveryAvailable ? "Home Delivery Available" : "Store Pickup Only";
+                                const formattedLocation = [pharmacy.city, pharmacy.state].filter(Boolean).join(', ');
+
+                                return (
+                                    <button
+                                        key={pharmacy._id || index}
+                                        onClick={() => setSelectedPharmacy(pharmacy)}
+                                        className={`flex-shrink-0 w-72 lg:w-full flex flex-col gap-3 p-4 rounded-3xl border-2 transition-all duration-300 text-left shrink-0 ${isSelected
+                                            ? 'bg-[#3d3f96] border-[#3d3f96] text-white shadow-xl shadow-indigo-100'
+                                            : 'bg-white border-white text-slate-600 hover:border-slate-200 shadow-sm'
+                                            }`}
+                                    >
+                                        {/* Header Info: Image, Name, Rating */}
+                                        <div className="flex items-start gap-3 w-full">
+                                            <div className="w-12 h-12 rounded-2xl overflow-hidden shrink-0 border-2 border-white/20 bg-slate-50">
+                                                <img
+                                                    src={getPharmacyImage(pharmacy)}
+                                                    alt={pharmacy.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-bold text-sm truncate">{pharmacy.name}</p>
+                                                <div className="flex items-center gap-1 mt-0.5">
+                                                    <Star size={10} className="fill-yellow-400 text-yellow-400" />
+                                                    <span className={`text-[10px] font-bold ${isSelected ? "text-blue-100" : "text-slate-400"}`}>
+                                                        {rating}
+                                                    </span>
+                                                    <span className="mx-1 text-[10px] opacity-30">•</span>
+                                                    <span className={`text-[10px] font-medium truncate ${isSelected ? "text-indigo-150" : "text-slate-400"}`}>
+                                                        {pharmacy.distance ? `${pharmacy.distance} km away` : formattedLocation}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <Truck size={12} className={selectedPharmacy?.id === pharmacy.id ? "text-indigo-200" : "text-slate-400"} />
-                                            <span className={`font-medium truncate ${selectedPharmacy?.id === pharmacy.id ? "text-indigo-100" : "text-slate-500"}`}>{pharmacy.delivery}</span>
+
+                                        {/* Divider */}
+                                        <div className={`h-[1px] w-full ${isSelected ? 'bg-white/15' : 'bg-slate-100'}`} />
+
+                                        {/* Simplified Metadata Block */}
+                                        <div className="space-y-1 w-full text-[11px]">
+                                            <div className="flex items-center gap-2">
+                                                <Clock size={12} className={isSelected ? "text-indigo-200" : "text-slate-400"} />
+                                                <span className={`font-medium ${isSelected ? "text-indigo-100" : "text-slate-500"}`}>
+                                                    {openStatusString}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Truck size={12} className={isSelected ? "text-indigo-200" : "text-slate-400"} />
+                                                <span className={`font-medium truncate ${isSelected ? "text-indigo-100" : "text-slate-500"}`}>
+                                                    {deliveryDetails}
+                                                </span>
+                                            </div>
                                         </div>
-                                    </div>
-                                </button>
-                            ))}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </aside>
 
@@ -173,14 +279,14 @@ const PharmacyPage = () => {
                     <div className="flex-1 lg:h-full lg:overflow-y-auto lg:pr-2 pb-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         <AnimatePresence mode="wait">
                             <motion.div
-                                key={selectedPharmacy ? selectedPharmacy.id : 'all'}
+                                key={selectedPharmacy ? selectedPharmacy._id : 'all'}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
                                 transition={{ duration: 0.3 }}
                             >
                                 <AllMedicines
-                                    pharmacyId={selectedPharmacy?.id}
+                                    pharmacyId={selectedPharmacy?._id}
                                     searchQuery={searchQuery}
                                 />
                             </motion.div>
@@ -192,7 +298,7 @@ const PharmacyPage = () => {
 
             {/* --- SEPARATE PHARMACY DETAIL MODAL --- */}
             <PharmacyDetail
-                pharmacyId={selectedPharmacy?.id}
+                pharmacyId={selectedPharmacy?._id}
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
             />

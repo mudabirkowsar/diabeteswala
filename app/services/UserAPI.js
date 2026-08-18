@@ -188,7 +188,59 @@ const UserAPI = {
     getAllLocalVideos: async () => {
         const response = await publicApi.get('/upload-videos/getVideo')
         return response.data;
-    }
+    },
+
+    //Pharmacy APIS 
+    // ===================================================
+    // --- USER PHARMACY DISCOVERY & CATALOG APIS -------
+    // ===================================================
+    getAllProducts: async (params) => {
+        // params: { page, category, subCategory }
+        const response = await publicApi.get('/user/pharmacy/standard-list', { params });
+        return response.data;
+    },
+
+    getNonPrescriptionMedicinse: async (params) => {
+        const response = await publicApi.get('/user/pharmacy/non-prescription-list', { params });
+        return response.data
+    },
+
+
+    getProductFullDetail: async (productId, params) => {
+        // vendorId example: "69df18ad0cf05769b93d6761"
+        // params example: { lat: 30.7333, lng: 76.7233 }
+        const response = await publicApi.get(`/user/pharmacy/medicine-details/${productId}`, { params });
+        return response.data;
+    },
+
+    getAllPharmacies: async (searchPayload) => {
+        // searchPayload: { lat, lng, search, city, state }
+        const response = await publicApi.post('/user/pharmacy/list', searchPayload);
+        return response.data;
+    },
+
+    getPharmacyProfileDetails: async (id) => {
+        // id: Pharmacy document identifier (_id)
+        const response = await publicApi.get(`/user/pharmacy/details/${id}`);
+        return response.data;
+    },
+
+    getMedicineByCategory: async (params) => {
+        // params: { category, subCategory, page }
+        const response = await publicApi.get('/user/pharmacy/category-details', { params });
+        return response.data;
+    },
+
+    getPharmacySuggestions: async (params) => {
+        // params: { query }
+        const response = await publicApi.get('/user/pharmacy/pharmacy-suggestions', { params });
+        return response.data;
+    },
+
+    getMedicineCategories: async () => {
+        const response = await publicApi.get('/user/pharmacy/categories');
+        return response.data;
+    },
 
 }
 export default UserAPI;
