@@ -64,6 +64,7 @@ export default function Sidebar({ sidebarOpen }) {
     const pathname = usePathname();
     const [openMenu, setOpenMenu] = useState(null);
     const [isHovering, setIsHovering] = useState(false);
+    const [openTiffinMenu, setOpenTiffinMenu] = useState(false)
 
     const toggleMenu = (menu) => {
         setOpenMenu(openMenu === menu ? null : menu);
@@ -89,6 +90,11 @@ export default function Sidebar({ sidebarOpen }) {
 
         if (pathname.includes("/vendors/lab")) {
             setOpenMenu("vendors");
+        }
+
+        if (pathname.includes("/vendors/food/tiffen")) {
+            setOpenMenu("vendors/food");
+            setOpenTiffinMenu(true)
         }
     }, [pathname]);
 
@@ -287,7 +293,7 @@ export default function Sidebar({ sidebarOpen }) {
                 )}
 
                 {/* Manage Food */}
-                {hasAccess() && (
+                  {hasAccess() && (
                     <>
                         <div
                             className={`${rowBase} ${isParentActive("/admin/food") ? rowActive : rowInactive}`}
@@ -314,10 +320,64 @@ export default function Sidebar({ sidebarOpen }) {
                                 <Link href="/admin/food/deliverycharge" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/deliverycharge") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/deliverycharge") ? theme.primary : "#D1D5DB" }} /> Delivery Charges
                                 </Link>
+                                <Link href="/admin/food/combo-offers" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/combo-offers") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/combo-offers") ? theme.primary : "#D1D5DB" }} /> Combo Offers
+                                </Link>
+                                <Link href="/admin/food/promotions" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/promotions") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/promotions") ? theme.primary : "#D1D5DB" }} /> Promotions
+                                </Link>
+                                <Link href="/admin/food/today-special" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/today-special") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/today-special") ? theme.primary : "#D1D5DB" }} /> Today's Special
+                                </Link>
+                                 <Link href="/admin/food/managebanner" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/managebanner") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/managebanner") ? theme.primary : "#D1D5DB" }} /> Manage Banners
+                                </Link>
+ 
+ 
+                                {/* Interactive Expandable Tiffin Sub-Dropdown */}
+                                <div
+                                    className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center justify-between cursor-pointer ${isParentActive("/admin/food/tiffin") ? "bg-[#3D3F96]/[0.04] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenTiffinMenu(!openTiffinMenu);
+                                    }}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isParentActive("/admin/food/tiffin") ? theme.primary : "#D1D5DB" }} />
+                                        Tiffin Service
+                                    </div>
+                                    {openTiffinMenu
+                                        ? <FaChevronDown className="text-[9px] text-[#3D3F96] transition-transform duration-200 rotate-90 shrink-0" />
+                                        : <FaChevronRight className="text-[9px] text-gray-400 shrink-0" />
+                                    }
+                                </div>
+                                {openTiffinMenu && (
+                                    <div className="flex flex-col gap-1 pl-4 mt-1 border-l border-gray-150 transition-all duration-200">
+                                        <Link href="/admin/food/tiffin/dashboard" className={`p-2 px-3 rounded-lg text-xs transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/tiffin/dashboard") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                            Dashboard
+                                        </Link>
+                                        <Link href="/admin/food/tiffin/subscribers" className={`p-2 px-3 rounded-lg text-xs transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/tiffin/subscribers") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                            Subscribers
+                                        </Link>
+                                        <Link href="/admin/food/tiffin/plans" className={`p-2 px-3 rounded-lg text-xs transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/tiffin/plans") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                            Plans
+                                        </Link>
+                                        <Link href="/admin/food/tiffin/requests" className={`p-2 px-3 rounded-lg text-xs transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/tiffin/requests") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                            Requests
+                                        </Link>
+                                        <Link href="/admin/food/tiffin/payments" className={`p-2 px-3 rounded-lg text-xs transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/tiffin/payments") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                            Payments
+                                        </Link>
+                                        <Link href="/admin/food/tiffin/reports" className={`p-2 px-3 rounded-lg text-xs transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/tiffin/reports") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                            Reports
+                                        </Link>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </>
                 )}
+ 
                 {/* Manage Clinics */}
                 {hasAccess() && (
                     <>

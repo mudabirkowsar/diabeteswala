@@ -103,7 +103,7 @@ const Navbar = () => {
     { name: 'Clinic', href: '/clinic' },
     { name: 'Labs', href: '/labs' },
     { name: 'Pharmacy', href: '/pharmacy' },
-    { name: 'Food & Nutrition', href: '/food-nutrition' },
+    { name: 'Food & Nutrition', href: '/food' },
     { name: 'Shop', href: '/shop', isShop: true },
     { name: 'Care Program', href: '/care-program' },
     { name: 'Science', href: '/science' },

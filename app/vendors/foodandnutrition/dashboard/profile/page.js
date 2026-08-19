@@ -1,423 +1,363 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import {
-    User, Mail, Phone, Building, Award, ShieldCheck, MapPin,
-    CreditCard, Clock, Calendar, Image, FileText, Loader2, CheckCircle2,
-    AlertCircle, Globe, ToggleLeft, ToggleRight, ArrowRight, X
-} from 'lucide-react';
-import { useNotification } from '../../../../context/NotificationContext';
-import ClinicAPI from '../../../../services/ClinicAPI'; // Adjust path based on your structure
-import { useRouter } from 'next/navigation';
 
-export default function ClinicProfilePage() {
-    const router = useRouter()
+import React, { useState } from 'react';
 
-    // --- Safe Context Extraction & Fallback ---
-    const notificationContext = useNotification();
-    const [localAlert, setLocalAlert] = useState(null); // Fallback state if context is undefined
+export default function ProfilePage() {
+  // Editable States
+  const [restaurantName, setRestaurantName] = useState('Diabeteswala Food Central');
+  const [description, setDescription] = useState('Specialized kitchen preparing meals with precise glycemic monitoring. Low GI, diabetic-friendly, customized calorie plans.');
+  const [secondaryPhone, setSecondaryPhone] = useState('+91 91234 56789'); // Editable secondary phone
+  const [address, setAddress] = useState('104, Active Kitchen Wing, Bellandur, Bengaluru - 560103');
+  const [latitude, setLatitude] = useState(12.9374);
+  const [longitude, setLongitude] = useState(77.6874);
 
-    const triggerNotification = (message, type = 'info') => {
-        if (notificationContext && typeof notificationContext.showNotification === 'function') {
-            notificationContext.showNotification(message, type);
-        } else {
-            // Local self-contained alert system when provider is missing
-            setLocalAlert({ message, type });
-            setTimeout(() => setLocalAlert(null), 4000);
-        }
-    };
+  // Simulated Media states
+  const [logoFileName, setLogoFileName] = useState('');
+  const [bannerFileName, setBannerFileName] = useState('');
+  const [isSaved, setIsSaved] = useState(false);
 
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [profile, setProfile] = useState(null);
-
-    const fetchProfile = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const response = await ClinicAPI.getClinicProfile();
-            if (response.success && response.data) {
-                setProfile(response.data);
-            } else {
-                setError("Failed to fetch clinic profile data.");
-            }
-        } catch (err) {
-            const errMsg = err.response?.data?.message || "An error occurred while loading your profile.";
-            setError(errMsg);
-            triggerNotification(errMsg, "error");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchProfile();
-    }, []);
-
-    // Format Date Utility
-    const formatDate = (dateString) => {
-        if (!dateString) return "N/A";
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
-
-    // Helper for Badges
-    const getVerificationBadge = (status) => {
-        const s = status || 'Incomplete';
-        if (s === 'Approved') {
-            return (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-100">
-                    <CheckCircle2 size={13} /> Approved
-                </span>
-            );
-        }
-        if (s === 'Pending') {
-            return (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-700 border border-amber-100">
-                    <Clock size={13} /> Pending Review
-                </span>
-            );
-        }
-        if (s === 'Rejected') {
-            return (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-rose-50 text-rose-700 border border-rose-100">
-                    <AlertCircle size={13} /> Rejected
-                </span>
-            );
-        }
-        return (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-slate-50 text-slate-700 border border-slate-100">
-                <AlertCircle size={13} /> Incomplete
-            </span>
-        );
-    };
-
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center select-none">
-                <Loader2 className="animate-spin text-[#3d3f96]" size={42} />
-                <p className="text-xs font-black text-slate-400 mt-4 uppercase tracking-widest">Loading Clinic Profile...</p>
-            </div>
-        );
+  // System Locked / Read-Only Data Mock
+  const systemData = {
+    primaryPhone: "+91 99887 76655",
+    primaryEmail: "payouts@diabeteswala.com",
+    gstNumber: "07AAAAA1111A1Z1",
+    fssaiNumber: "10021011000124",
+    panNumber: "ABCDE1234F",
+    openingTime: "09:00 AM",
+    closingTime: "10:00 PM",
+    deliveryRadius: 5, // in km
+    packagingCharge: 15, // in INR
+    deliveryCharge: 40, // in INR
+    bankAccount: {
+      bankName: "ICICI Bank",
+      accountNumber: "•••• •••• 7890",
+      accountType: "Savings"
     }
+  };
 
-    if (error || !profile) {
-        return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-[2.5rem] shadow-xl border border-gray-100 p-8 max-w-md w-full text-center">
-                    <AlertCircle className="text-rose-500 mx-auto mb-4" size={48} />
-                    <h3 className="text-lg font-black text-gray-800">Failed to Load Profile</h3>
-                    <p className="text-xs text-gray-400 mt-2 leading-relaxed">{error || "Check your network connection."}</p>
-                    <button
-                        onClick={fetchProfile}
-                        className="w-full mt-6 py-4 rounded-2xl bg-[#3d3f96] hover:bg-[#2d2f75] text-white text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-100"
-                    >
-                        Try Again
-                    </button>
-                </div>
+  const handleSave = (e) => {
+    e.preventDefault();
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 3000);
+  };
+
+  return (
+    <div className="max-w-[1400px] mx-auto space-y-8 animate-fade-in py-4 pb-12">
+      
+      {/* Header section */}
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Restaurant Profile</h1>
+        <p className="text-sm text-slate-500 font-medium mt-1">Manage your storefront assets and geolocation. System parameters are locked by administrators.</p>
+      </div>
+
+      {/* Profile Media Header (Editable Banner & Logo) */}
+      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden relative">
+        {/* Banner Mock */}
+        <div className="h-48 sm:h-64 bg-slate-100 relative group overflow-hidden">
+          <div className="absolute inset-0 bg-slate-900/10 group-hover:bg-slate-900/30 transition-all duration-200" />
+          <div className="absolute top-4 right-4 z-10">
+            <label className="cursor-pointer px-4 py-2 bg-white/95 backdrop-blur hover:bg-white text-slate-700 font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 border border-slate-100">
+              <ImageIcon className="w-4 h-4 text-slate-500" />
+              {bannerFileName ? 'Change Banner' : 'Upload Banner'}
+              <input 
+                type="file" 
+                className="hidden" 
+                onChange={(e) => setBannerFileName(e.target.files[0]?.name || '')}
+              />
+            </label>
+          </div>
+          {bannerFileName && (
+            <div className="absolute bottom-4 right-4 bg-slate-900/60 text-white text-[10px] px-2 py-1 rounded font-mono">
+              Selected: {bannerFileName}
             </div>
-        );
-    }
-
-    return (
-        <div className="min-h-screen py-0 px-4 sm:px-6 lg:px-8 select-none antialiased relative">
-
-            {/* Local Fallback Alert UI */}
-            {localAlert && (
-                <div className={`fixed top-6 right-6 z-50 p-4 rounded-2xl shadow-xl border text-xs font-black flex items-center gap-3 animate-bounce ${localAlert.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' :
-                        localAlert.type === 'error' ? 'bg-rose-50 border-rose-100 text-rose-800' :
-                            localAlert.type === 'warning' ? 'bg-amber-50 border-amber-100 text-amber-800' :
-                                'bg-slate-50 border-slate-100 text-slate-800'
-                    }`}>
-                    <span>{localAlert.message}</span>
-                    <button type="button" onClick={() => setLocalAlert(null)} className="text-slate-400 hover:text-slate-600">
-                        <X size={14} />
-                    </button>
-                </div>
-            )}
-
-            <div className="max-w-5xl mx-auto space-y-8">
-
-                {/* 1. HERO/HEADER BANNER COMPONENT */}
-                <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden relative">
-                    <div className="h-44 w-full bg-gradient-to-r from-[#3d3f96] to-[#5558bc] relative">
-                        {profile.posterimage && (
-                            <img src={profile.posterimage} alt="Poster" className="w-full h-full object-cover" />
-                        )}
-                        <div className="absolute right-6 top-6 flex items-center gap-2">
-                            {profile.isOnline ? (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500 text-white shadow-lg shadow-emerald-500/20">
-                                    <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping" /> Online
-                                </span>
-                            ) : (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-400 text-white">
-                                    Offline
-                                </span>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="p-6 md:p-10 -mt-16 flex flex-col md:flex-row items-center md:items-end justify-between gap-6 border-b border-slate-50">
-                        <div className="flex flex-col md:flex-row items-center md:items-end gap-5 text-center md:text-left">
-                            <div className="w-28 h-28 rounded-[2rem] bg-white border-4 border-white shadow-md overflow-hidden relative shrink-0">
-                                {profile.image ? (
-                                    <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300">
-                                        <Building size={42} />
-                                    </div>
-                                )}
-                            </div>
-                            <div className="space-y-1">
-                                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
-                                    <h1 className="text-2xl font-black text-gray-800">{profile.name}</h1>
-                                    {getVerificationBadge(profile.Accountverify)}
-                                </div>
-                                <p className="text-sm font-bold text-slate-400">{profile.clinicName || "Workspace Name Not Set"}</p>
-                                <span className="inline-block text-[10px] font-black uppercase tracking-widest text-[#3d3f96] bg-indigo-50 px-2.5 py-1 rounded-lg">
-                                    {profile.type} Workspace
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-slate-50/50 grid grid-cols-2 md:grid-cols-4 divide-x divide-slate-100 text-center py-4">
-                        <div>
-                            <span className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Profile Status</span>
-                            <span className="text-xs font-black text-slate-700 block mt-1">{profile.profileStatus || "Incomplete"}</span>
-                        </div>
-                        <div>
-                            <span className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Consultation Fee</span>
-                            <span className="text-xs font-black text-emerald-600 block mt-1">₹{profile.amount || 0}</span>
-                        </div>
-                        <div>
-                            <span className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Experience</span>
-                            <span className="text-xs font-black text-slate-700 block mt-1">{profile.experience || "Not Provided"}</span>
-                        </div>
-                        <div>
-                            <span className="text-[9px] uppercase font-black text-slate-400 tracking-wider">System Role</span>
-                            <span className="text-xs font-black text-slate-700 block mt-1 capitalize">{profile.role || "Clinic"}</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 2. REJECTION NOTICE (IF REJECTED) */}
-                {profile.Accountverify === 'Rejected' && (
-                    <div className="bg-rose-50 border border-rose-100 rounded-3xl p-6 flex gap-4 text-rose-800">
-                        <AlertCircle className="shrink-0 text-rose-600 mt-1" size={20} />
-                        <div className="space-y-1">
-                            <h4 className="font-black text-sm">Application Rejection Notice</h4>
-                            <p className="text-xs font-semibold text-rose-700/90 leading-relaxed">
-                                {profile.rejectReason || "Your document submissions were blurry or expired. Please upload valid credentials again."}
-                            </p>
-                        </div>
-                    </div>
-                )}
-
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-                    {/* LEFT COLUMN: GENERAL, TIMINGS, GEOGRAPHY */}
-                    <div className="lg:col-span-7 space-y-8">
-
-                        {/* GENERAL INFORMATION */}
-                        <div className="bg-white rounded-[2rem] p-6 md:p-10 shadow-sm border border-gray-100 space-y-6">
-                            <div className="flex items-center gap-2 border-b border-gray-50 pb-4">
-                                <Building className="text-[#3d3f96]" size={18} />
-                                <h3 className="text-base font-black text-gray-800">Clinic General Information</h3>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <div className="space-y-1">
-                                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block">Email Address</span>
-                                    <div className="flex items-center gap-2 text-xs font-black text-slate-700">
-                                        <Mail size={13} className="text-slate-400" />
-                                        <span>{profile.email}</span>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-1">
-                                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block">Phone Number</span>
-                                    <div className="flex items-center gap-2 text-xs font-black text-slate-700">
-                                        <Phone size={13} className="text-slate-400" />
-                                        <span>{profile.phoneNumber}</span>
-                                    </div>
-                                </div>
-
-                                {profile.alternatePhoneNumber && (
-                                    <div className="space-y-1">
-                                        <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block">Alternate Phone</span>
-                                        <div className="flex items-center gap-2 text-xs font-black text-slate-700">
-                                            <Phone size={13} className="text-slate-400" />
-                                            <span>{profile.alternatePhoneNumber}</span>
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="space-y-1">
-                                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block">Account Status</span>
-                                    <div className="flex items-center gap-2 text-xs font-black">
-                                        {profile.isActive ? (
-                                            <span className="text-emerald-600 flex items-center gap-1"><ToggleRight size={16} /> Active Account</span>
-                                        ) : (
-                                            <span className="text-slate-400 flex items-center gap-1"><ToggleLeft size={16} /> Inactive</span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {profile.About && (
-                                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
-                                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block mb-2">About the Clinic</span>
-                                    <p className="text-xs font-semibold text-slate-600 leading-relaxed">{profile.About}</p>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* ADDRESS & GEOGRAPHICAL DETAILS */}
-                        <div className="bg-white rounded-[2rem] p-6 md:p-10 shadow-sm border border-gray-100 space-y-6">
-                            <div className="flex items-center gap-2 border-b border-gray-50 pb-4">
-                                <MapPin className="text-[#3d3f96]" size={18} />
-                                <h3 className="text-base font-black text-gray-800">Geographical Location</h3>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                                <div className="space-y-1">
-                                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block">City</span>
-                                    <span className="text-xs font-black text-slate-700">{profile.city || "Mohali"}</span>
-                                </div>
-                                <div className="space-y-1">
-                                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block">State</span>
-                                    <span className="text-xs font-black text-slate-700">{profile.state || "Punjab"}</span>
-                                </div>
-                                <div className="space-y-1">
-                                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block">Country</span>
-                                    <span className="text-xs font-black text-slate-700">{profile.country || "India"}</span>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-2">
-                                <div className="space-y-1 sm:col-span-2">
-                                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block">Physical Address</span>
-                                    <span className="text-xs font-black text-slate-700 leading-normal">{profile.address || "No Specific Street Address Setup"}</span>
-                                </div>
-                                <div className="space-y-1">
-                                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block">Zip Code</span>
-                                    <span className="text-xs font-black text-slate-700">{profile.zipCode || "N/A"}</span>
-                                </div>
-                            </div>
-
-                            {/* Geo Location coordinates block */}
-                            {profile.location && (
-                                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                    <div className="flex items-center gap-2.5">
-                                        <Globe className="text-slate-400" size={16} />
-                                        <span className="text-[11px] font-black uppercase text-slate-400 tracking-wider">Map Coordinates</span>
-                                    </div>
-                                    <div className="flex items-center gap-4 text-xs font-bold text-slate-600">
-                                        <span>Lat: {profile.location.lat || 0}</span>
-                                        <span>Lng: {profile.location.lng || 0}</span>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                    </div>
-
-                    {/* RIGHT COLUMN: BANK, REGISTRATION, GALLERY */}
-                    <div className="lg:col-span-5 space-y-8">
-                        <div className="bg-white rounded-[2rem] p-6 md:p-10 shadow-sm border border-gray-100 space-y-6">
-                            <div className="flex items-center gap-2 border-b border-gray-50 pb-4">
-                                <Award className="text-[#3d3f96]" size={18} />
-                                <h3 className="text-base font-black text-gray-800">Verification Credentials</h3>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center text-xs">
-                                    <span className="font-bold text-slate-400">License Number</span>
-                                    <span className="font-black text-slate-700">{profile.licenseNumber || "Not Set"}</span>
-                                </div>
-                                <div className="flex justify-between items-center text-xs">
-                                    <span className="font-bold text-slate-400">Medical Council Name</span>
-                                    <span className="font-black text-slate-700">{profile.councilName || "Not Set"}</span>
-                                </div>
-                                <div className="flex justify-between items-center text-xs">
-                                    <span className="font-bold text-slate-400">Council Registration No</span>
-                                    <span className="font-black text-slate-700">{profile.councilNumber || "Not Set"}</span>
-                                </div>
-                                {profile.regId && (
-                                    <div className="flex justify-between items-center text-xs">
-                                        <span className="font-bold text-slate-400">Internal Registration ID</span>
-                                        <span className="font-black text-slate-700">{profile.regId}</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* ATTACHMENT GALLERY (CLINIC IMAGES & DOCUMENT PREVIEWS) */}
-                        <div className="bg-white rounded-[2rem] p-6 md:p-10 shadow-sm border border-gray-100 space-y-6">
-                            <div className="flex items-center gap-2 border-b border-gray-50 pb-4">
-                                <Image className="text-[#3d3f96]" size={18} />
-                                <h3 className="text-base font-black text-gray-800">Verification Galleries</h3>
-                            </div>
-
-                            {/* Clinic Images Gallery */}
-                            <div className="space-y-3">
-                                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Workspace Photos</span>
-                                {profile.clinicImages?.length > 0 ? (
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {profile.clinicImages.map((src, index) => (
-                                            <a key={index} href={src} target="_blank" rel="noreferrer" className="aspect-square bg-slate-50 border border-slate-100 rounded-xl overflow-hidden hover:opacity-85 transition-all">
-                                                <img src={src} alt="Clinic Space" className="w-full h-full object-cover" />
-                                            </a>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-xs text-slate-300 font-bold italic">No workspace photos uploaded</p>
-                                )}
-                            </div>
-
-                            {/* Licensing Files list */}
-                            <div className="space-y-3 pt-2">
-                                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">License Document</span>
-                                {profile.licenseDocument?.length > 0 ? (
-                                    <div className="space-y-2">
-                                        {profile.licenseDocument.map((src, index) => (
-                                            <a key={index} href={src} target="_blank" rel="noreferrer" className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 hover:border-indigo-100 rounded-2xl text-xs font-bold text-slate-700 transition-all">
-                                                <div className="flex items-center gap-2.5 truncate">
-                                                    <FileText className="text-[#3d3f96]" size={14} />
-                                                    <span className="truncate">licence_cert_v{index + 1}.pdf</span>
-                                                </div>
-                                                <ArrowRight size={14} className="text-slate-400 shrink-0" />
-                                            </a>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-xs text-slate-300 font-bold italic">No licensing files uploaded</p>
-                                )}
-                            </div>
-                        </div>
-
-                    </div>
-
-                </div>
-
-                {/* FOOTER SYSTEM METADATA LOG */}
-                <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4 text-center md:text-left">
-                    <div>
-                        <span className="text-[9px] uppercase font-black text-slate-400 tracking-wider block">Created On</span>
-                        <span className="text-xs font-bold text-slate-500 mt-1 block">{formatDate(profile.createdAt)}</span>
-                    </div>
-                    <div>
-                        <span className="text-[9px] uppercase font-black text-slate-400 tracking-wider block">Last Updated</span>
-                        <span className="text-xs font-bold text-slate-500 mt-1 block">{formatDate(profile.updatedAt)}</span>
-                    </div>
-                </div>
-
-            </div>
+          )}
         </div>
-    );
+
+        {/* Logo Placement Container */}
+        <div className="px-6 sm:px-8 pb-6 -mt-16 flex flex-col sm:flex-row sm:items-end justify-between gap-4 relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-end gap-5">
+            {/* Logo Circle Mock */}
+            <div className="w-32 h-32 rounded-2xl bg-white border border-slate-200 shadow-md flex items-center justify-center relative overflow-hidden group">
+              <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/30 transition-all duration-200 flex items-center justify-center">
+                <label className="cursor-pointer p-2 rounded-lg bg-white/90 shadow opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <UploadIcon className="w-5 h-5 text-slate-600" />
+                  <input 
+                    type="file" 
+                    className="hidden" 
+                    onChange={(e) => setLogoFileName(e.target.files[0]?.name || '')}
+                  />
+                </label>
+              </div>
+              <div className="text-center p-2">
+                <div className="w-10 h-10 rounded-full bg-[#3D3F96]/10 text-[#3D3F96] flex items-center justify-center font-bold text-xs mx-auto mb-1">
+                  Logo
+                </div>
+                <span className="text-[10px] text-slate-400 font-semibold truncate block max-w-[100px]">{logoFileName || 'No Logo'}</span>
+              </div>
+            </div>
+
+            {/* Restaurant Active Title details */}
+            <div className="pb-2 space-y-1">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight">{restaurantName}</h2>
+              <p className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+                <MapPinIcon className="w-3.5 h-3.5 text-slate-400" />
+                {address}
+              </p>
+            </div>
+          </div>
+
+          {/* Form Trigger Save button */}
+          <button
+            onClick={handleSave}
+            className="px-6 py-3.5 bg-[#3D3F96] hover:bg-[#3D3F96]/95 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-[#3D3F96]/10 flex items-center gap-2 self-start sm:self-auto"
+          >
+            <SaveIcon className="w-4 h-4 stroke-[2.5]" />
+            {isSaved ? 'Changes Saved!' : 'Save Profile Changes'}
+          </button>
+        </div>
+      </div>
+
+      {/* Form Details Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        
+        {/* Left Columns: Editable Geolocation & Basic Info (2/3 width) */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+            <div className="border-b border-slate-100 pb-4">
+              <h3 className="font-bold text-slate-800 text-base uppercase tracking-tight">Basic Storefront Information</h3>
+              <p className="text-xs text-slate-400 mt-1">Information visible to clients on the primary search interface.</p>
+            </div>
+
+            {/* Store Name Input */}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Storefront Name</label>
+              <input
+                type="text"
+                required
+                value={restaurantName}
+                onChange={(e) => setRestaurantName(e.target.value)}
+                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#3D3F96] focus:ring-4 focus:ring-[#3D3F96]/10 transition-all duration-200"
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Description</label>
+              <textarea
+                rows={3}
+                required
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#3D3F96] focus:ring-4 focus:ring-[#3D3F96]/10 transition-all duration-200 resize-none leading-relaxed"
+              />
+            </div>
+
+            {/* Editable Secondary Phone */}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Alternative Phone Number (Editable)</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  required
+                  value={secondaryPhone}
+                  onChange={(e) => setSecondaryPhone(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#3D3F96] focus:ring-4 focus:ring-[#3D3F96]/10 transition-all duration-200"
+                  placeholder="e.g. +91 91234 56789"
+                />
+                <PhoneIcon className="absolute left-4 top-3.5 w-4 h-4 text-slate-400 stroke-[2.2]" />
+              </div>
+            </div>
+
+            {/* Address Details */}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Physical Location Address</label>
+              <input
+                type="text"
+                required
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#3D3F96] focus:ring-4 focus:ring-[#3D3F96]/10 transition-all duration-200"
+              />
+            </div>
+
+            {/* Geolocation Coordinates */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Latitude</label>
+                <input
+                  type="number"
+                  step="0.000001"
+                  required
+                  value={latitude}
+                  onChange={(e) => setLatitude(parseFloat(e.target.value) || 0)}
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#3D3F96] focus:ring-4 focus:ring-[#3D3F96]/10 transition-all duration-200"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Longitude</label>
+                <input
+                  type="number"
+                  step="0.000001"
+                  required
+                  value={longitude}
+                  onChange={(e) => setLongitude(parseFloat(e.target.value) || 0)}
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#3D3F96] focus:ring-4 focus:ring-[#3D3F96]/10 transition-all duration-200"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Read-Only System Parameters & Credentials (1/3 width) */}
+        <div className="space-y-6">
+          
+          {/* System Locked Parameters Card */}
+          <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 space-y-5 relative">
+            <div className="border-b border-slate-200 pb-3 flex items-center justify-between">
+              <h3 className="font-bold text-slate-800 text-sm uppercase tracking-tight">System Parameters</h3>
+              <LockIcon className="w-4.5 h-4.5 text-slate-400 stroke-[2.5]" />
+            </div>
+
+            <div className="space-y-4 text-xs font-semibold text-slate-500">
+              {/* Primary phone */}
+              <div className="flex justify-between">
+                <span>Primary Phone</span>
+                <span className="text-slate-800">{systemData.primaryPhone}</span>
+              </div>
+              {/* Primary Email */}
+              <div className="flex justify-between">
+                <span>Store Email</span>
+                <span className="text-slate-800">{systemData.primaryEmail}</span>
+              </div>
+              {/* Open Time */}
+              <div className="flex justify-between">
+                <span>Opening Hour</span>
+                <span className="text-slate-800">{systemData.openingTime}</span>
+              </div>
+              {/* Close Time */}
+              <div className="flex justify-between">
+                <span>Closing Hour</span>
+                <span className="text-slate-800">{systemData.closingTime}</span>
+              </div>
+              {/* Delivery Radius */}
+              <div className="flex justify-between">
+                <span>Delivery Radius</span>
+                <span className="text-slate-800">{systemData.deliveryRadius} Km</span>
+              </div>
+              {/* Packaging Charge */}
+              <div className="flex justify-between">
+                <span>Packaging Charge</span>
+                <span className="text-slate-800">₹{systemData.packagingCharge}</span>
+              </div>
+              {/* Delivery Charge */}
+              <div className="flex justify-between">
+                <span>Delivery Charge</span>
+                <span className="text-slate-800">₹{systemData.deliveryCharge}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Business Credentials (Read-Only) */}
+          <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 space-y-5 relative">
+            <div className="border-b border-slate-200 pb-3 flex items-center justify-between">
+              <h3 className="font-bold text-slate-800 text-sm uppercase tracking-tight">Tax & FSSAI Credentials</h3>
+              <LockIcon className="w-4.5 h-4.5 text-slate-400 stroke-[2.5]" />
+            </div>
+
+            <div className="space-y-4 text-xs font-semibold text-slate-500">
+              <div className="flex justify-between">
+                <span>FSSAI License No.</span>
+                <span className="text-slate-800 font-bold uppercase">{systemData.fssaiNumber}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>GSTIN No.</span>
+                <span className="text-slate-800 font-bold uppercase">{systemData.gstNumber}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Business PAN</span>
+                <span className="text-slate-800 font-bold uppercase">{systemData.panNumber}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Linked Bank Details Block */}
+          <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 space-y-5 relative">
+            <div className="border-b border-slate-200 pb-3 flex items-center justify-between">
+              <h3 className="font-bold text-slate-800 text-sm uppercase tracking-tight">Linked Payout Account</h3>
+              <LockIcon className="w-4.5 h-4.5 text-slate-400 stroke-[2.5]" />
+            </div>
+
+            <div className="space-y-3 text-xs font-semibold text-slate-500">
+              <div className="flex justify-between">
+                <span>Settlement Bank</span>
+                <span className="text-slate-800 font-bold uppercase">{systemData.bankAccount.bankName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Account Number</span>
+                <span className="text-slate-800 font-bold tracking-widest">{systemData.bankAccount.accountNumber}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Account Type</span>
+                <span className="text-slate-800">{systemData.bankAccount.accountType}</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// Icons
+
+function ImageIcon(props) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.9 2.9m-18 1.5V19.5a2.25 2.25 0 002.25 2.25h15a2.25 2.25 0 002.25-2.25V14a2.25 2.25 0 00-2.25-2.25H4.5A2.25 2.25 0 002.25 14v4.75zm10.5-6h.008v.008h-.008V11.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+    </svg>
+  );
+}
+
+function UploadIcon(props) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+    </svg>
+  );
+}
+
+function SaveIcon(props) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17 21H7a2 2 0 01-2-2V5a2 2 0 012-2h8l5 5v11a2 2 0 01-2 2z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17 21v-8H7v8M7 3v5h8" />
+    </svg>
+  );
+}
+
+function MapPinIcon(props) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+    </svg>
+  );
+}
+
+function PhoneIcon(props) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.824-1.28-5.116-3.6-6.397-6.4l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+    </svg>
+  );
+}
+
+function LockIcon(props) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+    </svg>
+  );
 }

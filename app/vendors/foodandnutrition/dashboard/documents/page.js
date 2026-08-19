@@ -1,514 +1,357 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { 
-  FaFileMedical, 
-  FaCloudUploadAlt, 
-  FaCheckCircle, 
-  FaTimes, 
-  FaIdCard, 
-  FaCertificate, 
-  FaUserMd, 
-  FaSearchPlus, 
-  FaCreditCard,
-  FaAward,
-  FaImage,
-  FaDownload,
-  FaEye,
-  FaTrashAlt
-} from 'react-icons/fa';
+import React, { useState } from 'react';
 
-// --- INITIAL MOCK GALLERY DOCUMENTS ---
-const INITIAL_GALLERY = [
+const INITIAL_DOCUMENTS = [
   {
-    id: "doc-1",
-    name: "Medical Registration License",
-    type: "Medical License",
-    url: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&q=80&w=600",
-    status: "1" // Verified
+    id: "DOC-FSSAI",
+    name: "FSSAI Food License",
+    description: "Mandatory 14-digit central/state food safety license registration.",
+    fileName: "fssai_license_2026.pdf",
+    expiryDate: "12/10/2026",
+    status: "Approved", // "Approved", "Pending", "Rejected"
+    isActive: true, // Can only toggle if "Approved"
+    licenseNumber: "10021011000124"
   },
   {
-    id: "doc-2",
-    name: "NABH Accreditation Certificate",
-    type: "Accreditation",
-    url: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80&w=600",
-    status: "1" // Verified
+    id: "DOC-GSTIN",
+    name: "GSTIN Certificate",
+    description: "Goods and Services Tax identification certificate for business taxation.",
+    fileName: "gst_certificate_signed.pdf",
+    expiryDate: "No Expiry",
+    status: "Approved",
+    isActive: true,
+    licenseNumber: "07AAAAA1111A1Z1"
   },
   {
-    id: "doc-3",
-    name: "Chief Doctor MBBS Certificate",
-    type: "Doctor Certificate",
-    url: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&q=80&w=600",
-    status: "0" // Pending
+    id: "DOC-PAN",
+    name: "Business PAN Card",
+    description: "Permanent Account Number card registered under the business entity.",
+    fileName: "pan_card_corp.pdf",
+    expiryDate: "No Expiry",
+    status: "Pending", // Awaiting Admin Approval
+    isActive: false,
+    licenseNumber: "ABCDE1234F"
   },
   {
-    id: "doc-4",
-    name: "Fire Safety Compliance Clearance",
-    type: "Custom Certificate",
-    url: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=600",
-    status: "1" // Verified
+    id: "DOC-HEALTH",
+    name: "Kitchen Health & Sanitation Audit",
+    description: "Annual municipal department health and clean kitchen verification certificate.",
+    fileName: "sanitation_clearance.pdf",
+    expiryDate: "28/02/2026",
+    status: "Rejected", // Needs update
+    isActive: false,
+    licenseNumber: "SAN-94820-2025"
   }
 ];
 
-export default function ClinicDocumentsPage() {
-  const [mounted, setMounted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [galleryDocs, setGalleryDocs] = useState(INITIAL_GALLERY);
-  
-  // Selected Image for Lightbox Preview Modal
+export default function DocumentsPage() {
+  const [documents, setDocuments] = useState(INITIAL_DOCUMENTS);
   const [selectedDoc, setSelectedDoc] = useState(null);
+  
+  // Modal Edit Inputs
+  const [uploadFile, setUploadFile] = useState(null);
+  const [licenseNumInput, setLicenseNumInput] = useState('');
+  const [expiryInput, setExpiryInput] = useState(''); // Corrected state setter naming conflict
 
-  // Form Upload States
-  const [formData, setFormData] = useState({
-    licenceImage: null,
-    accreditation: null,
-    doctorCertificate: null,
-    customCertName: '',
-    customCertFile: null,
-    aadharCard: null,
-    panCard: null,
-    drivingLicence: null
-  });
-
-  // LIVE IMAGE PREVIEWS STATE
-  const [previews, setPreviews] = useState({
-    licenceImage: null,
-    accreditation: null,
-    doctorCertificate: null,
-    customCertFile: null,
-    aadharCard: null,
-    panCard: null,
-    drivingLicence: null
-  });
-
-  const [notification, setNotification] = useState(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const showToast = (text, type = "success") => {
-    setNotification({ text, type });
-    setTimeout(() => setNotification(null), 3500);
+  // Handle live toggle activation (Only allowed if Approved)
+  const handleToggleActivation = (id) => {
+    setDocuments(prev => prev.map(doc => {
+      if (doc.id === id && doc.status === "Approved") {
+        return { ...doc, isActive: !doc.isActive };
+      }
+      return doc;
+    }));
   };
 
-  // Status Badge Renderer
-  const renderStatusBadge = (status) => {
-    switch(status) {
-      case '1':
-        return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">Verified</span>;
-      case '0':
-        return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase bg-amber-50 text-amber-700 border border-amber-200">Pending</span>;
-      case '3':
-        return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase bg-rose-50 text-rose-700 border border-rose-200">Rejected</span>;
-      default:
-        return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase bg-slate-100 text-slate-600">Not Uploaded</span>;
-    }
+  // Open Update Modal
+  const openUpdateModal = (doc) => {
+    setSelectedDoc(doc);
+    setLicenseNumInput(doc.licenseNumber);
+    setExpiryInput(doc.expiryDate === "No Expiry" ? "" : doc.expiryDate);
+    setUploadFile(null);
   };
 
-  // Handle Local File Selection & Create Instant Preview URL
-  const handleFileChange = (field, e) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setFormData(prev => ({ ...prev, [field]: file }));
-      setPreviews(prev => ({
-        ...prev,
-        [field]: {
-          url: URL.createObjectURL(file),
-          name: file.name
-        }
-      }));
-    }
-  };
-
-  // Remove Selected File
-  const handleRemoveSelected = (field) => {
-    setFormData(prev => ({ ...prev, [field]: null }));
-    setPreviews(prev => ({ ...prev, [field]: null }));
-  };
-
-  // Submit Handler
-  const handleSubmit = (e) => {
+  // Handle Form Submission (Submits to Admin)
+  const handleDocumentSubmit = (e) => {
     e.preventDefault();
-    setLoading(true);
+    if (!selectedDoc) return;
 
-    setTimeout(() => {
-      const newItems = [];
-
-      // If Custom Certificate uploaded
-      if (formData.customCertName && formData.customCertFile) {
-        newItems.push({
-          id: `custom-${Date.now()}`,
-          name: formData.customCertName,
-          type: "Custom Certificate",
-          url: previews.customCertFile?.url,
-          status: "0" // Pending
-        });
+    setDocuments(prev => prev.map(doc => {
+      if (doc.id === selectedDoc.id) {
+        return {
+          ...doc,
+          fileName: uploadFile ? uploadFile.name : doc.fileName,
+          licenseNumber: licenseNumInput,
+          expiryDate: expiryInput || "No Expiry",
+          status: "Pending", // State automatically resets to Pending Admin Approval
+          isActive: false // Lock activation switch until admin approves
+        };
       }
+      return doc;
+    }));
 
-      // Check each standard field
-      const fields = [
-        { field: 'licenceImage', name: 'Medical License', type: 'Medical License' },
-        { field: 'accreditation', name: 'Accreditation Certificate', type: 'Accreditation' },
-        { field: 'doctorCertificate', name: 'Doctor Certificate', type: 'Doctor Certificate' },
-        { field: 'aadharCard', name: 'Aadhar Card Proof', type: 'Aadhar Card' },
-        { field: 'panCard', name: 'PAN Card Proof', type: 'PAN Card' },
-        { field: 'drivingLicence', name: 'Driving Licence', type: 'Driving Licence' }
-      ];
-
-      fields.forEach(item => {
-        if (formData[item.field] && previews[item.field]) {
-          newItems.push({
-            id: `${item.field}-${Date.now()}`,
-            name: item.name,
-            type: item.type,
-            url: previews[item.field].url,
-            status: "0"
-          });
-        }
-      });
-
-      if (newItems.length === 0) {
-        alert("Please select at least one file to upload!");
-        setLoading(false);
-        return;
-      }
-
-      setGalleryDocs([...newItems, ...galleryDocs]);
-      setLoading(false);
-      
-      // Reset Form & Previews
-      setFormData({
-        licenceImage: null,
-        accreditation: null,
-        doctorCertificate: null,
-        customCertName: '',
-        customCertFile: null,
-        aadharCard: null,
-        panCard: null,
-        drivingLicence: null
-      });
-
-      setPreviews({
-        licenceImage: null,
-        accreditation: null,
-        doctorCertificate: null,
-        customCertFile: null,
-        aadharCard: null,
-        panCard: null,
-        drivingLicence: null
-      });
-
-      showToast("Clinic compliance documents updated successfully!");
-    }, 800);
+    setSelectedDoc(null);
   };
 
-  if (!mounted) return null;
-
-  // REUSABLE LARGE FILE UPLOAD BOX WITH LIVE PREVIEW
-  const LargeUploadBox = ({ title, field, accept = "image/*,.pdf" }) => {
-    const preview = previews[field];
-
-    return (
-      <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col justify-between gap-3 transition-all hover:border-indigo-100">
-        <div>
-          <label className="text-xs font-black text-gray-800 block">{title}</label>
-          <span className="text-[10px] text-gray-400 font-bold block mt-0.5">JPG, PNG, WEBP, PDF</span>
-        </div>
-
-        {/* Live Preview Display or Large Upload Dropzone */}
-        {preview ? (
-          <div className="relative group rounded-xl overflow-hidden border border-indigo-200 bg-white p-2">
-            <img 
-              src={preview.url} 
-              alt={title} 
-              className="w-full h-32 object-cover rounded-lg"
-            />
-            <div className="mt-2 flex items-center justify-between px-1">
-              <span className="text-[10px] font-bold text-gray-600 truncate max-w-[140px]">
-                {preview.name}
-              </span>
-              <button 
-                type="button"
-                onClick={() => handleRemoveSelected(field)}
-                className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold transition-all"
-                title="Remove file"
-              >
-                <FaTimes />
-              </button>
-            </div>
-          </div>
-        ) : (
-          <label className="flex flex-col items-center justify-center w-full py-6 px-4 rounded-xl border-2 border-dashed border-gray-200 hover:border-[#3D3F96] bg-white hover:bg-indigo-50/20 cursor-pointer transition-all text-center">
-            <FaCloudUploadAlt className="text-2xl text-[#3D3F96] mb-1.5" />
-            <span className="text-xs font-black text-[#3D3F96]">Choose File</span>
-            <span className="text-[9px] font-semibold text-gray-400 mt-0.5">Click to browse</span>
-            <input 
-              type="file" 
-              accept={accept}
-              onChange={(e) => handleFileChange(field, e)}
-              className="hidden" 
-            />
-          </label>
-        )}
-      </div>
-    );
+  // Status Badge styles
+  const statusStyles = {
+    Approved: {
+      box: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+      dot: 'bg-emerald-500',
+      label: 'Approved'
+    },
+    Pending: {
+      box: 'bg-amber-50 text-amber-700 border-amber-100',
+      dot: 'bg-amber-500',
+      label: 'Pending Admin Approval'
+    },
+    Rejected: {
+      box: 'bg-rose-50 text-rose-700 border-rose-100',
+      dot: 'bg-rose-500',
+      label: 'Action Required / Rejected'
+    }
   };
 
   return (
-    <div className="p-4 md:p-8 space-y-8 select-none animate-fadeIn">
+    <div className="max-w-[1400px] mx-auto space-y-8 animate-fade-in py-4">
       
-      <style jsx global>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.5s ease-out forwards;
-        }
-      `}</style>
-
-      {/* Dynamic Toast */}
-      {notification && (
-        <div className={`fixed top-6 right-6 z-50 p-4 rounded-2xl shadow-2xl text-xs font-black uppercase tracking-wider text-white border border-white/20 animate-fadeIn ${
-          notification.type === 'danger' ? 'bg-rose-600' : 'bg-[#3D3F96]'
-        }`}>
-          {notification.text}
-        </div>
-      )}
-
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-6">
-        <div>
-          <h2 className="text-2xl font-black text-gray-800">Clinic Documents & Verification</h2>
-          <p className="text-xs text-gray-400 mt-1">Manage compliance licenses, medical registrations, identity proofs, and custom certificates.</p>
-        </div>
-
-        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 px-4 py-2 rounded-2xl text-emerald-700 text-xs font-black self-start sm:self-auto">
-          <FaCheckCircle className="text-emerald-500" />
-          <span>{galleryDocs.length} Active Records</span>
-        </div>
-      </div>
-
-      {/* --- SECTION 1: VERIFICATION OVERVIEW CARDS --- */}
-      <div className="bg-white rounded-[2rem] border border-gray-100 p-6 md:p-8 shadow-sm">
-        <h4 className="text-sm font-black text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <FaCertificate className="text-[#3D3F96]" /> Compliance Verification Overview
-        </h4>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: "Medical License", icon: FaIdCard, status: "1" },
-            { label: "Accreditation", icon: FaCertificate, status: "1" },
-            { label: "Doctor Certificate", icon: FaUserMd, status: "0" },
-            { label: "Aadhar & Identity", icon: FaCreditCard, status: "1" }
-          ].map((item, i) => {
-            const Icon = item.icon;
-            return (
-              <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-indigo-50 text-[#3D3F96] flex items-center justify-center text-sm">
-                    <Icon />
-                  </div>
-                  <span className="text-xs font-bold text-gray-700">{item.label}</span>
-                </div>
-                {renderStatusBadge(item.status)}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* --- SECTION 2: GALLERY VIEW --- */}
-      <div className="bg-white rounded-[2rem] border border-gray-100 overflow-hidden shadow-sm">
-        <div className="p-6 md:p-8 bg-slate-50/50 border-b border-gray-100 flex items-center justify-between">
-          <div>
-            <h4 className="text-base font-black text-gray-800 leading-none">Uploaded Documents Gallery</h4>
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mt-1">Click on any card to preview full size</span>
-          </div>
-          <span className="px-3.5 py-1.5 rounded-full text-xs font-black bg-[#3D3F96] text-white">
-            {galleryDocs.length} Items
-          </span>
-        </div>
-
-        <div className="p-6 md:p-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {galleryDocs.map((doc) => (
-              <div 
-                key={doc.id}
-                onClick={() => setSelectedDoc(doc)}
-                className="group bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col justify-between"
-              >
-                <div className="relative h-44 w-full overflow-hidden bg-slate-100">
-                  <img 
-                    src={doc.url} 
-                    alt={doc.name} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute top-3 right-3 z-10">
-                    {renderStatusBadge(doc.status)}
-                  </div>
-                  
-                  <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-2xl">
-                    <FaSearchPlus />
-                  </div>
-                </div>
-
-                <div className="p-4 border-t border-gray-50 flex items-center justify-between gap-2">
-                  <div>
-                    <h5 className="text-xs font-black text-gray-800 line-clamp-1">{doc.name}</h5>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mt-0.5">{doc.type}</span>
-                  </div>
-                  <div className="w-8 h-8 rounded-xl bg-indigo-50 text-[#3D3F96] flex items-center justify-center shrink-0">
-                    <FaEye size={12} />
-                  </div>
-                </div>
-
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* --- SECTION 3: UPLOAD FORM SECTION WITH LARGE BUTTONS & LIVE PREVIEWS --- */}
-      <div className="bg-white rounded-[2rem] border border-gray-100 p-6 md:p-8 shadow-sm">
-        <div className="flex items-center gap-3 pb-6 border-b border-gray-100 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 text-[#3D3F96] flex items-center justify-center text-lg">
-            <FaCloudUploadAlt />
+      {/* Header section */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-[#3D3F96]/10 text-[#3D3F96] flex items-center justify-center border border-[#3D3F96]/10 flex-shrink-0">
+            <ShieldIcon className="w-7 h-7 stroke-[2]" />
           </div>
           <div>
-            <h4 className="text-base font-black text-gray-800 leading-none">Upload & Update Documents</h4>
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mt-1">Select files below for instant preview and submission</span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Business Verification</h1>
+            <p className="text-sm text-slate-500 font-medium mt-1">Upload and manage statutory food licenses. Document changes undergo admin verification.</p>
           </div>
         </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          
-          {/* Custom Certificate Input Section */}
-          <div className="p-5 rounded-2xl bg-indigo-50/40 border border-indigo-100 space-y-4">
-            <div className="flex items-center gap-2 text-xs font-black text-[#3D3F96] uppercase tracking-wider">
-              <FaAward />
-              <span>Upload Custom Certificate (Custom Name)</span>
-            </div>
+      {/* Documents Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {documents.map((doc) => {
+          const style = statusStyles[doc.status] || { box: 'bg-slate-100', dot: 'bg-slate-400', label: 'Unknown' };
+          const isInteractable = doc.status === "Approved";
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-              {/* Field 1: Custom Name Input */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-black uppercase text-gray-500">Certificate Name / Title *</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Fire Safety Clearance, NABH Accreditation"
-                  value={formData.customCertName}
-                  onChange={(e) => setFormData({ ...formData, customCertName: e.target.value })}
-                  className="px-4 py-3.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-800 outline-none focus:ring-2 focus:ring-[#3D3F96]/20 transition-all"
-                />
-              </div>
-
-              {/* Field 2: Custom File Uploader with Live Preview */}
-              <div>
-                <label className="text-[10px] font-black uppercase text-gray-500 block mb-1.5">Select Certificate Image *</label>
-                {previews.customCertFile ? (
-                  <div className="relative rounded-xl overflow-hidden border border-indigo-200 bg-white p-2">
-                    <img src={previews.customCertFile.url} alt="Custom Cert Preview" className="w-full h-36 object-cover rounded-lg" />
-                    <div className="mt-2 flex items-center justify-between px-1">
-                      <span className="text-xs font-bold text-gray-700 truncate">{previews.customCertFile.name}</span>
-                      <button 
-                        type="button" 
-                        onClick={() => handleRemoveSelected('customCertFile')}
-                        className="px-3 py-1 rounded-lg bg-rose-50 text-rose-600 text-xs font-bold"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <label className="flex flex-col items-center justify-center w-full py-5 px-4 rounded-xl border-2 border-dashed border-gray-200 hover:border-[#3D3F96] bg-white hover:bg-indigo-50/20 cursor-pointer transition-all text-center">
-                    <FaCloudUploadAlt className="text-3xl text-[#3D3F96] mb-1" />
-                    <span className="text-xs font-black text-[#3D3F96]">Choose Custom File</span>
-                    <span className="text-[9px] font-semibold text-gray-400 mt-0.5">Click to browse file</span>
-                    <input 
-                      type="file" 
-                      accept="image/*,.pdf"
-                      onChange={(e) => handleFileChange('customCertFile', e)}
-                      className="hidden" 
-                    />
-                  </label>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Standard Document Large Upload Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <LargeUploadBox title="Medical License" field="licenceImage" />
-            <LargeUploadBox title="Accreditation Certificate" field="accreditation" />
-            <LargeUploadBox title="Doctor Certificate" field="doctorCertificate" />
-            <LargeUploadBox title="Aadhar Card Proof" field="aadharCard" />
-            <LargeUploadBox title="PAN Card Proof" field="panCard" />
-            <LargeUploadBox title="Driving Licence" field="drivingLicence" />
-          </div>
-
-          {/* Submit Action Button */}
-          <div className="pt-4 flex justify-end">
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-8 py-4 rounded-2xl bg-[#3D3F96] hover:bg-[#2C2E75] text-white text-xs font-black uppercase tracking-widest transition-all duration-300 shadow-lg shadow-indigo-950/10 flex items-center justify-center gap-2"
+          return (
+            <div 
+              key={doc.id}
+              className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-all duration-200"
             >
-              {loading ? (
-                <span className="animate-spin inline-block w-4 h-4 border-2 border-white rounded-full"></span>
-              ) : (
-                <>
-                  <FaCloudUploadAlt size={16} /> Update Clinic Documents
-                </>
-              )}
-            </button>
-          </div>
+              <div className="space-y-4">
+                {/* Top status bar */}
+                <div className="flex justify-between items-start gap-4">
+                  <div className="space-y-1">
+                    <h3 className="font-extrabold text-slate-900 text-[17px] leading-snug">{doc.name}</h3>
+                    <p className="text-xs text-slate-400 font-medium leading-relaxed">{doc.description}</p>
+                  </div>
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border flex-shrink-0 ${style.box}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${style.dot} ${doc.status === 'Pending' ? 'animate-pulse' : ''}`} />
+                    {style.label}
+                  </span>
+                </div>
 
-        </form>
+                {/* Document Metadata Details */}
+                <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-2 text-xs font-semibold text-slate-600">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">License Number</span>
+                    <span className="text-slate-800 uppercase font-bold">{doc.licenseNumber || 'Not Provided'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Attached File</span>
+                    <span className="text-[#3D3F96] underline truncate max-w-[200px] flex items-center gap-1.5 cursor-pointer">
+                      <PaperclipIcon className="w-3.5 h-3.5 stroke-[2]" />
+                      {doc.fileName}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Validity Expiry</span>
+                    <span className="text-slate-800">{doc.expiryDate}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card Footer Control Bar */}
+              <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100">
+                {/* Upload / Edit Button */}
+                <button
+                  onClick={() => openUpdateModal(doc)}
+                  className="px-4 py-2 border border-slate-200 text-slate-600 hover:text-[#3D3F96] hover:bg-[#3D3F96]/5 rounded-xl font-bold text-xs transition-all flex items-center gap-2"
+                >
+                  <EditIcon className="w-4 h-4 stroke-[2]" />
+                  Upload Update
+                </button>
+
+                {/* Activation Toggle Switch */}
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active</span>
+                  <label className={`relative inline-flex items-center ${isInteractable ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'}`}>
+                    <input 
+                      type="checkbox" 
+                      disabled={!isInteractable}
+                      checked={doc.isActive} 
+                      onChange={() => handleToggleActivation(doc.id)}
+                      className="sr-only peer" 
+                    />
+                    <div className="w-10 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#3D3F96]" />
+                  </label>
+                </div>
+              </div>
+
+            </div>
+          );
+        })}
       </div>
 
-      {/* --- LIGHTBOX IMAGE PREVIEW MODAL --- */}
+      {/* UPDATE DOCUMENT MODAL OVERLAY */}
       {selectedDoc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white rounded-[2rem] w-full max-w-2xl shadow-2xl border border-gray-100 overflow-hidden relative animate-fadeIn">
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 sm:p-8 shadow-2xl relative animate-scale-up">
             
             {/* Modal Header */}
-            <div className="p-6 bg-slate-50 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-6">
               <div>
-                <h4 className="text-base font-black text-gray-800">{selectedDoc.name}</h4>
-                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mt-0.5">{selectedDoc.type}</span>
+                <h3 className="font-extrabold text-slate-900 text-lg uppercase tracking-tight">Update Business Document</h3>
+                <p className="text-xs text-slate-400 mt-0.5">{selectedDoc.name}</p>
               </div>
-
-              <div className="flex items-center gap-3">
-                {renderStatusBadge(selectedDoc.status)}
-                <button onClick={() => setSelectedDoc(null)} className="p-2 rounded-xl bg-white hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-all">
-                  <FaTimes />
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Image Body */}
-            <div className="p-6 text-center bg-slate-100 flex items-center justify-center min-h-[300px]">
-              <img src={selectedDoc.url} alt={selectedDoc.name} className="max-h-[60vh] w-auto object-contain rounded-xl shadow-md" />
-            </div>
-
-            {/* Modal Footer Controls */}
-            <div className="p-6 bg-white border-t border-gray-100 flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-400">Clinic Verification Record</span>
-              
-              <button 
-                onClick={() => showToast(`Downloading ${selectedDoc.name}...`)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#3D3F96] hover:bg-[#2C2E75] text-white text-xs font-black uppercase tracking-wider transition-all"
+              <button
+                onClick={() => setSelectedDoc(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 focus:outline-none"
               >
-                <FaDownload /> Download File
+                <CloseIcon className="w-5 h-5 stroke-[2]" />
               </button>
             </div>
 
+            {/* Input Form */}
+            <form onSubmit={handleDocumentSubmit} className="space-y-5">
+              
+              {/* File Dropzone Simulator */}
+              <div className="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-6 text-center space-y-2">
+                <div className="w-10 h-10 rounded-full bg-[#3D3F96]/10 text-[#3D3F96] flex items-center justify-center mx-auto mb-1">
+                  <UploadIcon className="w-5 h-5 stroke-[2]" />
+                </div>
+                <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Choose PDF / Image Certificate</span>
+                <div className="pt-2 flex items-center justify-center gap-3">
+                  <label className="cursor-pointer px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl transition-all">
+                    Browse File
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      onChange={(e) => setUploadFile(e.target.files[0] || null)}
+                    />
+                  </label>
+                  <span className="text-xs font-semibold text-slate-500 truncate max-w-[150px]">
+                    {uploadFile ? uploadFile.name : selectedDoc.fileName}
+                  </span>
+                </div>
+              </div>
+
+              {/* License / Registration Number */}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Document Registration Number</label>
+                <input
+                  type="text"
+                  required
+                  value={licenseNumInput}
+                  onChange={(e) => setLicenseNumInput(e.target.value)}
+                  placeholder="e.g. 10021011000124"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#3D3F96] focus:ring-4 focus:ring-[#3D3F96]/5 uppercase"
+                />
+              </div>
+
+              {/* Expiry Date */}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Expiry Date (Leave blank if non-expiring)</label>
+                <input
+                  type="text"
+                  value={expiryInput}
+                  onChange={(e) => setExpiryInput(e.target.value)}
+                  placeholder="e.g. 12/10/2026"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#3D3F96] focus:ring-4 focus:ring-[#3D3F96]/5"
+                />
+              </div>
+
+              {/* Warning Descriptor */}
+              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-100 flex gap-2.5 text-[11px] text-amber-700 font-semibold leading-relaxed">
+                <WarningIcon className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-500" />
+                <p>Uploading launches an admin review session. Store validation will temporarily pause for this document.</p>
+              </div>
+
+              {/* Actions */}
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedDoc(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-[#3D3F96] hover:bg-[#3D3F96]/95 text-white font-bold text-xs rounded-xl shadow-lg shadow-[#3D3F96]/10 flex items-center gap-1.5"
+                >
+                  <UploadIcon className="w-4 h-4 stroke-[2]" />
+                  Submit for Approval
+                </button>
+              </div>
+
+            </form>
           </div>
         </div>
       )}
 
     </div>
+  );
+}
+
+// Icons
+
+function ShieldIcon(props) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.959 0 003 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.105-2.59-.308-3.83A11.959 11.959 0 0112 2.714z" />
+    </svg>
+  );
+}
+
+function PaperclipIcon(props) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.75m-3.535-3.536L15.9 14.14a5 5 0 00-7.072-7.07l-3.535 3.536a5 5 0 007.072 7.072l3.535-3.536" />
+    </svg>
+  );
+}
+
+function EditIcon(props) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+    </svg>
+  );
+}
+
+function CloseIcon(props) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  );
+}
+
+function UploadIcon(props) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+    </svg>
+  );
+}
+
+function WarningIcon(props) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    </svg>
   );
 }
