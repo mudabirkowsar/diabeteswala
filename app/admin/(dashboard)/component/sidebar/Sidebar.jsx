@@ -7,7 +7,7 @@ import {
     FaTachometerAlt, FaChartLine, FaWallet, FaUserShield, FaUsers, FaStore,
     FaChevronDown, FaChevronRight, FaSlidersH, FaPills, FaCapsules, FaTruck,
     FaFlask, FaUserMd, FaStethoscope, FaBoxes, FaHeadset, FaClipboardList, FaAd,
-    FaUtensils, FaHospital,FaCheck // Added FaUtensils for the Food section icon
+    FaUtensils, FaHospital, FaCheck // Added FaUtensils for the Food section icon
 } from "react-icons/fa";
 
 /* =========================================================================
@@ -293,7 +293,7 @@ export default function Sidebar({ sidebarOpen }) {
                 )}
 
                 {/* Manage Food */}
-                  {hasAccess() && (
+                {hasAccess() && (
                     <>
                         <div
                             className={`${rowBase} ${isParentActive("/admin/food") ? rowActive : rowInactive}`}
@@ -315,7 +315,10 @@ export default function Sidebar({ sidebarOpen }) {
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/foodvendors") ? theme.primary : "#D1D5DB" }} /> Food Vendors
                                 </Link>
                                 <Link href="/admin/food/foodcategory" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/foodcategory") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
-                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/foodcategory") ? theme.primary : "#D1D5DB" }} /> Food Category
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/foodcategory") ? theme.primary : "#D1D5DB" }} /> Manage Food
+                                </Link>
+                                <Link href="/admin/food/managecategory" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/managecategory") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/managecategory") ? theme.primary : "#D1D5DB" }} /> Manage Category
                                 </Link>
                                 <Link href="/admin/food/deliverycharge" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/deliverycharge") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/deliverycharge") ? theme.primary : "#D1D5DB" }} /> Delivery Charges
@@ -329,11 +332,11 @@ export default function Sidebar({ sidebarOpen }) {
                                 <Link href="/admin/food/today-special" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/today-special") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/today-special") ? theme.primary : "#D1D5DB" }} /> Today's Special
                                 </Link>
-                                 <Link href="/admin/food/managebanner" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/managebanner") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                <Link href="/admin/food/managebanner" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/managebanner") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/managebanner") ? theme.primary : "#D1D5DB" }} /> Manage Banners
                                 </Link>
- 
- 
+
+
                                 {/* Interactive Expandable Tiffin Sub-Dropdown */}
                                 <div
                                     className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center justify-between cursor-pointer ${isParentActive("/admin/food/tiffin") ? "bg-[#3D3F96]/[0.04] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}
@@ -377,7 +380,7 @@ export default function Sidebar({ sidebarOpen }) {
                         )}
                     </>
                 )}
- 
+
                 {/* Manage Clinics */}
                 {hasAccess() && (
                     <>
@@ -577,45 +580,45 @@ export default function Sidebar({ sidebarOpen }) {
                 )}
 
                 {/* Others Group Section (Membership Plans, Distance Manage, Cancellation Charges) */}
-{hasAccess() && (
-    <>
-        <div
-            className={`${rowBase} ${isParentActive("/admin/others") ? rowActive : rowInactive}`}
-            onClick={() => toggleMenu("others")}
-        >
-            {isParentActive("/admin/others") && <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-md" style={{ backgroundColor: theme.primary }} />}
-            <IconChip icon={FaSlidersH} active={isParentActive("/admin/others")} />
-            {isExpanded && <span className="truncate">Others</span>}
-            {isExpanded && (
-                openMenu === "others"
-                    ? <FaChevronDown className="ml-auto text-[11px] text-gray-400 transition-transform duration-200 rotate-90" />
-                    : <FaChevronRight className="ml-auto text-[11px] text-gray-400 transition-transform duration-200" />
-            )}
-            <CollapsedTooltip label="Others" show={!isExpanded} />
-        </div>
-        {openMenu === "others" && isExpanded && (
-            <div className="flex flex-col gap-1 mt-1 mb-1 pl-4 border-l-2 border-gray-100 transition-all duration-200">
-                {/* 1. Membership Plans */}
-                <Link href="/admin/others/membershipplans" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/others/membershipplans") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/others/membershipplans") ? theme.primary : "#D1D5DB" }} />
-                    Membership Plans
-                </Link>
+                {hasAccess() && (
+                    <>
+                        <div
+                            className={`${rowBase} ${isParentActive("/admin/others") ? rowActive : rowInactive}`}
+                            onClick={() => toggleMenu("others")}
+                        >
+                            {isParentActive("/admin/others") && <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-md" style={{ backgroundColor: theme.primary }} />}
+                            <IconChip icon={FaSlidersH} active={isParentActive("/admin/others")} />
+                            {isExpanded && <span className="truncate">Others</span>}
+                            {isExpanded && (
+                                openMenu === "others"
+                                    ? <FaChevronDown className="ml-auto text-[11px] text-gray-400 transition-transform duration-200 rotate-90" />
+                                    : <FaChevronRight className="ml-auto text-[11px] text-gray-400 transition-transform duration-200" />
+                            )}
+                            <CollapsedTooltip label="Others" show={!isExpanded} />
+                        </div>
+                        {openMenu === "others" && isExpanded && (
+                            <div className="flex flex-col gap-1 mt-1 mb-1 pl-4 border-l-2 border-gray-100 transition-all duration-200">
+                                {/* 1. Membership Plans */}
+                                <Link href="/admin/others/membershipplans" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/others/membershipplans") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/others/membershipplans") ? theme.primary : "#D1D5DB" }} />
+                                    Membership Plans
+                                </Link>
 
-                {/* 2. Distance Manage */}
-                <Link href="/admin/others/distancemanage" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/others/distancemanage") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/others/distancemanage") ? theme.primary : "#D1D5DB" }} />
-                    Distance Manage
-                </Link>
+                                {/* 2. Distance Manage */}
+                                <Link href="/admin/others/distancemanage" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/others/distancemanage") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/others/distancemanage") ? theme.primary : "#D1D5DB" }} />
+                                    Distance Manage
+                                </Link>
 
-                {/* 3. Cancellation Charges */}
-                <Link href="/admin/others/cancellationcharges" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/others/cancellationcharges") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/others/cancellationcharges") ? theme.primary : "#D1D5DB" }} />
-                    Cancellation Charges
-                </Link>
-            </div>
-        )}
-    </>
-)}
+                                {/* 3. Cancellation Charges */}
+                                <Link href="/admin/others/cancellationcharges" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/others/cancellationcharges") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/others/cancellationcharges") ? theme.primary : "#D1D5DB" }} />
+                                    Cancellation Charges
+                                </Link>
+                            </div>
+                        )}
+                    </>
+                )}
 
             </div>
         </aside>

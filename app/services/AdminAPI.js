@@ -183,6 +183,38 @@ const AdminAPI = {
         return response.data;
     },
 
+    // ===================================================
+    // --- FOOD CATEGORY MANAGEMENT APIS -----------------
+    // ===================================================
+
+    // --- 1. Add Food Category ---
+    addFoodCategory: async (categoryData) => {
+        // categoryData: { foodCategory: "Low GI Rice Bowls", foodEffectCategory: "Diabetes Care" }
+        const response = await authApi.post('/admin/food/category/add', categoryData);
+        return response.data;
+    },
+
+    // --- 2. Update/Rename Category Details ---
+    updateFoodCategory: async (id, categoryData) => {
+        // id: Mongoose ObjectID of the Category to update
+        // categoryData: Partial object containing the fields needing update
+        const response = await authApi.put(`/admin/food/category/update/${id}`, categoryData);
+        return response.data;
+    },
+
+    // --- 3. Delete Category ---
+    deleteFoodCategory: async (id) => {
+        // id: Mongoose ObjectID of the Category to delete
+        const response = await authApi.delete(`/admin/food/category/delete/${id}`);
+        return response.data;
+    },
+
+    // --- 4. Get Categories List (Public) ---
+    getFoodCategories: async () => {
+        // Public endpoint (No Authorization Header Check required)
+        const response = await publicApi.get('/admin/food/category/get');
+        return response.data;
+    }
 
 
 
