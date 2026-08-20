@@ -57,7 +57,7 @@ const ExpertLogin = () => {
             localStorage.setItem('foodToken', response.token);
           }
           showNotification("Welcome back!", "success");
-          router.push('/vendors/foodandnutrition/dashboard');
+          router.push('/vendors/food/dashboard');
           return;
         }
 
@@ -73,7 +73,7 @@ const ExpertLogin = () => {
         // 3. Handle Incomplete Account
         else if (verifyStatus === 'Incomplete') {
           showNotification("Please upload your operational documents.", "warning");
-          router.push('/vendors/foodandnutrition/documents');
+          router.push('/vendors/food/documents');
         }
         // 4. Handle Rejected Account
         else if (verifyStatus === 'Rejected') {

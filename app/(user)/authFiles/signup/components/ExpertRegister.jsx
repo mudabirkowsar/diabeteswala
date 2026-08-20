@@ -112,7 +112,7 @@ const ExpertRegister = () => {
                 }
 
                 // Redirect directly to the document upload page for Food and Nutrition Vendors
-                router.push('/vendors/foodandnutrition/documents');
+                router.push('/vendors/food/documents');
             } else {
                 triggerNotification(response.message || "Registration failed", "error");
             }
