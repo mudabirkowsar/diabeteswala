@@ -57,7 +57,7 @@ export default function WeeklyFood() {
   const [selectedDietType, setSelectedDietType] = useState('All'); // 'All', 'Veg', 'Egg', 'Non Veg'
 
   // --- Modal State --- 
-  const [selectedMeal, setSelectedMeal] = useState(null);
+  const [selectedMeal, setSelectedMeal] = useState(null); 
  
   // --- Fetch Weekly Menu ---
   const fetchWeeklyContent = async () => {
