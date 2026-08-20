@@ -24,7 +24,7 @@ export default function FoodStorefront() {
       {/* <FoodList /> */}
       <DayWiseFood />
       <WeeklyFood />
-      <AdvantagesModal />
+      <Combos />
     </>
   );
 }

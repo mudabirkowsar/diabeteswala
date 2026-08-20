@@ -92,16 +92,14 @@ export default function WeeklyFood() {
     const isNonVeg = type === 'Non Veg';
 
     return (
-      <div 
-        className={`w-4 h-4 border-2 rounded flex items-center justify-center p-[2px] shrink-0 bg-white/95 shadow-sm ${
-          isVeg ? 'border-emerald-500' : isEgg ? 'border-amber-500' : isNonVeg ? 'border-rose-500' : 'border-slate-300'
-        }`}
+      <div
+        className={`w-4 h-4 border-2 rounded flex items-center justify-center p-[2px] shrink-0 bg-white/95 shadow-sm ${isVeg ? 'border-emerald-500' : isEgg ? 'border-amber-500' : isNonVeg ? 'border-rose-500' : 'border-slate-300'
+          }`}
         title={type}
       >
-        <span 
-          className={`w-1.5 h-1.5 rounded-full ${
-            isVeg ? 'bg-emerald-500' : isEgg ? 'bg-amber-500' : isNonVeg ? 'bg-rose-500' : 'bg-slate-400'
-          }`} 
+        <span
+          className={`w-1.5 h-1.5 rounded-full ${isVeg ? 'bg-emerald-500' : isEgg ? 'bg-amber-500' : isNonVeg ? 'bg-rose-500' : 'bg-slate-400'
+            }`}
         />
       </div>
     );
@@ -122,36 +120,9 @@ export default function WeeklyFood() {
   return (
     <div className="min-h-screen bg-[#f8fbff] py-8 px-4 sm:px-6 lg:px-10 max-w-[1600px] mx-auto space-y-10 antialiased">
 
-      {/* --- HERO HEADER --- */}
-      <div className="bg-gradient-to-br from-[#1e293b] to-[#0f172a] rounded-[2.5rem] p-8 sm:p-12 text-white shadow-xl shadow-slate-900/10 relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-8">
-        <div className="space-y-4 max-w-2xl z-10 text-left">
-          <span className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-slate-200 text-[11px] font-black uppercase tracking-widest px-3.5 py-1.5 rounded-full border border-white/15">
-            <Calendar size={13} className="text-emerald-400" /> Tiffin Recurring Subscriptions
-          </span>
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-            7-Day Cyclical Weekly Tiffin Menu
-          </h1>
-          <p className="text-sm text-slate-300 font-medium leading-relaxed">
-            Explore everyday scheduled dishes prepared by clinical chefs. Structured across the full week to ensure balanced calorie intake.
-          </p>
-        </div>
-
-        <button
-          onClick={fetchWeeklyContent}
-          disabled={loading}
-          className="self-start md:self-auto flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-5 py-3 rounded-2xl border border-white/20 font-bold text-xs backdrop-blur-sm transition-all cursor-pointer z-10"
-        >
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh Schedule
-        </button>
-
-        {/* Ambient shapes */}
-        <div className="absolute -right-12 -bottom-12 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute left-1/3 -top-16 w-60 h-60 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
-      </div>
-
       {/* --- FILTERS & WEEKDAY SELECTOR --- */}
       <div className="space-y-4">
-        
+
         {/* Search & Diet Type Row */}
         <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-[0_4px_25px_rgba(0,0,0,0.02)] grid grid-cols-1 md:grid-cols-12 gap-4">
           <div className="md:col-span-8 relative">
@@ -170,11 +141,10 @@ export default function WeeklyFood() {
               <button
                 key={type}
                 onClick={() => setSelectedDietType(type)}
-                className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                  selectedDietType === type
+                className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${selectedDietType === type
                     ? 'bg-white text-slate-900 shadow-sm border border-slate-200/60 font-black'
                     : 'text-slate-500 hover:text-slate-800'
-                }`}
+                  }`}
               >
                 {type}
               </button>
@@ -193,11 +163,10 @@ export default function WeeklyFood() {
               <button
                 key={day.key}
                 onClick={() => setSelectedWeeklyDay(day.key)}
-                className={`flex-1 min-w-[110px] sm:min-w-[140px] p-4 rounded-3xl border transition-all cursor-pointer text-center ${
-                  isSelected
+                className={`flex-1 min-w-[110px] sm:min-w-[140px] p-4 rounded-3xl border transition-all cursor-pointer text-center ${isSelected
                     ? 'bg-[#3d3f96] text-white border-[#3d3f96] shadow-lg shadow-indigo-900/15 scale-[1.02]'
                     : 'bg-white text-slate-700 border-slate-100 hover:bg-slate-50 hover:border-slate-200'
-                }`}
+                  }`}
               >
                 <span className="block text-xs sm:text-sm font-black uppercase tracking-wider">{day.label}</span>
                 <span className={`text-[10px] font-bold mt-1 block ${isSelected ? 'text-indigo-200' : 'text-slate-400'}`}>
