@@ -61,17 +61,17 @@ export default function FoodVendorLayout({ children }) {
       title: "Main Menu",
       items: [
         { name: 'Dashboard', href: '/vendors/food/dashboard', icon: DashboardIcon },
-        { name: 'Orders', href: '/vendors/food/orders', icon: RevenueIcon },
-        { name: 'Bank Details', href: '/vendors/food/bankdetails', icon: BankDetailsIcon },
-        { name: 'Wallet & Earnings', href: '/vendors/food/earnings', icon: WalletIcon } 
+        { name: 'Orders', href: '/vendors/food/dashboard/orders', icon: RevenueIcon },
+        { name: 'Bank Details', href: '/vendors/food/dashboard/bankdetails', icon: BankDetailsIcon },
+        { name: 'Wallet & Earnings', href: '/vendors/food/dashboard/earnings', icon: WalletIcon } 
       ]
     },
     {
       title: "Operations",
       items: [
-        { name: 'My Availability', href: '/vendors/food/availability', icon: AvailabilityIcon },
-        { name: 'Manage Driver', href: '/vendors/food/managedriver', icon: DriverIcon },
-        { name: 'Documents', href: '/vendors/food/documents', icon: DocumentsIcon },
+        { name: 'My Availability', href: '/vendors/food/dashboard/availability', icon: AvailabilityIcon },
+        { name: 'Manage Driver', href: '/vendors/food/dashboard/managedriver', icon: DriverIcon },
+        { name: 'Documents', href: '/vendors/food/dashboard/documents', icon: DocumentsIcon },
       ]
     },
   ];
