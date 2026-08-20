@@ -58,7 +58,7 @@ export default function WeeklyFood() {
 
   // --- Modal State --- 
   const [selectedMeal, setSelectedMeal] = useState(null);
-
+ 
   // --- Fetch Weekly Menu ---
   const fetchWeeklyContent = async () => {
     setLoading(true);
