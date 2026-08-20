@@ -254,5 +254,23 @@ const UserAPI = {
         return response.data;
     },
 
+    // ===================================================
+    // --- USER-END FOOD PAGE & DISCOVERY APIS -----------
+    // ===================================================
+
+    // --- 1. Get Daywise Layout Content (Primary Widget Loader) ---
+    getUserFoodPageDaywise: async () => {
+        // Public Discovery API (No Authorization Header Required)
+        const response = await publicApi.get('/api/foodpage/daywise');
+        return response.data;
+    },
+
+    // --- 2. Get Weekly Menu Template Planner (Tiffin Subscription) ---
+    getUserFoodPageWeeklyMenu: async () => {
+        // Public Discovery API (No Authorization Header Required)
+        const response = await publicApi.get('/api/foodpage/weekly');
+        return response.data;
+    }
+
 }
 export default UserAPI;

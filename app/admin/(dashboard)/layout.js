@@ -43,6 +43,11 @@ export default function AdminDashboardLayout({ children }) {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-gray-50">
       
+      {/* HTML Head / Metadata injection */}
+      <title>Diabetes Care Admin Portal | Dashboard</title>
+      <meta name="description" content="Clinical therapy focus admin panel for managing personalized dietary care, diabetes nutrition, and lifestyle configurations." />
+      <meta name="robots" content="noindex, nofollow" />
+      
       {/* Sidebar Container */}
       <aside className="h-screen shrink-0">
         <Sidebar sidebarOpen={sidebarOpen} />

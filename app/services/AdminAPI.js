@@ -99,7 +99,7 @@ const AdminAPI = {
         const response = await authApi.patch(`/api/admin/approval/pharmacy/approve/${id}`);
         return response.data;
     },
- 
+
     rejectPharmacy: async (id, payload) => {
         const response = await authApi.patch(`/api/admin/approval/pharmacy/reject/${id}`, payload);
         return response.data;
@@ -156,25 +156,17 @@ const AdminAPI = {
     // ============================================
     // --- FOOD PARTNER APPROVAL WORKFLOW APIS ----
     // ============================================
-
-    // --- 1. Get Food Partners List (Paginated & Filtered) ---
     getFoodApprovalList: async (params) => {
-        // params: { status, page, limit, search, country, state, city }
         const response = await authApi.get('/api/admin/approval/food', { params });
         return response.data;
     },
 
-    // --- 2. Approve Food Partner Profile ---
     approveFoodPartner: async (id) => {
-        // id: The MongoDB Object ID (_id) of the food document to approve
         const response = await authApi.patch(`/api/admin/approval/food/approve/${id}`);
         return response.data;
     },
 
-    // --- 3. Reject Food Partner Profile ---
     rejectFoodPartner: async (id, payload) => {
-        // id: The MongoDB Object ID (_id) of the food document to reject
-        // payload: { reason: "The uploaded FSSAI registration certificate is..." }
         const response = await authApi.patch(`/api/admin/approval/food/reject/${id}`, payload);
         return response.data;
     },
@@ -183,40 +175,90 @@ const AdminAPI = {
         return response.data;
     },
 
-    // ===================================================
-    // --- FOOD CATEGORY MANAGEMENT APIS -----------------
-    // ===================================================
-
-    // --- 1. Add Food Category ---
     addFoodCategory: async (categoryData) => {
-        // categoryData: { foodCategory: "Low GI Rice Bowls", foodEffectCategory: "Diabetes Care" }
         const response = await authApi.post('/admin/food/category/add', categoryData);
         return response.data;
     },
 
-    // --- 2. Update/Rename Category Details ---
     updateFoodCategory: async (id, categoryData) => {
-        // id: Mongoose ObjectID of the Category to update
-        // categoryData: Partial object containing the fields needing update
         const response = await authApi.put(`/admin/food/category/update/${id}`, categoryData);
         return response.data;
     },
 
-    // --- 3. Delete Category ---
     deleteFoodCategory: async (id) => {
-        // id: Mongoose ObjectID of the Category to delete
         const response = await authApi.delete(`/admin/food/category/delete/${id}`);
         return response.data;
     },
 
-    // --- 4. Get Categories List (Public) ---
     getFoodCategories: async () => {
-        // Public endpoint (No Authorization Header Check required)
         const response = await publicApi.get('/admin/food/category/get');
         return response.data;
+    },
+    // ===================================================
+    // --- FOOD ITEMS & MENU MANAGEMENT APIS -------------
+    // ===================================================
+    addFoodItem: async (formData) => {
+        const response = await authApi.post('/admin/food/manage/add', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    updateFoodItem: async (id, payload, isMultipart = false) => {
+        const headers = isMultipart ? { 'Content-Type': 'multipart/form-data' } : {};
+        const response = await authApi.put(`/admin/food/manage/update/${id}`, payload, { headers });
+        return response.data;
+    },
+
+    deleteFoodItem: async (id) => {
+        const response = await authApi.delete(`/admin/food/manage/delete/${id}`);
+        return response.data;
+    },
+
+    toggleFoodStatus: async (id) => {
+        const response = await authApi.patch(`/admin/food/manage/toggle-status/${id}`);
+        return response.data;
+    },
+
+    getAllFoodItems: async (params) => {
+        const response = await publicApi.get('/admin/food/manage/get', { params });
+        return response.data;
+    },
+
+    getSingleFoodItem: async (id) => {
+        const response = await publicApi.get(`/admin/food/manage/get/${id}`);
+        return response.data;
+    },
+
+    // ===================================================
+    // --- TODAY'S SPECIALS & WEEKLY PLANNER APIS --------
+    // =============================================
+    getTodaysSpecials: async () => {
+        const response = await publicApi.get('/admin/food/special/today');
+        return response.data;
+    },
+
+    publishTodaysSpecials: async (payload) => {
+        const response = await authApi.post('/admin/food/special/today/publish', payload);
+        return response.data;
+    },
+
+    removeTodaysSpecial: async (id) => {
+        const response = await authApi.delete(`/admin/food/special/today/delete/${id}`);
+        return response.data;
+    },
+
+    getWeeklyMenuTemplate: async () => {
+        const response = await publicApi.get('/admin/food/special/weekly');
+        return response.data;
+    },
+
+    updateWeeklyDayMenu: async (day, payload) => {
+        const response = await authApi.put(`/admin/food/special/weekly/update/${day}`, payload);
+        return response.data;
     }
-
-
 
 }
 
