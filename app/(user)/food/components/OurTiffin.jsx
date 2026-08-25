@@ -153,35 +153,6 @@ export default function OurTiffin() {
            ---------------------------------------------------- */
         <div className="animate-fade-in flex flex-col justify-between h-full w-full">
           <div>
-            
-            {/* ABSOLUTE TOP: CUSTOM DAILY PLATE RATIOS HIGHLIGHT BANNER */}
-            <div className="mb-12 bg-indigo-50/40 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 border border-indigo-100/35">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <div className="w-14 h-14 bg-[#3D3F96] text-white rounded-2xl flex items-center justify-center text-2xl shadow-md shrink-0">
-                  🍽️
-                </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-black text-gray-900">Customize Your Daily Plate Ratios</h3>
-                  <p className="text-xs text-gray-500 mt-1 max-w-xl">
-                    Need exact tracking of your carbohydrate limits and insulin windows? Build your own custom tiffin plate item-by-item to keep absolute control over your daily nutritional targets.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  // Smooth scroll to builder element anchor
-                  const el = document.getElementById('custom-tiffin');
-                  if (el) el.scrollIntoView({ behavior: 'smooth' });
-
-                  // Dispatch global event to trigger opening builder modal
-                  window.dispatchEvent(new CustomEvent('open-custom-tiffin'));
-                }}
-                className="bg-[#3D3F96] hover:bg-indigo-900 text-white text-xs font-black px-6 py-4 rounded-2xl shadow-sm transition active:scale-95 whitespace-nowrap"
-              >
-                Create Your Own Tiffin 🍱
-              </button>
-            </div>
-
             {/* SECTION HEADER */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 pb-6">
               <div>

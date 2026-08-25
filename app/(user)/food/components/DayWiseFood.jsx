@@ -96,16 +96,14 @@ export default function DayWiseFood() {
     const isNonVeg = type === 'Non Veg';
 
     return (
-      <div 
-        className={`w-4 h-4 border-2 rounded flex items-center justify-center p-[2px] shrink-0 bg-white/95 shadow-sm ${
-          isVeg ? 'border-emerald-500' : isEgg ? 'border-amber-500' : isNonVeg ? 'border-rose-500' : 'border-slate-300'
-        }`}
+      <div
+        className={`w-4 h-4 border-2 rounded flex items-center justify-center p-[2px] shrink-0 bg-white/95 shadow-sm ${isVeg ? 'border-emerald-500' : isEgg ? 'border-amber-500' : isNonVeg ? 'border-rose-500' : 'border-slate-300'
+          }`}
         title={type}
       >
-        <span 
-          className={`w-1.5 h-1.5 rounded-full ${
-            isVeg ? 'bg-emerald-500' : isEgg ? 'bg-amber-500' : isNonVeg ? 'bg-rose-500' : 'bg-slate-400'
-          }`} 
+        <span
+          className={`w-1.5 h-1.5 rounded-full ${isVeg ? 'bg-emerald-500' : isEgg ? 'bg-amber-500' : isNonVeg ? 'bg-rose-500' : 'bg-slate-400'
+            }`}
         />
       </div>
     );
@@ -116,13 +114,13 @@ export default function DayWiseFood() {
     return dishList.filter(dish => {
       const nameMatch = dish.name?.toLowerCase().includes(searchQuery.toLowerCase());
       const descMatch = dish.description?.toLowerCase().includes(searchQuery.toLowerCase());
-      const tagMatch = Array.isArray(dish.tags) 
+      const tagMatch = Array.isArray(dish.tags)
         ? dish.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()))
         : false;
 
       const matchesSearch = searchQuery.trim() === '' || nameMatch || descMatch || tagMatch;
       const matchesDiet = selectedDietType === 'All' || dish.dietType === selectedDietType;
-      const matchesCategory = selectedCategory === 'All' || 
+      const matchesCategory = selectedCategory === 'All' ||
         dish.categoryId?.foodCategory === selectedCategory ||
         dish.foodEffectCategory === selectedCategory;
 
@@ -142,11 +140,11 @@ export default function DayWiseFood() {
 
   return (
     <div className="min-h-screen bg-[#f8fbff] py-8 px-4 sm:px-6 lg:px-10 max-w-[1600px] mx-auto space-y-10 antialiased">
-      
+
       {/* --- SEARCH & QUICK FILTERS --- */}
       <div className="bg-white rounded-3xl p-5 sm:p-7 border border-slate-100 shadow-[0_4px_25px_rgba(0,0,0,0.02)] space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          
+
           {/* Search Box */}
           <div className="md:col-span-8 relative">
             <Search className="absolute left-4 top-3.5 text-slate-400" size={18} />
@@ -161,19 +159,30 @@ export default function DayWiseFood() {
 
           {/* Diet Type Switcher */}
           <div className="md:col-span-4 flex items-center gap-1.5 bg-slate-50 p-1 rounded-2xl border border-slate-100">
-            {['All', 'Veg', 'Egg', 'Non Veg'].map((type) => (
-              <button
-                key={type}
-                onClick={() => setSelectedDietType(type)}
-                className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                  selectedDietType === type
-                    ? 'bg-white text-slate-900 shadow-sm border border-slate-200/60 font-black'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                {type}
-              </button>
-            ))}
+            {['All', 'Veg', 'Egg', 'Non Veg'].map((type) => {
+              // Dynamic color mappings for active states
+              const activeStyles = {
+                All: 'bg-white text-slate-900 shadow-sm border border-slate-200/60 font-black',
+                Veg: 'bg-emerald-50/80 text-emerald-600 border border-emerald-100/60 font-black',
+                Egg: 'bg-amber-50/80 text-amber-600 border border-amber-100/60 font-black',
+                'Non Veg': 'bg-red-50/60 text-red-600 border border-red-100/60 font-black'
+              };
+
+              const isSelected = selectedDietType === type;
+
+              return (
+                <button
+                  key={type}
+                  onClick={() => setSelectedDietType(type)}
+                  className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer border ${isSelected
+                    ? activeStyles[type]
+                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
+                    }`}
+                >
+                  {type}
+                </button>
+              );
+            })}
           </div>
 
         </div>
@@ -185,11 +194,10 @@ export default function DayWiseFood() {
               <button
                 key={chip}
                 onClick={() => setSelectedCategory(chip)}
-                className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer border ${
-                  selectedCategory === chip
-                    ? 'bg-[#3d3f96] text-white border-[#3d3f96] shadow-md shadow-indigo-900/10'
-                    : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
-                }`}
+                className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer border ${selectedCategory === chip
+                  ? 'bg-red-50/60 text-red-600 border-red-200/60 shadow-sm shadow-red-900/5 font-black'
+                  : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
+                  }`}
               >
                 {chip}
               </button>
@@ -206,7 +214,7 @@ export default function DayWiseFood() {
         </div>
       ) : (
         <div className="space-y-12">
-          
+
           {/* 1. TODAY'S SPECIALS (LIMIT TO 4) */}
           {filterDishes(daywiseData.todaySpecials || []).length > 0 && (
             <div className="space-y-5">
@@ -237,9 +245,9 @@ export default function DayWiseFood() {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
                       <div className="absolute top-3.5 left-3.5">{renderDietBadge(dish.dietType)}</div>
-                      
+
                       {dish.foodEffectCategory && (
-                        <span className="absolute top-3.5 right-3.5 bg-white/95 backdrop-blur-sm text-[#3d3f96] px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm">
+                        <span className="absolute top-3.5 right-3.5 bg-red-50/90 backdrop-blur-sm text-red-600 border border-red-100/60 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm">
                           {dish.foodEffectCategory}
                         </span>
                       )}
@@ -331,7 +339,9 @@ export default function DayWiseFood() {
                           <Flame size={12} className="text-amber-500" /> {dish.calories || 0} Kcal
                         </span>
                         {dish.foodEffectCategory && (
-                          <span className="text-[#3d3f96] font-black">{dish.foodEffectCategory}</span>
+                          <span className="text-red-600 bg-red-50/60 border border-red-100/60 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider">
+                            {dish.foodEffectCategory}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -389,7 +399,9 @@ export default function DayWiseFood() {
                           <Flame size={12} className="text-amber-500" /> {dish.calories || 0} Kcal
                         </span>
                         {dish.foodEffectCategory && (
-                          <span className="text-[#3d3f96] font-black">{dish.foodEffectCategory}</span>
+                          <span className="text-red-600 bg-red-50/60 border border-red-100/60 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider">
+                            {dish.foodEffectCategory}
+                          </span>
                         )}
                       </div>
                     </div>

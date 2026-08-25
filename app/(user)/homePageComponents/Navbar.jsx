@@ -128,7 +128,7 @@ const Navbar = () => {
   const accountLinks = [
     { name: 'My Profile', icon: <UserCircle size={20} />, href: '/otherscreens/profile' },
     { name: 'My Appointments', icon: <ClipboardList size={20} />, href: '/appointments' },
-    { name: 'My Orders', icon: <ShoppingBag size={20} />, href: '/orders' },
+    { name: 'My Orders', icon: <ShoppingBag size={20} />, href: '/otherscreens/orders' },
     { name: 'Lab Reports', icon: <FileText size={20} />, href: '/reports' },
     { name: 'My Prescriptions', icon: <FileText size={20} />, href: '/prescriptions' },
     { name: 'Settings', icon: <Settings size={20} />, href: '/settings' },

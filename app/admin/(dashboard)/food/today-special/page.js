@@ -382,8 +382,8 @@ export default function TiffinMenuPlanner() {
                           <strong className="text-slate-700 font-mono">{meal.calories || 0} Kcal</strong>
                         </div>
                         <div>
-                          <span className="block text-slate-400 font-bold uppercase">GI Index</span>
-                          <strong className="text-emerald-600 font-mono">{meal.glycemicIndex || 0}</strong>
+                          <span className="block text-slate-400 font-bold uppercase">Time</span>
+                          <strong className="text-emerald-600 font-mono">{meal.prepTime || 0}</strong>
                         </div>
                       </div>
 

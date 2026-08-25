@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, ArrowRight, Pill, FileText, ChevronRight } from 'lucide-react';
@@ -34,7 +35,9 @@ const Cart = () => {
         pharmacyCart, 
         pharmacyCartTotal, 
         labCart, 
-        labCartTotal 
+        labCartTotal,
+        foodCart,
+        foodCartTotal
     } = useCart(); // Get real-time cart states from context
 
     const [isHovered, setIsHovered] = useState(false);
@@ -46,8 +49,8 @@ const Cart = () => {
     const labCount = labCart?.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
     const labTotalVal = labCartTotal || 0;
 
-    const foodCount = 0; // Set to zero unless integrated with a dynamic Food Context
-    const foodTotalVal = 0;
+    const foodCount = foodCart?.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+    const foodTotalVal = foodCartTotal || 0;
 
     // Aggregate totals
     const totalItems = pharmacyCount + labCount + foodCount;
@@ -79,7 +82,7 @@ const Cart = () => {
             name: "Food Cart",
             count: foodCount,
             total: foodTotalVal.toLocaleString(),
-            href: "/food-nutrition/cart",
+            href: "/otherscreens/carts/foodcart",
             icon: <ShoppingBag size={16} className="text-[#3d3f96]" />,
             bgLight: "bg-indigo-50/60"
         }] : [])

@@ -31,10 +31,12 @@ export const CartProvider = ({ children }) => {
     // --- Cart Data States ---
     const [labCart, setLabCart] = useState(null);
     const [pharmacyCart, setPharmacyCart] = useState(null);
+    const [foodCart, setFoodCart] = useState(null);
 
     // --- Pricing & Calculation States ---
     const [labCartTotal, setLabCartTotal] = useState(0);
     const [pharmacyCartTotal, setPharmacyCartTotal] = useState(0);
+    const [foodCartTotal, setFoodCartTotal] = useState(0);
     const [totalItems, setTotalItems] = useState(0);
 
     // --- Loading & Error Handling States ---
@@ -191,11 +193,87 @@ export const CartProvider = ({ children }) => {
     };
 
 
+    // --- 15. Fetch Food Cart Details ---
+    const fetchFoodCart = async () => {
+        setLoading(true);
+        try {
+            const response = await authApi.get('/user/cart/food');
+            if (response.data && response.data.success) {
+                setFoodCart(response.data.data);
+                setFoodCartTotal(response.data.data?.foodCartTotal || 0);
+            }
+        } catch (err) {
+            console.error("Error fetching food cart:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // --- 16. Add Item to Food Cart ---
+    const addToFoodCart = async (payload) => {
+        // payload: { foodId, itemId, quantity, forceReplace }
+        try {
+            const response = await authApi.post('/user/cart/food/add', payload);
+            if (response.data && response.data.success) {
+                await fetchFoodCart();
+            }
+            return response.data;
+        } catch (err) {
+            console.error("Error adding item to food cart:", err);
+            throw err;
+        }
+    };
+
+    // --- 17. Update Food Item Quantity ---
+    const updateFoodItemQuantity = async (itemId, action) => {
+        // action: 'inc' (or 'increment') or 'dec' (or 'decrement')
+        try {
+            const response = await authApi.put('/user/cart/food/quantity', { itemId, action });
+            if (response.data && response.data.success) {
+                await fetchFoodCart(); // Synchronize local state
+            }
+            return response.data;
+        } catch (err) {
+            console.error("Error updating food item quantity:", err);
+            throw err;
+        }
+    };
+
+    // --- 18. Remove Specific Item from Food Cart ---
+    const removeFoodCartItem = async (itemId) => {
+        try {
+            const response = await authApi.delete(`/user/cart/food/item/${itemId}`);
+            if (response.data && response.data.success) {
+                await fetchFoodCart(); // Synchronize local state
+            }
+            return response.data;
+        } catch (err) {
+            console.error("Error removing food item from cart:", err);
+            throw err;
+        }
+    };
+
+    // --- 19. Clear Full Food Cart ---
+    const clearFoodCart = async () => {
+        try {
+            const response = await authApi.post('/user/cart/food/clear');
+            if (response.data && response.data.success) {
+                setFoodCart(null);
+                setFoodCartTotal(0);
+            }
+            return response.data;
+        } catch (err) {
+            console.error("Error clearing full food cart:", err);
+            throw err;
+        }
+    };
+
+
     // --- Auto Fetch and Sync Calculations ---
     useEffect(() => {
         // Fetch cart lists once when the Context Provider is initialized on Client
         const syncCarts = async () => {
-            await Promise.allSettled([fetchLabCart(), fetchPharmacyCart()]);
+            await Promise.allSettled([fetchLabCart(), fetchPharmacyCart(), fetchFoodCart()]);
         };
         syncCarts();
     }, []);
@@ -204,24 +282,28 @@ export const CartProvider = ({ children }) => {
     useEffect(() => {
         const labItemsCount = labCart?.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
         const pharmacyItemsCount = pharmacyCart?.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
-        setTotalItems(labItemsCount + pharmacyItemsCount);
-    }, [labCart, pharmacyCart]);
+        const foodItemsCount = foodCart?.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+        setTotalItems(labItemsCount + pharmacyItemsCount + foodItemsCount);
+    }, [labCart, pharmacyCart, foodCart]);
 
     return (
         <CartContext.Provider value={{
             // Data States
             labCart,
             pharmacyCart,
+            foodCart,
             loading,
-            
+
             // Computations & Totals
             labCartTotal,
             pharmacyCartTotal,
+            foodCartTotal,
             totalItems,
 
             // Sync/Fetch Actions
             fetchLabCart,
             fetchPharmacyCart,
+            fetchFoodCart,
 
             // Lab Cart Operations (1-7)
             addToLabCart,
@@ -234,6 +316,12 @@ export const CartProvider = ({ children }) => {
             updatePharmacyItemQuantity,
             removePharmacyItem,
             clearPharmacyCart,
+
+            // Food Cart Operations (15-19)
+            addToFoodCart,
+            updateFoodItemQuantity,
+            removeFoodCartItem,
+            clearFoodCart
         }}>
             {children}
         </CartContext.Provider>

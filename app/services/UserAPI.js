@@ -226,25 +226,21 @@ const UserAPI = {
     },
 
     getAllPharmacies: async (searchPayload) => {
-        // searchPayload: { lat, lng, search, city, state }
         const response = await publicApi.post('/user/pharmacy/list', searchPayload);
         return response.data;
     },
 
     getPharmacyProfileDetails: async (id) => {
-        // id: Pharmacy document identifier (_id)
         const response = await publicApi.get(`/user/pharmacy/details/${id}`);
         return response.data;
     },
 
     getMedicineByCategory: async (params) => {
-        // params: { category, subCategory, page }
         const response = await publicApi.get('/user/pharmacy/category-details', { params });
         return response.data;
     },
 
     getPharmacySuggestions: async (params) => {
-        // params: { query }
         const response = await publicApi.get('/user/pharmacy/pharmacy-suggestions', { params });
         return response.data;
     },
@@ -257,18 +253,88 @@ const UserAPI = {
     // ===================================================
     // --- USER-END FOOD PAGE & DISCOVERY APIS -----------
     // ===================================================
-
-    // --- 1. Get Daywise Layout Content (Primary Widget Loader) ---
     getUserFoodPageDaywise: async () => {
-        // Public Discovery API (No Authorization Header Required)
         const response = await publicApi.get('/api/foodpage/daywise');
         return response.data;
     },
-
-    // --- 2. Get Weekly Menu Template Planner (Tiffin Subscription) ---
     getUserFoodPageWeeklyMenu: async () => {
-        // Public Discovery API (No Authorization Header Required)
         const response = await publicApi.get('/api/foodpage/weekly');
+        return response.data;
+    },
+    // ===================================================
+    // --- USER GEOLOCATED MEALS CATALOG APIS -----------
+    // ===================================================
+
+    getFoodCoupons: async () => {
+        const response = await authApi.get('/api/foodpage/coupons')
+        return response.data
+    },
+
+    getFoodCatgoriesAll: async () => {
+        const response = await publicApi.get('/api/foodpage/categories');
+        return response.data;
+    },
+
+    getMedicalCatgoriesAll: async () => {
+        const response = await publicApi.get('/api/foodpage/effects');
+        return response.data;
+    },
+
+    getNearestGeolocatedMeals: async (locationPayload) => {
+        const response = await publicApi.post('/api/foodpage/nearest-meals', locationPayload);
+        return response.data;
+    },
+    getSinglMealDetailsById: async (id) => {
+        const response = await publicApi.get(`/api/foodpage/meals/${id}`);
+        return response.data;
+    },
+
+    getNearestGeolocatedCombos: async (locationPayload) => {
+        const response = await publicApi.post('/api/foodpage/nearest-combos', locationPayload);
+        return response.data;
+    },
+
+    getSinglComboDetailsById: async (id) => {
+        const response = await publicApi.get(`/api/foodpage/combos/${id}`);
+        return response.data;
+    },
+
+    // ===================================================
+    // --- USER FOOD ORDER CHECKOUT APIS -----------------
+    // ===================================================
+
+    // --- 1. Calculate / Preview Bill Breakdown ---
+    previewFoodBill: async (calculationPayload) => {
+        // calculationPayload: { foodId, userLat, userLng, couponCode, isRapid }
+        const response = await authApi.post('/api/food/checkout/calculate', calculationPayload);
+        return response.data;
+    },
+
+    // --- 2. Place Order (COD & Online Initiation) ---
+    placeFoodOrder: async (orderPayload) => {
+        // orderPayload: { foodId, paymentMethod, address, userLat, userLng, couponCode, deliverySlot }
+        const response = await authApi.post('/api/food/checkout/place-order', orderPayload);
+        return response.data;
+    },
+
+    // --- 3. Verify Razorpay Payment (Online Flow) ---
+    verifyRazorpayPayment: async (paymentPayload) => {
+        // paymentPayload: { appointmentId, razorpayOrderId, razorpayPaymentId, razorpaySignature }
+        const response = await authApi.post('/api/food/checkout/verify-payment', paymentPayload);
+        return response.data;
+    },
+
+    // --- 4. Get User's Order History ---
+    getUserOrdersList: async (params) => {
+        // params (optional): { status }
+        const response = await authApi.get('/api/food/checkout/my-orders', { params });
+        return response.data;
+    },
+
+    // --- 5. Get Single Order Details & Tracking Spec ---
+    getSingleOrderDetails: async (id) => {
+        // id: bookingId or dynamic Mongoose Object ID
+        const response = await authApi.get(`/api/food/checkout/order/${id}`);
         return response.data;
     }
 

@@ -258,6 +258,182 @@ const AdminAPI = {
     updateWeeklyDayMenu: async (day, payload) => {
         const response = await authApi.put(`/admin/food/special/weekly/update/${day}`, payload);
         return response.data;
+    },
+
+    // ===================================================
+    // --- FOOD COMBO OFFERS MANAGEMENT APIS -------------
+    // =================================
+    createComboOffer: async (comboData) => {
+        // comboData: { name, description, comboPrice, spicyLevel, isPopular, isRecommended, dishes: [{ foodServiceId, quantity }] }
+        const response = await authApi.post('/admin/food/manage/combo/add', comboData);
+        return response.data;
+    },
+
+    updateComboDetails: async (id, comboData) => {
+        const response = await authApi.put(`/admin/food/manage/combo/update/${id}`, comboData);
+        return response.data;
+    },
+
+    deleteComboPackage: async (id) => {
+        const response = await authApi.delete(`/admin/food/manage/combo/delete/${id}`);
+        return response.data;
+    },
+
+    toggleComboStatus: async (id) => {
+        const response = await authApi.patch(`/admin/food/manage/combo/toggle-status/${id}`);
+        return response.data;
+    },
+
+    getAllComboOffers: async (params) => {
+        const response = await publicApi.get('/admin/food/manage/combo/get', { params });
+        return response.data;
+    },
+
+    getSingleComboDetails: async (id) => {
+        const response = await publicApi.get(`/admin/food/manage/combo/get/${id}`);
+        return response.data;
+    },
+
+    // ===================================================
+    // --- MAIN PAGE BANNERS MANAGEMENT APIS -------------
+    // ===================================================
+
+    // --- 1. Create New Hero Banner ---
+    createHeroBanner: async (formData) => {
+        const response = await authApi.post('/admin/food/manage/banner/add', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    // --- 2. Update Hero Banner Details ---
+    updateHeroBannerDetails: async (id, payload, isMultipart = false) => {
+        const headers = isMultipart ? { 'Content-Type': 'multipart/form-data' } : {};
+        const response = await authApi.put(`/admin/food/manage/banner/update/${id}`, payload, { headers });
+        return response.data;
+    },
+
+    // --- 3. Remove/Delete Banner Configuration ---
+    deleteBannerConfig: async (id) => {
+        const response = await authApi.delete(`/admin/food/manage/banner/delete/${id}`);
+        return response.data;
+    },
+
+    // --- 4. Toggle Active Status Switch (Live Active Status) ---
+    toggleBannerStatus: async (id) => {
+        const response = await authApi.patch(`/admin/food/manage/banner/toggle-status/${id}`);
+        return response.data;
+    },
+
+    // --- 5. Get All Banners List ---
+    getAllBannersList: async (params) => {
+        const response = await publicApi.get('/admin/food/manage/banner/get', { params });
+        return response.data;
+    },
+
+    // ===================================================
+    // --- ADMIN COUPONS & PROMOTIONS APIS ---------------
+    // ===================================================
+    createAdminCoupon: async (couponData) => {
+        const response = await authApi.post('/provider/coupons/admin/add', couponData);
+        return response.data;
+    },
+
+    getAdminCouponsList: async () => {
+        const response = await authApi.get('/provider/coupons/admin/list');
+        return response.data;
+    },
+
+    toggleAdminCouponStatus: async (id) => {
+        const response = await authApi.patch(`/provider/coupons/admin/toggle/${id}`);
+        return response.data;
+    },
+
+    updateAdminCoupon: async (id, couponData) => {
+        const response = await authApi.put(`/provider/coupons/admin/update/${id}`, couponData);
+        return response.data;
+    },
+
+    deleteAdminCoupon: async (id) => {
+        const response = await authApi.delete(`/provider/coupons/admin/delete/${id}`);
+        return response.data;
+    },
+
+    // ===================================================
+    // --- LOGISTICS & DELIVERY CHARGES APIS ------------
+    // ===================================================
+
+    // --- 1. Save/Update Vendor Delivery Charges ---
+    saveVendorDeliveryCharges: async (chargesData) => {
+        const response = await authApi.post('/provider/delivery-charges/save', chargesData);
+        return response.data;
+    },
+
+    // --- 2. Get Vendor Delivery Charges ---
+    getVendorDeliveryCharges: async () => {
+        const response = await authApi.get('/provider/delivery-charges/my-charges');
+        return response.data;
+    },
+
+
+    // --- PART 2: Admin Panel Endpoints ---
+    saveGlobalVendorChargesByAdmin: async (adminChargesData) => {
+        const response = await authApi.post('/provider/delivery-charges/admin/save', adminChargesData);
+        return response.data;
+    },
+
+    // --- 4. Get Vendor Charges (By Admin) ---
+    getVendorChargesByAdmin: async (params) => {
+        const response = await authApi.get('/provider/delivery-charges/admin/my-charges', { params });
+        return response.data;
+    },
+
+    // ===================================================
+    // --- ADMIN TIFFIN SUBSCRIPTION PLANS APIS ---------
+    // ===================================================
+
+    // --- 1. Create Subscription Plan (Create Custom Tier) ---
+    createTiffinPlan: async (planData) => {
+        // planData: { name, planCycle, mealsPerDay, price, permittedSlots, dishPool, description }
+        const response = await authApi.post('/admin/food/tiffin/plans/add', planData);
+        return response.data;
+    },
+
+    // --- 2. Get All Subscription Plans (Dashboard Grid) ---
+    getTiffinPlansList: async () => {
+        const response = await authApi.get('/admin/food/tiffin/plans/get');
+        return response.data;
+    },
+
+    // --- 3. Get Single Plan Details by ID ---
+    getTiffinPlanDetails: async (id) => {
+        // id: Document Mongoose Object ID (_id) or custom planId (e.g. PLN-101)
+        const response = await authApi.get(`/admin/food/tiffin/plans/get/${id}`);
+        return response.data;
+    },
+
+    // --- 4. Update Subscription Plan Details ---
+    updateTiffinPlan: async (id, planData) => {
+        // id: Document Mongoose Object ID (_id) or custom planId
+        // planData: Partial object containing the fields needing update
+        const response = await authApi.put(`/admin/food/tiffin/plans/update/${id}`, planData);
+        return response.data;
+    },
+
+    // --- 5. Delete Subscription Plan ---
+    deleteTiffinPlan: async (id) => {
+        // id: Document Mongoose Object ID (_id) or custom planId to permanently delete
+        const response = await authApi.delete(`/admin/food/tiffin/plans/delete/${id}`);
+        return response.data;
+    },
+
+    // --- 6. Toggle Plan Active / Inactive Status Switch ---
+    toggleTiffinPlanStatus: async (id) => {
+        // id: Document Mongoose Object ID (_id) or custom planId
+        const response = await authApi.patch(`/admin/food/tiffin/plans/toggle-status/${id}`);
+        return response.data;
     }
 
 }
