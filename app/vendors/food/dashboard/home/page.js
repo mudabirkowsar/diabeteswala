@@ -1,13 +1,107 @@
-import React from 'react';
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import FoodAPI from '../../../../services/FoodVendorAPI';
+
 
 export default function DashboardPage() {
+  const [isOnline, setIsOnline] = useState(true);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
+
+  // Fetch initial profile status on load if available, otherwise fallback to true
+  useEffect(() => {
+    // Optional: Query current kitchen status on mount
+    const fetchCurrentStatus = async () => {
+      try {
+        // Query the master catalog as it returns current active states
+        const response = await FoodAPI.getVendorMasterCatalog();
+        if (response.success && response.data && response.data.length > 0) {
+          // If profile/kitchen online state is returned, sync it here
+        }
+      } catch (err) {
+        console.warn("Failed to fetch initial online status on load:", err);
+      }
+    };
+    fetchCurrentStatus();
+  }, []);
+
+  const handleToggleOnline = async () => {
+    setStatusLoading(true);
+    setErrorMessage(null);
+    try {
+      const response = await FoodAPI.toggleVendorLiveStatus(!isOnline);
+      if (response.success) {
+        setIsOnline(response.isOnline);
+        setSuccessMessage(response.message || `Kitchen status set to ${response.isOnline ? 'Online' : 'Offline'}`);
+        setTimeout(() => setSuccessMessage(null), 4000);
+      }
+    } catch (err) {
+      setErrorMessage(err?.message || 'Failed to modify live kitchen status.');
+      setTimeout(() => setErrorMessage(null), 4000);
+    } finally {
+      setStatusLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto">
-      {/* Dashboard Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Food Revenue & Payouts</h1>
-        <p className="text-sm text-slate-500">Overview of lifetime earnings, current plan status, and analytics.</p>
+      
+      {/* Dashboard Header Block with Status Toggler */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Food Revenue & Payouts</h1>
+          <p className="text-sm text-slate-500 mt-1">Overview of lifetime earnings, current plan status, and analytics.</p>
+        </div>
+
+        {/* Live Kitchen Status Switcher Card */}
+        <div className="flex items-center gap-3 bg-white border border-slate-200 px-4 py-2.5 rounded-2xl shadow-sm self-start sm:self-center transition-all duration-150">
+          <div className="flex items-center gap-2">
+            <span className={`relative flex h-2 w-2 ${isOnline ? 'block' : 'hidden'}`}>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            {!isOnline && <span className="w-2 h-2 rounded-full bg-slate-300"></span>}
+            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+              {isOnline ? 'Online (Accepting Orders)' : 'Offline (Orders Paused)'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleToggleOnline}
+            disabled={statusLoading}
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              isOnline ? 'bg-emerald-500' : 'bg-slate-200'
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                isOnline ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
+          </button>
+        </div>
       </div>
+
+      {/* Action Notification Banners */}
+      {successMessage && (
+        <div className="rounded-2xl bg-emerald-50 p-4 border border-emerald-100 animate-fade-in shadow-sm">
+          <div className="flex items-center">
+            <span className="text-emerald-500 mr-2">✓</span>
+            <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">{successMessage}</p>
+          </div>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="rounded-2xl bg-rose-50 p-4 border border-rose-100 animate-fade-in shadow-sm">
+          <div className="flex items-center">
+            <span className="text-rose-500 mr-2">⚠️</span>
+            <p className="text-xs font-bold text-rose-800 uppercase tracking-wider">{errorMessage}</p>
+          </div>
+        </div>
+      )}
 
       {/* Main Colored Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">

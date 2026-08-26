@@ -34,7 +34,6 @@ const AdminAPI = {
         const response = await publicApi.post('/api/auth/admin/register', adminData);
         return response.data;
     },
-
     loginAdmin: async (credentials) => {
         const response = await publicApi.post('/api/auth/admin/login', credentials);
         return response.data;
@@ -45,6 +44,36 @@ const AdminAPI = {
     },
     updateAdminProfile: async (profileData) => {
         const response = await authApi.put('/api/auth/admin/update', profileData);
+        return response.data;
+    },
+
+    // ===================================================
+    // --- ADMIN COD POLICY CONFIGURATION APIS -----------
+    // ===================================================
+    getAllVendorsCodConfig: async () => {
+        const response = await authApi.get('/api/admin/policy-config/cod');
+        return response.data;
+    },
+    toggleVendorCodStatus: async (payload) => {
+        const response = await authApi.post('/api/admin/policy-config/cod/toggle', payload);
+        return response.data;
+    },
+
+    // ==========================================================
+    // --- ADMIN DELIVERY & LOGISTICS PRICING APIS -------------
+    // ==========================================================
+    saveAdminDeliveryCharges: async (chargesPayload) => {
+        const response = await authApi.post('/provider/delivery-charges/admin/save', chargesPayload);
+        return response.data;
+    },
+
+    updateAdminDeliveryCharges: async (chargesPayload) => {
+        const response = await authApi.put('/provider/delivery-charges/admin/update', chargesPayload);
+        return response.data;
+    },
+
+    getActiveDeliveryConfig: async (params) => {
+        const response = await authApi.get('/provider/delivery-charges/admin/my-charges', { params });
         return response.data;
     },
 
@@ -362,35 +391,6 @@ const AdminAPI = {
     },
 
     // ===================================================
-    // --- LOGISTICS & DELIVERY CHARGES APIS ------------
-    // ===================================================
-
-    // --- 1. Save/Update Vendor Delivery Charges ---
-    saveVendorDeliveryCharges: async (chargesData) => {
-        const response = await authApi.post('/provider/delivery-charges/save', chargesData);
-        return response.data;
-    },
-
-    // --- 2. Get Vendor Delivery Charges ---
-    getVendorDeliveryCharges: async () => {
-        const response = await authApi.get('/provider/delivery-charges/my-charges');
-        return response.data;
-    },
-
-
-    // --- PART 2: Admin Panel Endpoints ---
-    saveGlobalVendorChargesByAdmin: async (adminChargesData) => {
-        const response = await authApi.post('/provider/delivery-charges/admin/save', adminChargesData);
-        return response.data;
-    },
-
-    // --- 4. Get Vendor Charges (By Admin) ---
-    getVendorChargesByAdmin: async (params) => {
-        const response = await authApi.get('/provider/delivery-charges/admin/my-charges', { params });
-        return response.data;
-    },
-
-    // ===================================================
     // --- ADMIN TIFFIN SUBSCRIPTION PLANS APIS ---------
     // ===================================================
 
@@ -434,7 +434,44 @@ const AdminAPI = {
         // id: Document Mongoose Object ID (_id) or custom planId
         const response = await authApi.patch(`/admin/food/tiffin/plans/toggle-status/${id}`);
         return response.data;
-    }
+    },
+
+
+    // ===================================================
+    // --- NON-FOOD ADD-ONS MANAGEMENT APIS -------------
+    // ===================================================
+    getAvailableAddons: async () => {
+        const response = await publicApi.get('/api/food/checkout/addons');
+        return response.data;
+    },
+
+    getAddonDetails: async (id) => {
+        const response = await publicApi.get(`/api/food/checkout/addons/${id}`);
+        return response.data;
+    },
+
+    createAddon: async (addonData) => {
+        const response = await authApi.post('/api/food/checkout/addons/add', addonData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    updateAddonDetails: async (id, addonData) => {
+        const response = await authApi.put(`/api/food/checkout/addons/update/${id}`, addonData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    deleteAddon: async (id) => {
+        const response = await authApi.delete(`/api/food/checkout/addons/delete/${id}`);
+        return response.data;
+    },
 
 }
 

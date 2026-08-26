@@ -320,14 +320,15 @@ export default function Sidebar({ sidebarOpen }) {
                                 <Link href="/admin/food/managecategory" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/managecategory") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/managecategory") ? theme.primary : "#D1D5DB" }} /> Manage Category
                                 </Link>
-                                <Link href="/admin/food/deliverycharge" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/deliverycharge") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
-                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/deliverycharge") ? theme.primary : "#D1D5DB" }} /> Delivery Charges
+
+                                <Link href="/admin/food/manageaddons" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/manageaddons") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/manageaddons") ? theme.primary : "#D1D5DB" }} /> Manage Add On's
+                                </Link>
+                                <Link href="/admin/food/managedeliverycharges" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/managedeliverycharges") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/managedeliverycharges") ? theme.primary : "#D1D5DB" }} /> Manage Delivery Charges
                                 </Link>
                                 <Link href="/admin/food/combo-offers" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/combo-offers") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/combo-offers") ? theme.primary : "#D1D5DB" }} /> Combo Offers
-                                </Link>
-                                <Link href="/admin/food/promotions" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/promotions") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
-                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/promotions") ? theme.primary : "#D1D5DB" }} /> Promotions
                                 </Link>
                                 <Link href="/admin/food/today-special" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/today-special") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/today-special") ? theme.primary : "#D1D5DB" }} /> Today's Special
@@ -608,6 +609,21 @@ export default function Sidebar({ sidebarOpen }) {
                                 <Link href="/admin/others/distancemanage" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/others/distancemanage") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/others/distancemanage") ? theme.primary : "#D1D5DB" }} />
                                     Distance Manage
+                                </Link>
+
+                                <Link href="/admin/others/codconfig" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/others/codconfig") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/others/codconfig") ? theme.primary : "#D1D5DB" }} />
+                                    Manage COD
+                                </Link>
+
+                                <Link href="/admin/others/managedeliverycharges" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/others/managedeliverycharges") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/others/managedeliverycharges") ? theme.primary : "#D1D5DB" }} />
+                                    Manage Delivery Charge
+                                </Link>
+
+                                <Link href="/admin/others/promotions" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/others/promotions") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/others/promotions") ? theme.primary : "#D1D5DB" }} />
+                                    Manage Coupon
                                 </Link>
 
                                 {/* 3. Cancellation Charges */}

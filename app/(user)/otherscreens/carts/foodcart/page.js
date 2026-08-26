@@ -22,7 +22,7 @@ import Coupons from './components/Coupons';
 import OrderSuccessModal from './components/OrderSuccessModal';
 
 // --- BASE MEDIA HELPER ---
-const BASE_SERVER_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.3:5002";
+const BASE_SERVER_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 const getMediaUrl = (path) => {
   if (!path) return null;
@@ -77,11 +77,11 @@ export default function FoodCartPage() {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
 
-  // Accessories / Cutlery States
+  // Accessories / Addons States
   const [selectedAccessories, setSelectedAccessories] = useState([]);
   const [optOutOfCutlery, setOptOutOfCutlery] = useState(false);
 
-  // Checkout Options & Live Calculated Bill Summary States
+  // Checkout Options & Live Calculated Bill States
   const [isRapid, setIsRapid] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('Online'); // 'Online' or 'COD'
   const [billSummary, setBillSummary] = useState(null);
@@ -117,6 +117,13 @@ export default function FoodCartPage() {
     fetchInitialAddress();
   }, []);
 
+  // --- Dynamic Pricing Calculations for Accessories ---
+  const accessoriesTotal = optOutOfCutlery
+    ? 0
+    : selectedAccessories.reduce((acc, curr) => acc + curr.price * curr.quantity, 0);
+
+  const combinedSubtotal = foodCartTotal + accessoriesTotal;
+
   // --- 2. Live Bill Preview & Calculation Call ---
   const calculateLiveBill = useCallback(async () => {
     const kitchen = foodCart?.foodId || {};
@@ -125,8 +132,8 @@ export default function FoodCartPage() {
 
     setCalculatingBill(true);
     try {
-      let lat = 30.7114;
-      let lng = 76.6908;
+      let lat;
+      let lng;
 
       if (typeof window !== "undefined") {
         const savedCoords = localStorage.getItem("userCoords");
@@ -153,7 +160,16 @@ export default function FoodCartPage() {
 
       const response = await UserAPI.previewFoodBill(calculationPayload);
       if (response && response.success) {
-        setBillSummary(response.billSummary);
+        const summary = response.billSummary || {};
+        // Add dynamic accessories cost into the preview total
+        const updatedTotal = (summary.totalAmount || 0) + accessoriesTotal;
+
+        setBillSummary({
+          ...summary,
+          itemTotal: (summary.itemTotal || foodCartTotal) + accessoriesTotal,
+          totalAmount: updatedTotal
+        });
+
         if (response.distance) {
           setDistanceText(response.distance);
         }
@@ -163,7 +179,7 @@ export default function FoodCartPage() {
     } finally {
       setCalculatingBill(false);
     }
-  }, [foodCart, appliedCoupon, isRapid, selectedAddress]);
+  }, [foodCart, appliedCoupon, isRapid, selectedAddress, accessoriesTotal, foodCartTotal]);
 
   useEffect(() => {
     if (foodCart && foodCart.items && foodCart.items.length > 0) {
@@ -171,19 +187,19 @@ export default function FoodCartPage() {
     }
   }, [calculateLiveBill]);
 
-  // --- Accessory Handlers ---
+  // --- Accessory Quantity Modifier Handler ---
   const handleUpdateAccessoryQty = (item, delta) => {
     setSelectedAccessories((prev) => {
-      const existing = prev.find((a) => a.id === item.id);
+      const existing = prev.find((a) => a._id === item._id);
       if (!existing && delta > 0) {
         return [...prev, { ...item, quantity: 1 }];
       }
       if (existing) {
         const newQty = existing.quantity + delta;
         if (newQty <= 0) {
-          return prev.filter((a) => a.id !== item.id);
+          return prev.filter((a) => a._id !== item._id);
         }
-        return prev.map((a) => (a.id === item.id ? { ...a, quantity: newQty } : a));
+        return prev.map((a) => (a._id === item._id ? { ...a, quantity: newQty } : a));
       }
       return prev;
     });
@@ -199,7 +215,7 @@ export default function FoodCartPage() {
     });
   };
 
-  // --- Item Quantity Handlers ---
+  // --- Cart Item Handlers ---
   const handleQtyChange = async (itemId, currentQty, action) => {
     setUpdatingId(itemId);
     try {
@@ -280,8 +296,8 @@ export default function FoodCartPage() {
       return;
     }
 
-    let lat = 30.7114;
-    let lng = 76.6908;
+    let lat;
+    let lng;
     if (typeof window !== "undefined") {
       const savedCoords = localStorage.getItem("userCoords");
       if (savedCoords) {
@@ -317,8 +333,17 @@ export default function FoodCartPage() {
         state: selectedAddress.state,
         pincode: selectedAddress.pincode,
         addressType: selectedAddress.addressType || "Home"
-      }
+      },
+      accessories: selectedAccessories.map(a => ({
+        addonId: a._id,
+        name: a.name,
+        price: a.price,
+        quantity: a.quantity
+      })),
+      optOutOfCutlery
     };
+
+    console.log("=== FINAL FOOD ORDER PAYLOAD ===", JSON.stringify(orderPayload, null, 2));
 
     try {
       // --- FLOW A: CASH ON DELIVERY (COD) ---
@@ -459,8 +484,8 @@ export default function FoodCartPage() {
 
         {/* Primary Layout Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Left Column: Cart Items List + Accessories */}
+
+          {/* Left Column: Cart Items List + Dynamic Accessories */}
           <div className="lg:col-span-7 space-y-5">
             <CartItemsList
               items={foodCart?.items || []}
@@ -471,11 +496,13 @@ export default function FoodCartPage() {
               placeholderImage={PLACEHOLDER_IMAGE}
             />
 
+            {/* Dynamic Accessories Component */}
             <AccessoriesCard
               selectedAccessories={selectedAccessories}
               onUpdateAccessoryQty={handleUpdateAccessoryQty}
               optOutOfCutlery={optOutOfCutlery}
               onToggleOptOutCutlery={handleToggleOptOutCutlery}
+              getMediaUrl={getMediaUrl}
             />
           </div>
 
@@ -540,7 +567,7 @@ export default function FoodCartPage() {
         <Coupons
           isOpen={isCouponModalOpen}
           onClose={() => setIsCouponModalOpen(false)}
-          cartTotal={billSummary?.itemTotal || foodCartTotal}
+          cartTotal={billSummary?.itemTotal || combinedSubtotal}
           appliedCoupon={appliedCoupon}
           onApplyCoupon={(coupon) => {
             setAppliedCoupon(coupon);

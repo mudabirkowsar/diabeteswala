@@ -303,40 +303,34 @@ const UserAPI = {
     // --- USER FOOD ORDER CHECKOUT APIS -----------------
     // ===================================================
 
-    // --- 1. Calculate / Preview Bill Breakdown ---
     previewFoodBill: async (calculationPayload) => {
-        // calculationPayload: { foodId, userLat, userLng, couponCode, isRapid }
         const response = await authApi.post('/api/food/checkout/calculate', calculationPayload);
         return response.data;
     },
 
-    // --- 2. Place Order (COD & Online Initiation) ---
     placeFoodOrder: async (orderPayload) => {
-        // orderPayload: { foodId, paymentMethod, address, userLat, userLng, couponCode, deliverySlot }
         const response = await authApi.post('/api/food/checkout/place-order', orderPayload);
         return response.data;
     },
 
-    // --- 3. Verify Razorpay Payment (Online Flow) ---
     verifyRazorpayPayment: async (paymentPayload) => {
-        // paymentPayload: { appointmentId, razorpayOrderId, razorpayPaymentId, razorpaySignature }
         const response = await authApi.post('/api/food/checkout/verify-payment', paymentPayload);
         return response.data;
     },
 
-    // --- 4. Get User's Order History ---
     getUserOrdersList: async (params) => {
-        // params (optional): { status }
         const response = await authApi.get('/api/food/checkout/my-orders', { params });
         return response.data;
     },
 
-    // --- 5. Get Single Order Details & Tracking Spec ---
     getSingleOrderDetails: async (id) => {
-        // id: bookingId or dynamic Mongoose Object ID
         const response = await authApi.get(`/api/food/checkout/order/${id}`);
         return response.data;
-    }
+    },
+    getFoodAddons: async () => {
+        const response = await publicApi.get('/api/food/checkout/addons');
+        return response.data;
+    },
 
 }
 export default UserAPI;
