@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Trash2, Loader2 } from 'lucide-react';
 
@@ -22,7 +22,7 @@ import Coupons from './components/Coupons';
 import OrderSuccessModal from './components/OrderSuccessModal';
 
 // --- BASE MEDIA HELPER ---
-const BASE_SERVER_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+const BASE_SERVER_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.3:5002";
 
 const getMediaUrl = (path) => {
   if (!path) return null;
@@ -36,7 +36,7 @@ const getMediaUrl = (path) => {
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=150";
 const KITCHEN_PLACEHOLDER = "https://images.unsplash.com/photo-1556910103-1c02745aae4d?q=80&w=200";
 
-// --- RAZORPAY SDK LOADER ---
+// --- RAZORPAY SDK LOADER HELPER ---
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
     if (typeof window !== "undefined" && window.Razorpay) {
@@ -81,61 +81,49 @@ export default function FoodCartPage() {
   const [selectedAccessories, setSelectedAccessories] = useState([]);
   const [optOutOfCutlery, setOptOutOfCutlery] = useState(false);
 
-  // Checkout Options & Live Calculated Bill States
+  // Checkout Options & Live Calculated Bill Breakdown States
   const [isRapid, setIsRapid] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('Online'); // 'Online' or 'COD'
   const [billSummary, setBillSummary] = useState(null);
+  const [orderRestrictions, setOrderRestrictions] = useState({ isCodAvailable: true, isRapidAvailable: true });
   const [distanceText, setDistanceText] = useState('Calculating...');
+  const [appliedLocation, setAppliedLocation] = useState(null);
   const [calculatingBill, setCalculatingBill] = useState(false);
 
   // Order Confirmation Modal State
   const [placedOrderData, setPlacedOrderData] = useState(null);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
-  // --- 1. Fetch Default Address on Mount ---
-  useEffect(() => {
-    const fetchInitialAddress = async () => {
-      setLoadingAddress(true);
-      try {
-        const response = await UserAPI.getAddressList();
-        if (response && response.success) {
-          const addressList = response.data || [];
-          const defaultAddr = addressList.find((a) => a.isDefault);
-          if (defaultAddr) {
-            setSelectedAddress(defaultAddr);
-          } else if (addressList.length > 0) {
-            setSelectedAddress(addressList[0]);
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching initial delivery address:", err);
-      } finally {
-        setLoadingAddress(false);
-      }
-    };
+  // --- Format Addons Array for Payload ---
+  const formattedAddons = useMemo(() => {
+    if (optOutOfCutlery) return [];
+    return selectedAccessories.map((a) => ({
+      addonId: a._id,
+      quantity: a.quantity
+    }));
+  }, [optOutOfCutlery, selectedAccessories]);
 
-    fetchInitialAddress();
-  }, []);
+  // Accessories Cost Total Calculation
+  const accessoriesTotal = useMemo(() => {
+    if (optOutOfCutlery) return 0;
+    return selectedAccessories.reduce((acc, curr) => acc + (Number(curr.price) || 0) * (curr.quantity || 1), 0);
+  }, [optOutOfCutlery, selectedAccessories]);
 
-  // --- Dynamic Pricing Calculations for Accessories ---
-  const accessoriesTotal = optOutOfCutlery
-    ? 0
-    : selectedAccessories.reduce((acc, curr) => acc + curr.price * curr.quantity, 0);
-
-  const combinedSubtotal = foodCartTotal + accessoriesTotal;
-
-  // --- 2. Live Bill Preview & Calculation Call ---
-  const calculateLiveBill = useCallback(async () => {
+  // --- 1. Live Bill Breakdown Calculation (POST /api/food/checkout/calculate) ---
+  const calculateLiveBill = useCallback(async (targetAddr = selectedAddress) => {
     const kitchen = foodCart?.foodId || {};
     const foodId = kitchen._id || (typeof foodCart?.foodId === 'string' ? foodCart?.foodId : null);
     if (!foodId) return;
 
     setCalculatingBill(true);
     try {
-      let lat;
-      let lng;
+      let lat = 30.7114;
+      let lng = 76.6908;
 
-      if (typeof window !== "undefined") {
+      if (targetAddr?.lat && targetAddr?.lng) {
+        lat = Number(targetAddr.lat);
+        lng = Number(targetAddr.lng);
+      } else if (typeof window !== "undefined") {
         const savedCoords = localStorage.getItem("userCoords");
         if (savedCoords) {
           try {
@@ -152,26 +140,42 @@ export default function FoodCartPage() {
 
       const calculationPayload = {
         foodId,
+        address: targetAddr ? {
+          city: targetAddr.city,
+          state: targetAddr.state
+        } : undefined,
         userLat: lat,
         userLng: lng,
         couponCode: appliedCoupon ? appliedCoupon.couponName : undefined,
-        isRapid
+        isRapid,
+        items: (foodCart.items || []).map((item) => ({
+          itemId: item.itemId?._id || item.itemId,
+          quantity: item.quantity,
+          productType: item.productType || "MealItem"
+        })),
+        addons: formattedAddons
       };
 
       const response = await UserAPI.previewFoodBill(calculationPayload);
       if (response && response.success) {
-        const summary = response.billSummary || {};
-        // Add dynamic accessories cost into the preview total
-        const updatedTotal = (summary.totalAmount || 0) + accessoriesTotal;
+        setBillSummary(response.billSummary);
 
-        setBillSummary({
-          ...summary,
-          itemTotal: (summary.itemTotal || foodCartTotal) + accessoriesTotal,
-          totalAmount: updatedTotal
-        });
+        if (response.orderRestrictions) {
+          setOrderRestrictions(response.orderRestrictions);
+          if (response.orderRestrictions.isCodAvailable === false && paymentMethod === 'COD') {
+            setPaymentMethod('Online');
+          }
+          if (response.orderRestrictions.isRapidAvailable === false && isRapid) {
+            setIsRapid(false);
+          }
+        }
 
         if (response.distance) {
           setDistanceText(response.distance);
+        }
+
+        if (response.appliedLocation) {
+          setAppliedLocation(response.appliedLocation);
         }
       }
     } catch (err) {
@@ -179,15 +183,44 @@ export default function FoodCartPage() {
     } finally {
       setCalculatingBill(false);
     }
-  }, [foodCart, appliedCoupon, isRapid, selectedAddress, accessoriesTotal, foodCartTotal]);
+  }, [foodCart, appliedCoupon, isRapid, selectedAddress, paymentMethod, formattedAddons]);
 
+  // --- 2. Fetch Initial Default Address on Mount ---
+  useEffect(() => {
+    const fetchInitialAddress = async () => {
+      setLoadingAddress(true);
+      try {
+        const response = await UserAPI.getAddressList();
+        if (response && response.success) {
+          const addressList = response.data || [];
+          const defaultAddr = addressList.find((a) => a.isDefault);
+          const chosen = defaultAddr || (addressList.length > 0 ? addressList[0] : null);
+          if (chosen) {
+            setSelectedAddress(chosen);
+            calculateLiveBill(chosen);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching initial delivery address:", err);
+      } finally {
+        setLoadingAddress(false);
+      }
+    };
+
+    fetchInitialAddress();
+  }, []);
+
+  // --- 3. Recalculate bill whenever dependencies update ---
   useEffect(() => {
     if (foodCart && foodCart.items && foodCart.items.length > 0) {
-      calculateLiveBill();
+      calculateLiveBill(selectedAddress);
     }
-  }, [calculateLiveBill]);
+  }, [calculateLiveBill, selectedAddress, foodCart]);
 
-  // --- Accessory Quantity Modifier Handler ---
+  // --- Single Source of Truth for Final Payable Total ---
+  const finalPayableTotal = billSummary?.totalAmount ?? (foodCartTotal + accessoriesTotal);
+
+  // --- Accessory Handlers ---
   const handleUpdateAccessoryQty = (item, delta) => {
     setSelectedAccessories((prev) => {
       const existing = prev.find((a) => a._id === item._id);
@@ -215,7 +248,7 @@ export default function FoodCartPage() {
     });
   };
 
-  // --- Cart Item Handlers ---
+  // --- Cart Item Modifiers ---
   const handleQtyChange = async (itemId, currentQty, action) => {
     setUpdatingId(itemId);
     try {
@@ -296,9 +329,12 @@ export default function FoodCartPage() {
       return;
     }
 
-    let lat;
-    let lng;
-    if (typeof window !== "undefined") {
+    let lat = 30.7114;
+    let lng = 76.6908;
+    if (selectedAddress.lat && selectedAddress.lng) {
+      lat = Number(selectedAddress.lat);
+      lng = Number(selectedAddress.lng);
+    } else if (typeof window !== "undefined") {
       const savedCoords = localStorage.getItem("userCoords");
       if (savedCoords) {
         try {
@@ -315,7 +351,6 @@ export default function FoodCartPage() {
 
     setCheckingOut(true);
 
-    // Build payload matching API documentation
     const orderPayload = {
       foodId,
       paymentMethod,
@@ -323,6 +358,8 @@ export default function FoodCartPage() {
       userLat: lat,
       userLng: lng,
       deliverySlot: isRapid ? "Rapid Express (25-30 mins)" : "Immediate (30-45 mins)",
+      isRapid,
+      bookingType: "Direct",
       address: {
         name: selectedAddress.name,
         phone: selectedAddress.phone,
@@ -334,16 +371,13 @@ export default function FoodCartPage() {
         pincode: selectedAddress.pincode,
         addressType: selectedAddress.addressType || "Home"
       },
-      accessories: selectedAccessories.map(a => ({
-        addonId: a._id,
-        name: a.name,
-        price: a.price,
-        quantity: a.quantity
+      items: (foodCart.items || []).map((item) => ({
+        itemId: item.itemId?._id || item.itemId,
+        quantity: item.quantity,
+        productType: item.productType || "MealItem"
       })),
-      optOutOfCutlery
+      addons: formattedAddons
     };
-
-    console.log("=== FINAL FOOD ORDER PAYLOAD ===", JSON.stringify(orderPayload, null, 2));
 
     try {
       // --- FLOW A: CASH ON DELIVERY (COD) ---
@@ -387,12 +421,13 @@ export default function FoodCartPage() {
       const razorpayKey = orderRes.key || orderRes.key_id || orderRes.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
       const razorpayOrderId = orderRes.razorpayOrderId || orderRes.orderId || orderRes.order_id;
       const appointmentId = orderRes.appointmentId || orderRes.bookingId || orderRes._id;
-      const amount = orderRes.amount || (orderRes.amountInRupees ? orderRes.amountInRupees * 100 : billSummary?.totalAmount ? billSummary.totalAmount * 100 : 0);
 
-      // Configure Razorpay Checkout Sheet
+      // Amount in paise directly tied to the server order
+      const amountInPaise = orderRes.amount || (orderRes.amountInRupees ? Math.round(orderRes.amountInRupees * 100) : Math.round(finalPayableTotal * 100));
+
       const options = {
         key: razorpayKey,
-        amount: amount,
+        amount: amountInPaise,
         currency: orderRes.currency || "INR",
         name: kitchen.name || "Healthy Cloud Kitchen",
         description: "Nutritional Meal Checkout",
@@ -460,7 +495,7 @@ export default function FoodCartPage() {
     <main className="min-h-screen bg-[#f8fbff] py-8 sm:py-12 antialiased select-none text-slate-800 text-left">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
 
-        {/* Back Navigation Bar */}
+        {/* Top Back Navigation Bar */}
         <div className="flex items-center justify-between">
           <button
             type="button"
@@ -496,7 +531,6 @@ export default function FoodCartPage() {
               placeholderImage={PLACEHOLDER_IMAGE}
             />
 
-            {/* Dynamic Accessories Component */}
             <AccessoriesCard
               selectedAccessories={selectedAccessories}
               onUpdateAccessoryQty={handleUpdateAccessoryQty}
@@ -534,7 +568,9 @@ export default function FoodCartPage() {
 
             <CostSummaryCard
               billSummary={billSummary}
+              orderRestrictions={orderRestrictions}
               distanceText={distanceText}
+              appliedLocation={appliedLocation}
               isRapid={isRapid}
               onToggleRapid={() => setIsRapid(!isRapid)}
               paymentMethod={paymentMethod}
@@ -542,6 +578,8 @@ export default function FoodCartPage() {
               onProceedCheckout={handleProceedToCheckout}
               checkingOut={checkingOut}
               calculating={calculatingBill}
+              fallbackSubtotal={foodCartTotal}
+              accessoriesTotal={accessoriesTotal}
             />
           </div>
 
@@ -558,6 +596,10 @@ export default function FoodCartPage() {
           onSelectAddress={(addr) => {
             setSelectedAddress(addr);
             setIsAddressModalOpen(false);
+            calculateLiveBill(addr);
+            if (showNotification) {
+              showNotification(`Delivery address set to ${addr.city}. Updating delivery rates...`, "success");
+            }
           }}
         />
       )}
@@ -567,7 +609,7 @@ export default function FoodCartPage() {
         <Coupons
           isOpen={isCouponModalOpen}
           onClose={() => setIsCouponModalOpen(false)}
-          cartTotal={billSummary?.itemTotal || combinedSubtotal}
+          cartTotal={billSummary?.itemTotal || foodCartTotal}
           appliedCoupon={appliedCoupon}
           onApplyCoupon={(coupon) => {
             setAppliedCoupon(coupon);

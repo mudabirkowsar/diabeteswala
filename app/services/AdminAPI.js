@@ -59,21 +59,23 @@ const AdminAPI = {
         return response.data;
     },
 
-    // ==========================================================
-    // --- ADMIN DELIVERY & LOGISTICS PRICING APIS -------------
+ // ==========================================================
+    // --- ADMIN DELIVERY & LOGISTICS PRICING ENGINE APIS ------
     // ==========================================================
     saveAdminDeliveryCharges: async (chargesPayload) => {
         const response = await authApi.post('/provider/delivery-charges/admin/save', chargesPayload);
         return response.data;
     },
-
-    updateAdminDeliveryCharges: async (chargesPayload) => {
+    getAdminDeliveryCharges: async (params) => {
+        const response = await authApi.get('/provider/delivery-charges/admin/my-charges', { params });
+        return response.data;
+    },
+    updateAdminGlobalDeliveryCharges: async (chargesPayload) => {
         const response = await authApi.put('/provider/delivery-charges/admin/update', chargesPayload);
         return response.data;
     },
-
-    getActiveDeliveryConfig: async (params) => {
-        const response = await authApi.get('/provider/delivery-charges/admin/my-charges', { params });
+    updateAdminDeliveryChargesById: async (id, chargesPayload) => {
+        const response = await authApi.put(`/provider/delivery-charges/admin/update/${id}`, chargesPayload);
         return response.data;
     },
 

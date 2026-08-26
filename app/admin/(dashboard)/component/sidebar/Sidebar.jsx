@@ -616,11 +616,6 @@ export default function Sidebar({ sidebarOpen }) {
                                     Manage COD
                                 </Link>
 
-                                <Link href="/admin/others/managedeliverycharges" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/others/managedeliverycharges") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
-                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/others/managedeliverycharges") ? theme.primary : "#D1D5DB" }} />
-                                    Manage Delivery Charge
-                                </Link>
-
                                 <Link href="/admin/others/promotions" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/others/promotions") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/others/promotions") ? theme.primary : "#D1D5DB" }} />
                                     Manage Coupon

@@ -302,7 +302,6 @@ const UserAPI = {
     // ===================================================
     // --- USER FOOD ORDER CHECKOUT APIS -----------------
     // ===================================================
-
     previewFoodBill: async (calculationPayload) => {
         const response = await authApi.post('/api/food/checkout/calculate', calculationPayload);
         return response.data;
