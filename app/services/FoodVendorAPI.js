@@ -95,7 +95,34 @@ const FoodAPI = {
         const payload = isOnline !== null ? { isOnline } : {};
         const response = await authApi.patch('/provider/food/inventory/toggle-online', payload);
         return response.data;
-    }
+    },
+
+    // ===================================================
+    // --- VENDOR TIFFIN PLANS INVENTORY APIS ------------
+    // ===================================================
+
+    // --- 1. Get Master Tiffin Plans Checklist (Vendor Inventory View) ---
+    getVendorMasterTiffinPlans: async () => {
+        // Returns the list of admin-created tiffin plans with vendor-specific available statuses
+        const response = await authApi.get('/provider/food/inventory/master-plans');
+        return response.data;
+    },
+
+    // --- 2. Unified Sync Tiffin Plans (Multi-Select Sync API) ---
+    syncVendorTiffinPlans: async (syncPayload) => {
+        // syncPayload: { selectedPlanIds: ["6a..."], customPricing: { "6a...": 1850 } }
+        const response = await authApi.post('/provider/food/inventory/sync-plans', syncPayload);
+        return response.data;
+    },
+
+    // --- 3. Instant Single Tiffin Plan Toggle Switch (One-Click Toggle) ---
+    toggleVendorTiffinPlan: async (planId) => {
+        // planId: Target Tiffin Plan Mongoose Object ID (_id) (e.g. "6a8ed141f9ce2083c5626f11")
+        const response = await authApi.patch(`/provider/food/inventory/toggle-plan/${planId}`);
+        return response.data;
+    },
+
+    
 };
  
 export default FoodAPI;

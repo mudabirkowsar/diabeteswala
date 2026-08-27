@@ -331,5 +331,26 @@ const UserAPI = {
         return response.data;
     },
 
+    // ===================================================
+    // --- USER TIFFIN PLANS DISCOVERY & DETAILS APIS ----
+    // ===================================================
+
+    // --- 1. Fetch Geolocated Nearest Tiffin Plans (Storefront Grid View) ---
+    getNearestTiffinPlans: async (locationPayload, params) => {
+        // locationPayload: { lat: 30.7114, lng: 76.6908 }
+        // params (optional): { page: 1, limit: 20 }
+        const response = await publicApi.post('/api/foodpage/nearest-plans', locationPayload, { params });
+        return response.data;
+    },
+
+    // --- 2. Get Single Tiffin Plan Details By ID (Plan Overlay / Details Screen) ---
+    getUserTiffinPlanDetails: async (id, params) => {
+        // id: Document Mongoose Object ID (_id) or custom planId (e.g. PLN-103)
+        // params (optional): { lat: 30.7114, lng: 76.6908 } to calculate nearest vendor offsets
+        const response = await publicApi.get(`/api/foodpage/plans/${id}`, { params });
+        return response.data;
+    },
+    
+
 }
 export default UserAPI;

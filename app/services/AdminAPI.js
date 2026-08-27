@@ -59,7 +59,7 @@ const AdminAPI = {
         return response.data;
     },
 
- // ==========================================================
+    // ==========================================================
     // --- ADMIN DELIVERY & LOGISTICS PRICING ENGINE APIS ------
     // ==========================================================
     saveAdminDeliveryCharges: async (chargesPayload) => {
@@ -396,42 +396,49 @@ const AdminAPI = {
     // --- ADMIN TIFFIN SUBSCRIPTION PLANS APIS ---------
     // ===================================================
 
-    // --- 1. Create Subscription Plan (Create Custom Tier) ---
-    createTiffinPlan: async (planData) => {
-        // planData: { name, planCycle, mealsPerDay, price, permittedSlots, dishPool, description }
+    // --- 1. Get Catalog Pool for Modal Tabs (Dishes + Combos) ---
+    getTiffinCatalogPool: async (params) => {
+        // params (optional): { search: "Quinoa" }
+        const response = await authApi.get('/admin/food/tiffin/plans/catalog-pool', { params });
+        return response.data;
+    },
+
+    // --- 2. Create Tiffin Subscription Plan Tier ---
+    createTiffinPlanTier: async (planData) => {
+        // planData: { name, planCycle, mealsPerDay, price, permittedSlots, slotDishes, description }
         const response = await authApi.post('/admin/food/tiffin/plans/add', planData);
         return response.data;
     },
 
-    // --- 2. Get All Subscription Plans (Dashboard Grid) ---
+    // --- 3. Get All Tiffin Subscription Plans (Grid View) ---
     getTiffinPlansList: async () => {
         const response = await authApi.get('/admin/food/tiffin/plans/get');
         return response.data;
     },
 
-    // --- 3. Get Single Plan Details by ID ---
+    // --- 4. Get Single Plan Full Details By ID ---
     getTiffinPlanDetails: async (id) => {
-        // id: Document Mongoose Object ID (_id) or custom planId (e.g. PLN-101)
+        // id: Document Mongoose Object ID (_id) or custom planId (e.g. PLN-105)
         const response = await authApi.get(`/admin/food/tiffin/plans/get/${id}`);
         return response.data;
     },
 
-    // --- 4. Update Subscription Plan Details ---
+    // --- 5. Update Subscription Plan ---
     updateTiffinPlan: async (id, planData) => {
         // id: Document Mongoose Object ID (_id) or custom planId
-        // planData: Partial object containing the fields needing update
+        // planData: Partial object containing fields to update (e.g. price, description, etc.)
         const response = await authApi.put(`/admin/food/tiffin/plans/update/${id}`, planData);
         return response.data;
     },
 
-    // --- 5. Delete Subscription Plan ---
+    // --- 6. Delete Subscription Plan ---
     deleteTiffinPlan: async (id) => {
         // id: Document Mongoose Object ID (_id) or custom planId to permanently delete
         const response = await authApi.delete(`/admin/food/tiffin/plans/delete/${id}`);
         return response.data;
     },
 
-    // --- 6. Toggle Plan Active / Inactive Status Switch ---
+    // --- 7. Toggle Plan Active / Inactive Status ---
     toggleTiffinPlanStatus: async (id) => {
         // id: Document Mongoose Object ID (_id) or custom planId
         const response = await authApi.patch(`/admin/food/tiffin/plans/toggle-status/${id}`);

@@ -10,15 +10,18 @@ import {
     Utensils, 
     Users, 
     Inbox, 
-    RotateCcw
+    RotateCcw,
+    Coffee,
+    Sun,
+    Moon
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 import CreateTiffin from './components/CreateTiffin';
 
-// Import your API service (adjust path if needed)
-import AdminAPI from '../../../../../services/AdminAPI';
+// Import Admin API service functions
+import AdminAPI from '../../../../../services/AdminAPI'; // Adjust path if needed
 
-// --- BASE MEDIA HELPER ---
+// --- MEDIA HELPER ---
 const BASE_SERVER_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.3:5002";
 
 const getMediaUrl = (path) => {
@@ -103,17 +106,18 @@ export default function SubscriptionPlans() {
         }
     };
 
-    // --- 4. Open Edit Modal (Optionally fetch fresh single plan details) ---
+    // --- 4. Open Edit Modal ---
     const openEditModal = async (plan) => {
+        const targetId = plan._id || plan.planId;
         try {
-            const response = await AdminAPI.getTiffinPlanDetails(plan._id || plan.planId);
+            const response = await AdminAPI.getTiffinPlanDetails(targetId);
             if (response && response.success) {
                 setSelectedPlan(response.data);
             } else {
                 setSelectedPlan(plan);
             }
         } catch (err) {
-            console.error("Error fetching single plan details, using local data:", err);
+            console.error("Error fetching single plan details, fallback to grid data:", err);
             setSelectedPlan(plan);
         }
         setModalMode('edit');
@@ -129,6 +133,7 @@ export default function SubscriptionPlans() {
 
     return (
         <div className="space-y-8 max-w-[1600px] mx-auto animate-fade-in py-4 text-left select-none">
+            <Toaster position="top-right" />
 
             {/* Header section */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-5">
@@ -193,16 +198,17 @@ export default function SubscriptionPlans() {
                         const isProcessing = actionLoadingId === targetId;
                         const isActive = plan.isActive !== false;
                         
-                        // Extract first dish image as banner if available
-                        const firstDish = plan.dishPool?.[0];
+                        // Extract first valid dish image as banner
+                        const firstDish = plan.dishPool?.[0] || plan.slotDishes?.breakfast?.[0]?.itemId || plan.slotDishes?.lunch?.[0]?.itemId;
                         const bannerImg = (firstDish && typeof firstDish === 'object' && firstDish.imageUrl)
                             ? getMediaUrl(firstDish.imageUrl)
-                            : (plan.bannerUrl || DEFAULT_BANNER);
+                            : DEFAULT_BANNER;
 
-                        // Dish names list
-                        const dishNames = (plan.dishPool || []).map(dish => 
-                            typeof dish === 'object' ? dish.name : dish
-                        ).filter(Boolean);
+                        // Total count of configured slot items
+                        const breakfastCount = plan.slotDishes?.breakfast?.length || 0;
+                        const lunchCount = plan.slotDishes?.lunch?.length || 0;
+                        const dinnerCount = plan.slotDishes?.dinner?.length || 0;
+                        const totalConfiguredDishes = breakfastCount + lunchCount + dinnerCount;
 
                         return (
                             <div
@@ -212,7 +218,7 @@ export default function SubscriptionPlans() {
                                 }`}
                             >
                                 <div>
-                                    {/* Photo Section with Gradient Overlay */}
+                                    {/* Photo Banner */}
                                     <div className="relative h-44 w-full overflow-hidden bg-slate-100 border-b border-slate-100">
                                         <img 
                                             src={bannerImg} 
@@ -233,7 +239,7 @@ export default function SubscriptionPlans() {
                                         </span>
                                     </div>
 
-                                    {/* Inner Content */}
+                                    {/* Inner Details */}
                                     <div className="p-6 space-y-4">
                                         <div className="space-y-1">
                                             <h3 className="font-extrabold text-slate-900 text-base leading-snug group-hover:text-[#3D3F96] transition-colors">
@@ -248,24 +254,29 @@ export default function SubscriptionPlans() {
                                             {plan.description}
                                         </p>
 
-                                        {/* Allowed Meals badge row */}
+                                        {/* Allowed Slots Breakdown */}
                                         <div className="space-y-1.5 pt-1">
                                             <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
                                                 Permitted Meal Slots:
                                             </span>
                                             <div className="flex gap-1.5 flex-wrap">
-                                                {["Breakfast", "Lunch", "Dinner"].map(meal => {
-                                                    const isAllowed = plan.permittedSlots?.includes(meal) || plan.allowedMeals?.includes(meal);
+                                                {[
+                                                    { name: "Breakfast", icon: Coffee, count: breakfastCount },
+                                                    { name: "Lunch", icon: Sun, count: lunchCount },
+                                                    { name: "Dinner", icon: Moon, count: dinnerCount }
+                                                ].map(({ name, icon: Icon, count }) => {
+                                                    const isAllowed = plan.permittedSlots?.includes(name);
                                                     return (
                                                         <span 
-                                                            key={meal} 
-                                                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors ${
+                                                            key={name} 
+                                                            className={`px-2.5 py-1 rounded-xl text-[10px] font-extrabold border flex items-center gap-1.5 transition-colors ${
                                                                 isAllowed
                                                                     ? 'bg-indigo-50 border-indigo-100 text-[#3D3F96]'
-                                                                    : 'bg-slate-100 border-slate-100 text-slate-400 line-through'
+                                                                    : 'bg-slate-100 border-slate-100 text-slate-400 line-through opacity-60'
                                                             }`}
                                                         >
-                                                            {meal}
+                                                            <Icon size={11} />
+                                                            <span>{name} ({count})</span>
                                                         </span>
                                                     );
                                                 })}
@@ -281,24 +292,24 @@ export default function SubscriptionPlans() {
                                             <div>
                                                 <span className="text-slate-400 block uppercase text-[10px]">Subscribers</span>
                                                 <span className="text-[#3D3F96] text-base font-black flex items-center gap-1">
-                                                    <Users size={14} /> {plan.activeSubscribers || plan.subscribersCount || 0}
+                                                    <Users size={14} /> {plan.activeSubscribers || 0}
                                                 </span>
                                             </div>
                                         </div>
 
-                                        {/* Food Selection Pool indicator */}
+                                        {/* Total configured items indicator */}
                                         <div className="space-y-1">
                                             <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block flex items-center gap-1">
-                                                <Utensils size={10} /> Dish Pool ({dishNames.length}):
+                                                <Utensils size={10} /> Configured Dishes Pool:
                                             </span>
-                                            <p className="text-xs font-semibold text-slate-600 truncate" title={dishNames.join(', ')}>
-                                                {dishNames.length > 0 ? dishNames.join(', ') : 'No dishes assigned'}
+                                            <p className="text-xs font-bold text-slate-700">
+                                                {totalConfiguredDishes > 0 ? `${totalConfiguredDishes} slot items mapped` : 'No slot items mapped'}
                                             </p>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Actions Footer row */}
+                                {/* Actions Footer */}
                                 <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex justify-between items-center">
                                     <div className="flex items-center gap-2">
                                         <button
@@ -320,7 +331,7 @@ export default function SubscriptionPlans() {
                                         </button>
                                     </div>
 
-                                    {/* Status Switcher Button */}
+                                    {/* Toggle Active / Inactive Button */}
                                     <button
                                         onClick={() => handleToggleStatus(targetId)}
                                         disabled={isProcessing}
@@ -351,7 +362,7 @@ export default function SubscriptionPlans() {
                 onClose={() => setIsModalOpen(false)}
                 onSuccess={() => {
                     fetchAllPlans();
-                    toast.success(modalMode === 'create' ? 'Subscription tier created!' : 'Plan updated successfully!');
+                    toast.success(modalMode === 'create' ? 'Subscription tier created successfully!' : 'Plan updated successfully!');
                 }}
                 initialData={selectedPlan}
                 mode={modalMode}

@@ -23,12 +23,12 @@ export default function FoodStorefront() {
       <NearestMeal />
       <GetNearComboOffers />
       <FoodByDisease/>
+      <OurTiffin/>
 
 
       {/* <DayWiseFood /> */}
       {/* <WeeklyFood /> */}
       {/* <YourTiffin /> */}
-      {/* <OurTiffin/> */}
       {/* <Presence /> */}
     </>
   );
