@@ -159,8 +159,8 @@ export default function FoodVendorLayout({ children }) {
                                   key={sub.name}
                                   href={sub.href}
                                   className={`block px-3 py-2 text-xs font-semibold rounded-lg transition-colors duration-150 ${isSubActive
-                                      ? 'text-[#3D3F96] bg-[#3D3F96]/10 font-bold'
-                                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                                    ? 'text-[#3D3F96] bg-[#3D3F96]/10 font-bold'
+                                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                                     }`}
                                 >
                                   {sub.name}
@@ -268,7 +268,7 @@ export default function FoodVendorLayout({ children }) {
                     className="absolute right-0 mt-2 w-48 bg-white border border-slate-100 rounded-2xl shadow-xl p-1.5 flex flex-col z-50 animate-scale-up"
                   >
                     <Link
-                      href="/vendors/food/profile"
+                      href="/vendors/food/dashboard/profile"
                       onClick={() => setIsProfileOpen(false)}
                       className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all text-left w-full"
                     >
