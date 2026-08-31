@@ -14,6 +14,7 @@ import WeeklyFood from './components/WeeklyFood';
 import DayWiseFood from './components/DayWiseFood';
 import NearestMeal from './components/NearestMeal';
 import GetNearComboOffers from './components/GetNearComboOffers';
+import CustomTiffin from './components/CustomTiffin';
 
 export default function FoodStorefront() {
 
@@ -24,6 +25,7 @@ export default function FoodStorefront() {
       <GetNearComboOffers />
       <FoodByDisease/>
       <OurTiffin/>
+      <CustomTiffin />
 
 
       {/* <DayWiseFood /> */}

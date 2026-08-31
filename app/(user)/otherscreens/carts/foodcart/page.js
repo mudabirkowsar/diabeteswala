@@ -22,7 +22,7 @@ import Coupons from './components/Coupons';
 import OrderSuccessModal from './components/OrderSuccessModal';
 
 // --- BASE MEDIA HELPER ---
-const BASE_SERVER_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.3:5002";
+const BASE_SERVER_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.8:5002";
 
 const getMediaUrl = (path) => {
   if (!path) return null;
@@ -49,6 +49,28 @@ const loadRazorpayScript = () => {
     script.onerror = () => resolve(false);
     document.body.appendChild(script);
   });
+};
+
+// 🛡️ Helper to accurately detect if an item is a Combo or a Single Meal
+const resolveProductType = (item) => {
+  if (
+    item.productType === 'Combo' || 
+    item.productType === 'FoodComboOffer' || 
+    item.itemType === 'FoodComboOffer' || 
+    item.itemType === 'Combo' ||
+    item.isCombo ||
+    item.comboOfferId ||
+    item.comboId ||
+    (Array.isArray(item.dishes) && item.dishes.length > 0)
+  ) {
+    return 'Combo';
+  }
+  return 'MealItem';
+};
+
+// 🛡️ Helper to safely extract Item ID
+const resolveItemId = (item) => {
+  return item.itemId?._id || item.itemId || item._id || item.id;
 };
 
 export default function FoodCartPage() {
@@ -98,8 +120,8 @@ export default function FoodCartPage() {
   const formattedAddons = useMemo(() => {
     if (optOutOfCutlery) return [];
     return selectedAccessories.map((a) => ({
-      addonId: a._id,
-      quantity: a.quantity
+      addonId: a._id || a.addonId || a.id,
+      quantity: a.quantity || 1
     }));
   }, [optOutOfCutlery, selectedAccessories]);
 
@@ -112,13 +134,15 @@ export default function FoodCartPage() {
   // --- 1. Live Bill Breakdown Calculation (POST /api/food/checkout/calculate) ---
   const calculateLiveBill = useCallback(async (targetAddr = selectedAddress) => {
     const kitchen = foodCart?.foodId || {};
-    const foodId = kitchen._id || (typeof foodCart?.foodId === 'string' ? foodCart?.foodId : null);
-    if (!foodId) return;
+    // Extract Kitchen ID safely
+    const foodId = kitchen._id || (typeof foodCart?.foodId === 'string' ? foodCart?.foodId : (foodCart?.vendorId || null));
+
+    if (!foodCart?.items || foodCart.items.length === 0) return;
 
     setCalculatingBill(true);
     try {
-      let lat = 30.7114;
-      let lng = 76.6908;
+      let lat = 30.7046;
+      let lng = 76.7179;
 
       if (targetAddr?.lat && targetAddr?.lng) {
         lat = Number(targetAddr.lat);
@@ -138,8 +162,9 @@ export default function FoodCartPage() {
         }
       }
 
+      // 🛡️ Format items accurately with Combo detection
       const calculationPayload = {
-        foodId,
+        foodId: foodId || undefined,
         address: targetAddr ? {
           city: targetAddr.city,
           state: targetAddr.state
@@ -149,9 +174,9 @@ export default function FoodCartPage() {
         couponCode: appliedCoupon ? appliedCoupon.couponName : undefined,
         isRapid,
         items: (foodCart.items || []).map((item) => ({
-          itemId: item.itemId?._id || item.itemId,
-          quantity: item.quantity,
-          productType: item.productType || "MealItem"
+          itemId: resolveItemId(item),
+          quantity: item.quantity || 1,
+          productType: resolveProductType(item) // 👈 Ab Combo ko 100% "Combo" hi bhejega!
         })),
         addons: formattedAddons
       };
@@ -223,16 +248,16 @@ export default function FoodCartPage() {
   // --- Accessory Handlers ---
   const handleUpdateAccessoryQty = (item, delta) => {
     setSelectedAccessories((prev) => {
-      const existing = prev.find((a) => a._id === item._id);
+      const existing = prev.find((a) => (a._id || a.id) === (item._id || item.id));
       if (!existing && delta > 0) {
         return [...prev, { ...item, quantity: 1 }];
       }
       if (existing) {
         const newQty = existing.quantity + delta;
         if (newQty <= 0) {
-          return prev.filter((a) => a._id !== item._id);
+          return prev.filter((a) => (a._id || a.id) !== (item._id || item.id));
         }
-        return prev.map((a) => (a._id === item._id ? { ...a, quantity: newQty } : a));
+        return prev.map((a) => ((a._id || a.id) === (item._id || item.id) ? { ...a, quantity: newQty } : a));
       }
       return prev;
     });
@@ -320,17 +345,10 @@ export default function FoodCartPage() {
     }
 
     const kitchen = foodCart?.foodId || {};
-    const foodId = kitchen._id || (typeof foodCart?.foodId === 'string' ? foodCart?.foodId : null);
+    const foodId = kitchen._id || (typeof foodCart?.foodId === 'string' ? foodCart?.foodId : (foodCart?.vendorId || null));
 
-    if (!foodId) {
-      if (showNotification) {
-        showNotification("Unable to determine kitchen details.", "error");
-      }
-      return;
-    }
-
-    let lat = 30.7114;
-    let lng = 76.6908;
+    let lat = 30.7046;
+    let lng = 76.7179;
     if (selectedAddress.lat && selectedAddress.lng) {
       lat = Number(selectedAddress.lat);
       lng = Number(selectedAddress.lng);
@@ -352,7 +370,7 @@ export default function FoodCartPage() {
     setCheckingOut(true);
 
     const orderPayload = {
-      foodId,
+      foodId: foodId || undefined,
       paymentMethod,
       couponCode: appliedCoupon ? appliedCoupon.couponName : undefined,
       userLat: lat,
@@ -372,9 +390,9 @@ export default function FoodCartPage() {
         addressType: selectedAddress.addressType || "Home"
       },
       items: (foodCart.items || []).map((item) => ({
-        itemId: item.itemId?._id || item.itemId,
-        quantity: item.quantity,
-        productType: item.productType || "MealItem"
+        itemId: resolveItemId(item),
+        quantity: item.quantity || 1,
+        productType: resolveProductType(item) // 👈 Accurate detection for order placement
       })),
       addons: formattedAddons
     };
@@ -422,7 +440,6 @@ export default function FoodCartPage() {
       const razorpayOrderId = orderRes.razorpayOrderId || orderRes.orderId || orderRes.order_id;
       const appointmentId = orderRes.appointmentId || orderRes.bookingId || orderRes._id;
 
-      // Amount in paise directly tied to the server order
       const amountInPaise = orderRes.amount || (orderRes.amountInRupees ? Math.round(orderRes.amountInRupees * 100) : Math.round(finalPayableTotal * 100));
 
       const options = {

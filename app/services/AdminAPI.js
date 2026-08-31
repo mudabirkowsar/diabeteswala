@@ -79,6 +79,32 @@ const AdminAPI = {
         return response.data;
     },
 
+    // ===================================================
+    // --- ADMIN PROFILE UPDATE APPROVAL APIS ------------
+    // ===================================================
+
+    // --- 1. List Profile Update Requests ---
+    getProfileUpdateRequests: async (params) => {
+        // params (optional): { status, vendorModel, page, limit }
+        const response = await authApi.get('/api/admin/profile-update', { params });
+        return response.data;
+    },
+
+    // --- 2. Get Request Details & Comparison ---
+    getProfileUpdateRequestDetails: async (requestId) => {
+        // requestId: The unique ObjectID (_id) of the profile update request
+        const response = await authApi.get(`/api/admin/profile-update/${requestId}`);
+        return response.data;
+    },
+
+    // --- 3. Process Request (Approve or Reject) ---
+    processProfileUpdateRequest: async (requestId, actionPayload) => {
+        // requestId: The unique ObjectID (_id) of the profile update request
+        // actionPayload: { action: "Approve" | "Reject", reason: "Mandatory reason if rejecting" }
+        const response = await authApi.post(`/api/admin/profile-update/${requestId}/action`, actionPayload);
+        return response.data;
+    },
+
 
     //Clinic Management APIs
     getClinicsList: async (params) => {

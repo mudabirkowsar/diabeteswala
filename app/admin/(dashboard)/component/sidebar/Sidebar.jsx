@@ -446,6 +446,16 @@ export default function Sidebar({ sidebarOpen }) {
                     </Link>
                 )}
 
+                {/* Manage Vendor Orders */}
+                {hasAccess() && (
+                    <Link href="/admin/managevendorupdaterequest" className={`${rowBase} ${isActive("/admin/managevendorupdaterequest") ? rowActive : rowInactive}`}>
+                        {isActive("/admin/managevendorupdaterequest") && <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-md" style={{ backgroundColor: theme.primary }} />}
+                        <IconChip icon={FaClipboardList} active={isActive("/admin/managevendorupdaterequest")} />
+                        {isExpanded && <span className="truncate">Manage Update Requests</span>}
+                        <CollapsedTooltip label="Manage Update Requests" show={!isExpanded} />
+                    </Link>
+                )}
+
                 <GroupLabel show={isExpanded}>Support &amp; Content</GroupLabel>
 
                 {/* Requests Issue */}

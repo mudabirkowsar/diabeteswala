@@ -350,7 +350,56 @@ const UserAPI = {
         const response = await publicApi.get(`/api/foodpage/plans/${id}`, { params });
         return response.data;
     },
-    
+    // ===================================================
+    // --- USER TIFFIN SUBSCRIPTION & CHECKOUT APIS ------
+    // ===================================================
+
+    // --- 1. Calculate / Preview Tiffin Subscription Bill ---
+    previewTiffinSubscriptionBill: async (calculationPayload) => {
+        // calculationPayload: { foodId, bookingType: "Subscription", planId, billingCycle, userLat, userLng, address, universalDeliveryTimes, dailyMealSchedule, couponCode }
+        const response = await authApi.post('/api/food/tiffin/calculate', calculationPayload);
+        return response.data;
+    },
+
+    // --- 2. Subscribe & Initiate Online Payment (Direct Buy) ---
+    subscribeTiffinPlan: async (subscriptionPayload) => {
+        // subscriptionPayload: { foodId, bookingType: "Subscription", planId, planName, billingCycle, paymentMethod: "Online", userLat, userLng, address, universalDeliveryTimes, dailyMealSchedule }
+        const response = await authApi.post('/api/food/tiffin/subscribe', subscriptionPayload);
+        return response.data;
+    },
+
+    // --- 3. Verify Razorpay Payment (Order Finalization) ---
+    verifyTiffinRazorpayPayment: async (paymentPayload) => {
+        // paymentPayload: { appointmentId, bookingId, razorpayOrderId, razorpayPaymentId, razorpaySignature }
+        const response = await authApi.post('/api/food/checkout/verify-payment', paymentPayload);
+        return response.data;
+    },
+
+    // --- 4. Modify Daily Slot Schedule (4-Hour Lockout Guard) ---
+    modifyTiffinDailySchedule: async (bookingId, schedulePayload) => {
+        // bookingId: Custom subscription booking ID (e.g. "SUB-FD-582910")
+        // schedulePayload: { dailyMealSchedule: [...] } - Updated daily meal slot layout
+        const response = await authApi.put(`/api/food/tiffin/schedule/${bookingId}`, schedulePayload);
+        return response.data;
+    },
+    // ===================================================
+    // --- USER TIFFIN SUBSCRIPTION MANAGEMENT APIS ------
+    // ===================================================
+
+    // --- 1. Get All My Tiffin Subscriptions ---
+    getUserTiffinSubscriptions: async () => {
+        // Retrieves a list of active and historical tiffin subscriptions for the logged-in user
+        const response = await authApi.get('/api/food/tiffin/my-subscriptions');
+        return response.data;
+    },
+
+    // --- 2. Get Single Tiffin Subscription Details by ID ---
+    getUserTiffinSubscriptionDetails: async (id) => {
+        // id: The Mongoose Object ID (_id) of the specific tiffin subscription (e.g. "6a9545086d14dca404eabecb")
+        const response = await authApi.get(`/api/food/tiffin/my-subscription/${id}`);
+        return response.data;
+    }
+
 
 }
 export default UserAPI;
