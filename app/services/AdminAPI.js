@@ -83,25 +83,43 @@ const AdminAPI = {
     // --- ADMIN PROFILE UPDATE APPROVAL APIS ------------
     // ===================================================
 
-    // --- 1. List Profile Update Requests ---
     getProfileUpdateRequests: async (params) => {
-        // params (optional): { status, vendorModel, page, limit }
         const response = await authApi.get('/api/admin/profile-update', { params });
         return response.data;
     },
 
-    // --- 2. Get Request Details & Comparison ---
     getProfileUpdateRequestDetails: async (requestId) => {
-        // requestId: The unique ObjectID (_id) of the profile update request
         const response = await authApi.get(`/api/admin/profile-update/${requestId}`);
         return response.data;
     },
 
-    // --- 3. Process Request (Approve or Reject) ---
     processProfileUpdateRequest: async (requestId, actionPayload) => {
-        // requestId: The unique ObjectID (_id) of the profile update request
-        // actionPayload: { action: "Approve" | "Reject", reason: "Mandatory reason if rejecting" }
         const response = await authApi.post(`/api/admin/profile-update/${requestId}/action`, actionPayload);
+        return response.data;
+    },
+
+    // ===================================================
+    // --- ADMIN PEAK ORDER CHARGES APIS -----------------
+    // ===================================================
+
+    // --- 1. Get Selected Peak Order Charges (Dashboard Grid) ---
+    getPeakCharges: async () => {
+        // Fetches Breakfast, Lunch, Dinner, and Global active peak surcharges and toggle states
+        const response = await authApi.get('/admin/food/peak-charges');
+        return response.data;
+    },
+
+    // --- 2. Save / Update Slot-Wise Peak Order Charges ---
+    savePeakCharges: async (chargesPayload) => {
+        // chargesPayload: { isGlobalActive, breakfast: { charge, isActive }, lunch: { charge, isActive }, dinner: { charge, isActive } }
+        const response = await authApi.post('/admin/food/peak-charges/save', chargesPayload);
+        return response.data;
+    },
+
+    // --- 3. Instant Toggle Specific Slot Status (1-Click Switch) ---
+    togglePeakChargeSlot: async (slotName) => {
+        // slotName: 'breakfast' | 'lunch' | 'dinner' | 'global'
+        const response = await authApi.patch(`/admin/food/peak-charges/toggle-slot/${slotName}`);
         return response.data;
     },
 
