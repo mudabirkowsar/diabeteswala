@@ -6,21 +6,61 @@ import {
     Home,
     Briefcase,
     Building,
-    Phone,
-    User,
     CheckCircle2,
     Plus,
     RefreshCw,
     Loader2,
     X,
-    Trash2,
-    Edit3,
-    Check
+    Check,
+    AlertCircle
 } from 'lucide-react';
 
 // Import your API service functions & Notification Context
 import UserAPI from '../../../../../services/UserAPI';
 import { useNotification } from '../../../../../context/NotificationContext';
+
+const MAX_DELIVERY_DISTANCE_KM = 10;
+const DEFAULT_USER_COORDS = { lat: 30.7046, lng: 76.7179 }; // Mohali fallback
+
+// --- Haversine Distance Formula (Returns Distance in KM) ---
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+    const R = 6371; // Earth radius in KM
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+};
+
+// --- Helper: Geocode an address using OpenStreetMap Nominatim ---
+const geocodeAddress = async (addr) => {
+    try {
+        // Construct search query focusing on pincode, city, state, country
+        const queryParts = [addr.pincode, addr.city, addr.state, addr.country || "India"]
+            .filter(Boolean)
+            .join(", ");
+
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queryParts)}&limit=1`;
+        const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+        const data = await res.json();
+
+        if (data && data.length > 0) {
+            return {
+                lat: parseFloat(data[0].lat),
+                lng: parseFloat(data[0].lon)
+            };
+        }
+    } catch (e) {
+        console.error("Geocoding failed for:", addr, e);
+    }
+    return null;
+};
 
 export default function Address({
     isOpen,
@@ -33,14 +73,70 @@ export default function Address({
     // --- States ---
     const [addresses, setAddresses] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [userCoords, setUserCoords] = useState(DEFAULT_USER_COORDS);
 
-    // --- Fetch Addresses on Modal Open ---
+    // --- Read User Coordinates from LocalStorage ---
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const savedCoords = localStorage.getItem("userCoords");
+            if (savedCoords) {
+                try {
+                    const parsed = JSON.parse(savedCoords);
+                    if (parsed.lat && parsed.lng) {
+                        setUserCoords({
+                            lat: Number(parsed.lat),
+                            lng: Number(parsed.lng)
+                        });
+                    }
+                } catch (e) {
+                    console.error("Error reading coordinates:", e);
+                }
+            }
+        }
+    }, [isOpen]);
+
+    // --- Fetch & Geocode Addresses ---
     const fetchAddressList = async () => {
         setLoading(true);
         try {
             const response = await UserAPI.getAddressList();
             if (response && response.success) {
-                setAddresses(response.data || []);
+                const rawAddresses = response.data || [];
+
+                // Resolve distance for all addresses
+                const addressesWithDistance = await Promise.all(
+                    rawAddresses.map(async (addr) => {
+                        let lat = addr.lat ? Number(addr.lat) : null;
+                        let lng = addr.lng ? Number(addr.lng) : null;
+
+                        // If lat/lng missing in DB, geocode using city, state & pincode
+                        if (!lat || !lng) {
+                            const coords = await geocodeAddress(addr);
+                            if (coords) {
+                                lat = coords.lat;
+                                lng = coords.lng;
+                            }
+                        }
+
+                        let distance = null;
+                        let isOutOfRange = false;
+
+                        if (lat && lng) {
+                            distance = calculateDistance(userCoords.lat, userCoords.lng, lat, lng);
+                            isOutOfRange = distance > MAX_DELIVERY_DISTANCE_KM;
+                        }
+
+                        return {
+                            ...addr,
+                            lat,
+                            lng,
+                            distance,
+                            isOutOfRange
+                        };
+                    })
+                );
+
+                setAddresses(addressesWithDistance);
             } else {
                 if (showNotification) {
                     showNotification("Unable to load saved addresses.", "error");
@@ -49,7 +145,7 @@ export default function Address({
         } catch (err) {
             console.error("Error fetching address list:", err);
             if (showNotification) {
-                showNotification(err.response?.data?.message || "Failed to retrieve your delivery addresses.", "error");
+                showNotification(err.response?.data?.message || "Failed to retrieve addresses.", "error");
             }
         } finally {
             setLoading(false);
@@ -60,7 +156,23 @@ export default function Address({
         if (isOpen) {
             fetchAddressList();
         }
-    }, [isOpen]);
+    }, [isOpen, userCoords]);
+
+    // --- Helper: Handle Selection ---
+    const handleSelect = (address) => {
+        if (address.isOutOfRange) {
+            if (showNotification) {
+                showNotification(
+                    `This address is ${address.distance ? address.distance.toFixed(1) + " km" : "too far"} away. Maximum delivery range is ${MAX_DELIVERY_DISTANCE_KM} km.`,
+                    "error"
+                );
+            }
+            return;
+        }
+        if (onSelectAddress) {
+            onSelectAddress(address);
+        }
+    };
 
     // --- Helper: Icon by Address Type ---
     const getAddressTypeIcon = (type) => {
@@ -90,7 +202,9 @@ export default function Address({
                             </div>
                             <div>
                                 <h3 className="font-extrabold text-slate-900 text-lg tracking-tight">Delivery Address</h3>
-                                <p className="text-xs text-slate-400 font-semibold mt-0.5">Select a destination for your order</p>
+                                <p className="text-xs text-slate-400 font-semibold mt-0.5">
+                                    Select an address within {MAX_DELIVERY_DISTANCE_KM} km of your location
+                                </p>
                             </div>
                         </div>
 
@@ -119,7 +233,7 @@ export default function Address({
                         <div className="py-20 flex flex-col items-center justify-center">
                             <Loader2 className="animate-spin text-[#3d3f96] mb-3" size={36} />
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                                Fetching saved addresses...
+                                Calculating distance & addresses...
                             </p>
                         </div>
                     ) : addresses.length === 0 ? (
@@ -136,20 +250,24 @@ export default function Address({
                         <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1 [&::-webkit-scrollbar]:hidden">
                             {addresses.map((address) => {
                                 const isSelected = selectedAddressId === address._id;
+                                const isOutOfRange = address.isOutOfRange;
 
                                 return (
                                     <div
                                         key={address._id}
-                                        onClick={() => onSelectAddress && onSelectAddress(address)}
-                                        className={`p-4 sm:p-5 rounded-2xl border transition-all cursor-pointer flex items-start justify-between gap-4 group ${isSelected
-                                            ? 'border-[#3d3f96] bg-indigo-50/20 ring-2 ring-[#3d3f96]/20 shadow-sm'
-                                            : 'border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50/60'
-                                            }`}
+                                        onClick={() => handleSelect(address)}
+                                        className={`p-4 sm:p-5 rounded-2xl border transition-all flex items-start justify-between gap-4 ${
+                                            isOutOfRange
+                                                ? 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed'
+                                                : isSelected
+                                                ? 'border-[#3d3f96] bg-indigo-50/20 ring-2 ring-[#3d3f96]/20 shadow-sm cursor-pointer'
+                                                : 'border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50/60 cursor-pointer group'
+                                        }`}
                                     >
                                         <div className="space-y-2 flex-1 min-w-0">
 
-                                            {/* Address Type Badge & Default Status */}
-                                            <div className="flex items-center gap-2">
+                                            {/* Badges */}
+                                            <div className="flex items-center gap-2 flex-wrap">
                                                 <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold uppercase">
                                                     {getAddressTypeIcon(address.addressType)}
                                                     <span>{address.addressType || "Address"}</span>
@@ -158,6 +276,21 @@ export default function Address({
                                                 {address.isDefault && (
                                                     <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[9px] font-black uppercase px-2 py-0.5 rounded-md border border-emerald-100">
                                                         <CheckCircle2 size={10} /> Default
+                                                    </span>
+                                                )}
+
+                                                {/* Distance / Range Tag */}
+                                                {address.distance !== null && (
+                                                    <span
+                                                        className={`inline-flex items-center gap-1 text-[9px] font-black uppercase px-2 py-0.5 rounded-md border ${
+                                                            isOutOfRange
+                                                                ? 'bg-rose-50 text-rose-600 border-rose-200'
+                                                                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                        }`}
+                                                    >
+                                                        {isOutOfRange && <AlertCircle size={10} />}
+                                                        {address.distance.toFixed(1)} km away
+                                                        {isOutOfRange && ' • Out of range'}
                                                     </span>
                                                 )}
                                             </div>
@@ -173,12 +306,27 @@ export default function Address({
                                                 {address.houseNo}{address.sector ? `, ${address.sector}` : ''}
                                                 {address.landmark ? `, Near ${address.landmark}` : ''}, {address.city}, {address.state} - <strong className="font-mono text-slate-800 font-bold">{address.pincode}</strong>
                                             </p>
+
+                                            {isOutOfRange && (
+                                                <p className="text-[11px] text-rose-500 font-semibold flex items-center gap-1 mt-1">
+                                                    <AlertCircle size={12} /> Delivery not available (exceeds {MAX_DELIVERY_DISTANCE_KM} km limit)
+                                                </p>
+                                            )}
                                         </div>
 
-                                        {/* Radio Select Indicator */}
-                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 transition-all ${isSelected ? 'border-[#3d3f96] bg-[#3d3f96]' : 'border-slate-300 bg-white group-hover:border-slate-400'
-                                            }`}>
-                                            {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                        {/* Radio Indicator */}
+                                        <div
+                                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 transition-all ${
+                                                isOutOfRange
+                                                    ? 'border-slate-300 bg-slate-100 cursor-not-allowed'
+                                                    : isSelected
+                                                    ? 'border-[#3d3f96] bg-[#3d3f96]'
+                                                    : 'border-slate-300 bg-white group-hover:border-slate-400'
+                                            }`}
+                                        >
+                                            {isSelected && !isOutOfRange && (
+                                                <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                                            )}
                                         </div>
                                     </div>
                                 );

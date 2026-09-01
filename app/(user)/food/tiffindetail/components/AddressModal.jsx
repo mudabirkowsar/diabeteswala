@@ -9,13 +9,54 @@ import {
     Building2,
     CheckCircle2,
     Circle,
-    Plus,
     Loader2,
     Phone,
     AlertCircle
 } from 'lucide-react';
 import UserAPI from '../../../../services/UserAPI';
 import { useNotification } from '../../../../context/NotificationContext';
+
+const MAX_DELIVERY_DISTANCE_KM = 10;
+const DEFAULT_USER_COORDS = { lat: 30.7046, lng: 76.7179 }; // Default: Mohali coordinates
+
+// --- Haversine Distance Formula (Returns Distance in KM) ---
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+    const R = 6371; // Earth radius in km
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+};
+
+// --- Geocode address via OpenStreetMap Nominatim ---
+const geocodeAddress = async (addr) => {
+    try {
+        const queryParts = [addr.pincode, addr.city, addr.state, addr.country || "India"]
+            .filter(Boolean)
+            .join(", ");
+
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queryParts)}&limit=1`;
+        const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+        const data = await res.json();
+
+        if (data && data.length > 0) {
+            return {
+                lat: parseFloat(data[0].lat),
+                lng: parseFloat(data[0].lon)
+            };
+        }
+    } catch (e) {
+        console.error("Geocoding failed for:", addr, e);
+    }
+    return null;
+};
 
 export default function AddressModal({
     isOpen,
@@ -27,13 +68,34 @@ export default function AddressModal({
     const [addresses, setAddresses] = useState([]);
     const [loading, setLoading] = useState(false);
     const [tempSelectedId, setTempSelectedId] = useState(selectedAddressId || null);
+    const [userCoords, setUserCoords] = useState(DEFAULT_USER_COORDS);
 
-    // Fetch user addresses whenever the modal opens
+    // --- Read User Coordinates from LocalStorage ---
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const savedCoords = localStorage.getItem("userCoords");
+            if (savedCoords) {
+                try {
+                    const parsed = JSON.parse(savedCoords);
+                    if (parsed.lat && parsed.lng) {
+                        setUserCoords({
+                            lat: Number(parsed.lat),
+                            lng: Number(parsed.lng)
+                        });
+                    }
+                } catch (e) {
+                    console.error("Error reading coordinates:", e);
+                }
+            }
+        }
+    }, [isOpen]);
+
+    // Fetch user addresses whenever the modal opens or coords update
     useEffect(() => {
         if (isOpen) {
             fetchAddresses();
         }
-    }, [isOpen]);
+    }, [isOpen, userCoords]);
 
     useEffect(() => {
         setTempSelectedId(selectedAddressId);
@@ -44,12 +106,48 @@ export default function AddressModal({
         try {
             const response = await UserAPI.getAddressList();
             if (response && response.success && Array.isArray(response.data)) {
-                setAddresses(response.data);
+                const rawAddresses = response.data || [];
 
-                // If nothing currently selected, pick default address or first address
-                if (!tempSelectedId && response.data.length > 0) {
-                    const defaultAddr = response.data.find((a) => a.isDefault) || response.data[0];
-                    setTempSelectedId(defaultAddr._id);
+                // Calculate distance and range check for every address
+                const processed = await Promise.all(
+                    rawAddresses.map(async (addr) => {
+                        let lat = addr.lat ? Number(addr.lat) : null;
+                        let lng = addr.lng ? Number(addr.lng) : null;
+
+                        if (!lat || !lng) {
+                            const coords = await geocodeAddress(addr);
+                            if (coords) {
+                                lat = coords.lat;
+                                lng = coords.lng;
+                            }
+                        }
+
+                        let distance = null;
+                        let isOutOfRange = false;
+
+                        if (lat && lng) {
+                            distance = calculateDistance(userCoords.lat, userCoords.lng, lat, lng);
+                            isOutOfRange = distance > MAX_DELIVERY_DISTANCE_KM;
+                        }
+
+                        return {
+                            ...addr,
+                            lat,
+                            lng,
+                            distance,
+                            isOutOfRange
+                        };
+                    })
+                );
+
+                setAddresses(processed);
+
+                // Auto-select the first valid address (within 10km) if none selected
+                if (!tempSelectedId) {
+                    const validAddr = processed.find((a) => !a.isOutOfRange && a.isDefault) || processed.find((a) => !a.isOutOfRange);
+                    if (validAddr) {
+                        setTempSelectedId(validAddr._id);
+                    }
                 }
             } else {
                 setAddresses([]);
@@ -64,11 +162,33 @@ export default function AddressModal({
         }
     };
 
+    const handleSelectAddress = (addr) => {
+        if (addr.isOutOfRange) {
+            if (showNotification) {
+                showNotification(
+                    `This address is ${addr.distance ? addr.distance.toFixed(1) + ' km' : 'too far'} away. Max delivery limit is ${MAX_DELIVERY_DISTANCE_KM} km.`,
+                    "error"
+                );
+            }
+            return;
+        }
+        setTempSelectedId(addr._id);
+    };
+
     const handleConfirm = () => {
         const chosen = addresses.find((a) => a._id === tempSelectedId);
         if (!chosen) {
             if (showNotification) {
                 showNotification("Please select a delivery address.", "warning");
+            }
+            return;
+        }
+        if (chosen.isOutOfRange) {
+            if (showNotification) {
+                showNotification(
+                    `Selected address is out of delivery range (${MAX_DELIVERY_DISTANCE_KM} km limit).`,
+                    "error"
+                );
             }
             return;
         }
@@ -86,7 +206,7 @@ export default function AddressModal({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200 select-none">
             {/* Modal Box */}
             <div className="bg-white w-full max-w-lg rounded-[2rem] border border-slate-100 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                 
@@ -101,7 +221,7 @@ export default function AddressModal({
                                 Select Delivery Address
                             </h3>
                             <p className="text-[11px] text-slate-400 font-medium">
-                                Choose where your tiffin meal will be delivered
+                                Deliverable within {MAX_DELIVERY_DISTANCE_KM} km of your location
                             </p>
                         </div>
                     </div>
@@ -115,11 +235,11 @@ export default function AddressModal({
                 </div>
 
                 {/* Body Content */}
-                <div className="p-6 overflow-y-auto space-y-3.5 flex-1">
+                <div className="p-6 overflow-y-auto space-y-3.5 flex-1 [&::-webkit-scrollbar]:hidden">
                     {loading ? (
                         <div className="py-12 flex flex-col items-center justify-center text-slate-400 space-y-2">
                             <Loader2 size={28} className="animate-spin text-[#3d3f96]" />
-                            <span className="text-xs font-bold uppercase tracking-wider">Fetching your addresses...</span>
+                            <span className="text-xs font-bold uppercase tracking-wider">Checking distance & addresses...</span>
                         </div>
                     ) : addresses.length === 0 ? (
                         <div className="py-10 text-center space-y-3">
@@ -132,20 +252,25 @@ export default function AddressModal({
                     ) : (
                         addresses.map((addr) => {
                             const isSelected = tempSelectedId === addr._id;
+                            const isOutOfRange = addr.isOutOfRange;
 
                             return (
                                 <div
                                     key={addr._id}
-                                    onClick={() => setTempSelectedId(addr._id)}
-                                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-start gap-3.5 ${
-                                        isSelected
-                                            ? 'bg-indigo-50/40 border-[#3d3f96] ring-1 ring-[#3d3f96]'
-                                            : 'bg-white border-slate-200 hover:border-slate-300'
+                                    onClick={() => handleSelectAddress(addr)}
+                                    className={`p-4 rounded-2xl border transition-all flex items-start gap-3.5 ${
+                                        isOutOfRange
+                                            ? 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed'
+                                            : isSelected
+                                            ? 'bg-indigo-50/40 border-[#3d3f96] ring-1 ring-[#3d3f96] cursor-pointer'
+                                            : 'bg-white border-slate-200 hover:border-slate-300 cursor-pointer'
                                     }`}
                                 >
                                     {/* Selection Radio */}
                                     <div className="pt-0.5 shrink-0">
-                                        {isSelected ? (
+                                        {isOutOfRange ? (
+                                            <Circle size={20} className="text-slate-200" />
+                                        ) : isSelected ? (
                                             <CheckCircle2 size={20} className="text-[#3d3f96] fill-indigo-100" />
                                         ) : (
                                             <Circle size={20} className="text-slate-300" />
@@ -154,7 +279,7 @@ export default function AddressModal({
 
                                     {/* Address Details */}
                                     <div className="space-y-1 text-left flex-1 min-w-0">
-                                        <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center justify-between gap-2 flex-wrap">
                                             <div className="flex items-center gap-2">
                                                 <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
                                                     {getAddressTypeIcon(addr.addressType)}
@@ -165,11 +290,28 @@ export default function AddressModal({
                                                 </strong>
                                             </div>
 
-                                            {addr.isDefault && (
-                                                <span className="text-[9px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md shrink-0">
-                                                    Default
-                                                </span>
-                                            )}
+                                            <div className="flex items-center gap-1.5">
+                                                {/* Distance / Range Tag */}
+                                                {addr.distance !== null && (
+                                                    <span
+                                                        className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md border flex items-center gap-1 ${
+                                                            isOutOfRange
+                                                                ? 'bg-rose-50 text-rose-600 border-rose-200'
+                                                                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                        }`}
+                                                    >
+                                                        {isOutOfRange && <AlertCircle size={9} />}
+                                                        {addr.distance.toFixed(1)} km away
+                                                        {isOutOfRange && ' • Out of range'}
+                                                    </span>
+                                                )}
+
+                                                {addr.isDefault && (
+                                                    <span className="text-[9px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md shrink-0">
+                                                        Default
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
 
                                         <p className="text-xs font-medium text-slate-600 leading-relaxed pt-0.5">
@@ -191,6 +333,12 @@ export default function AddressModal({
                                                 <span>+91 {addr.phone}</span>
                                             </div>
                                         )}
+
+                                        {isOutOfRange && (
+                                            <p className="text-[11px] text-rose-500 font-semibold flex items-center gap-1 pt-1">
+                                                <AlertCircle size={12} /> Delivery unavailable (exceeds {MAX_DELIVERY_DISTANCE_KM} km limit)
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             );
@@ -210,7 +358,7 @@ export default function AddressModal({
                     <button
                         type="button"
                         onClick={handleConfirm}
-                        disabled={addresses.length === 0}
+                        disabled={addresses.length === 0 || !tempSelectedId || addresses.find((a) => a._id === tempSelectedId)?.isOutOfRange}
                         className="flex-1 py-3 px-4 rounded-xl bg-[#3d3f96] hover:bg-[#2F3175] text-white text-xs font-extrabold shadow-md shadow-indigo-950/10 transition-all uppercase tracking-wider cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Use This Address
