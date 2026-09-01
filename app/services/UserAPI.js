@@ -190,6 +190,69 @@ const UserAPI = {
         return response.data;
     },
 
+    // Custom Tiffin 
+    // ===================================================
+    // --- USER ALL NEAREST FOODS & SEARCH APIS ----------
+    // ===================================================
+
+    // --- 1. Fetch All Nearest Food Items (Search, Filters & Lightweight Response) ---
+    getAllNearestFoods: async (locationPayload, params) => {
+        // locationPayload: { lat: 30.7046, lng: 76.7179 }
+        // params (optional): { search, dietType, categoryId, page, limit }
+        const response = await publicApi.post('/api/foodpage/all-foods', locationPayload, { params });
+        return response.data;
+    },
+
+    // ===================================================
+    // --- USER CUSTOM TIFFIN BUILDER APIS --------------
+    // ===================================================
+
+    // --- 1. Get Available Food & Slots (Builder Loader) ---
+    getCustomTiffinBuilderLoader: async () => {
+        // Fetches Breakfast, Lunch, and Dinner slot configurations and their available clinical food items
+        const response = await authApi.get('/api/food/custom-tiffin/menu-config');
+        return response.data;
+    },
+
+    // --- 2. Calculate / Preview Custom Tiffin Package Bill (With COD & Peak Charges) ---
+    previewCustomTiffinBill: async (calculationPayload) => {
+        // calculationPayload: { packageDays, startDate, dietaryType, spiceLevel, clinicalNotes, selectedMeals, selectedFoods, deliverySlots, userLat, userLng, address, couponCode }
+        const response = await authApi.post('/api/food/custom-tiffin/calculate', calculationPayload);
+        return response.data;
+    },
+
+    // --- 3. Direct Create & Buy Custom Tiffin Package (Order Placement) ---
+    createCustomTiffinOrder: async (orderPayload) => {
+        // orderPayload: { packageDays, startDate, paymentMethod, dietaryType, spiceLevel, clinicalNotes, selectedMeals, selectedFoods, deliverySlots, userLat, userLng, address }
+        const response = await authApi.post('/api/food/custom-tiffin/create', orderPayload);
+        return response.data;
+    },
+
+    // --- 4. Get Active Custom Tiffin Full Details ---
+    getCustomTiffinPlanDetails: async (bookingId) => {
+        // bookingId: Custom Booking ID (e.g. "CTM-FD-593326") or Mongoose Object ID
+        const response = await authApi.get(`/api/food/custom-tiffin/my-custom-plan/${bookingId}`);
+        return response.data;
+    },
+
+    // ===================================================
+    // --- USER CUSTOM TIFFIN SUBSCRIPTION DETAILS -------
+    // ===================================================
+
+    // --- 1. Get All My Custom Tiffin Subscriptions (Lightweight List View) ---
+    getUserCustomTiffinPlans: async (params) => {
+        // params (optional): { status: 'New' | 'Active' | etc. }
+        const response = await authApi.get('/api/food/custom-tiffin/my-custom-plans', { params });
+        return response.data;
+    },
+
+    // --- 2. Get Single Custom Tiffin Full Details By ID ---
+    getSingleCustomTiffinDetails: async (bookingId) => {
+        // bookingId: Custom Booking ID (e.g. "CTM-FD-593326") or dynamic Mongoose Object ID
+        const response = await authApi.get(`/api/food/custom-tiffin/my-custom-plan/${bookingId}`);
+        return response.data;
+    },
+
     //Pharmacy APIS 
     // ===================================================
     // --- USER PHARMACY DISCOVERY & CATALOG APIS -------
