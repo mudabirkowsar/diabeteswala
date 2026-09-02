@@ -190,6 +190,13 @@ const UserAPI = {
         return response.data;
     },
 
+    //search APIs
+     getFoodSearchSuggestions: async (searchPayload) => {
+        // searchPayload: { query: "Salad", limit: 10 }
+        const response = await publicApi.post('/api/foodpage/search-suggestions', searchPayload);
+        return response.data;
+    },
+
     // Custom Tiffin 
     getAllNearestFoods: async (locationPayload, params) => {
         const response = await publicApi.post('/api/foodpage/all-foods', locationPayload, { params });

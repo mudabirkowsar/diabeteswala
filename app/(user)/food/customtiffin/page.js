@@ -557,6 +557,7 @@ export default function CustomTiffinBuilderPage() {
                             <label className="text-xs font-bold text-slate-700">Dietary Category</label>
                             <div className="grid grid-cols-3 gap-2">
                                 {[
+                                    // { key: 'all', label: 'All' },
                                     { key: 'veg', label: 'Vegetarian' },
                                     { key: 'egg', label: 'Eggetarian' },
                                     { key: 'non veg', label: 'Non Veg' }
