@@ -167,8 +167,46 @@ const FoodAPI = {
         // statusPayload: { status: 'Preparing' | 'Ready' | 'Ready for Delivery' | 'Cancelled', cancelReason }
         const response = await authApi.patch(`/provider/food/orders/${id}/status`, statusPayload);
         return response.data;
-    }
+    },
+    // ===================================================
+    // --- VENDOR TIFFIN & CUSTOM REQUESTS APIS ---------
+    // ===================================================
 
+    // --- 1. Get All Standard Tiffin Subscriptions (Lightweight Card List) ---
+    getVendorStandardSubscriptions: async (params) => {
+        // params (optional): { status, billingCycle, search, page, limit }
+        const response = await authApi.get('/provider/food/tiffin/subscriptions', { params });
+        return response.data;
+    },
+
+    // --- 2. Get Single Standard Subscription Full Details By ID ---
+    getVendorStandardSubscriptionDetails: async (id) => {
+        // id: Document Object ID (_id) or custom bookingId (e.g. "SUB-FD-582910")
+        const response = await authApi.get(`/provider/food/tiffin/subscriptions/${id}`);
+        return response.data;
+    },
+
+    // --- 3. Get All Custom Tiffin Requests (Lightweight Card List) ---
+    getVendorCustomRequests: async (params) => {
+        // params (optional): { status, search, page, limit }
+        const response = await authApi.get('/provider/food/tiffin/custom-requests', { params });
+        return response.data;
+    },
+
+    // --- 4. Get Single Custom Tiffin Full Details By ID ---
+    getVendorCustomRequestDetails: async (id) => {
+        // id: Document Object ID (_id) or custom bookingId (e.g. "CTM-FD-849201")
+        const response = await authApi.get(`/provider/food/tiffin/custom-requests/${id}`);
+        return response.data;
+    },
+
+    // --- 5. Accept or Reject Custom Tiffin Request (With Reason) ---
+    processVendorCustomRequest: async (id, actionPayload) => {
+        // id: Document Object ID (_id) or custom bookingId
+        // actionPayload: { action: 'Accept' | 'Reject', rejectReason: "Mandatory description if rejecting" }
+        const response = await authApi.patch(`/provider/food/tiffin/custom-requests/${id}/action`, actionPayload);
+        return response.data;
+    },
 
 };
 

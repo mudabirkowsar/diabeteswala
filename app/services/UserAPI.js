@@ -191,64 +191,37 @@ const UserAPI = {
     },
 
     // Custom Tiffin 
-    // ===================================================
-    // --- USER ALL NEAREST FOODS & SEARCH APIS ----------
-    // ===================================================
-
-    // --- 1. Fetch All Nearest Food Items (Search, Filters & Lightweight Response) ---
     getAllNearestFoods: async (locationPayload, params) => {
-        // locationPayload: { lat: 30.7046, lng: 76.7179 }
-        // params (optional): { search, dietType, categoryId, page, limit }
         const response = await publicApi.post('/api/foodpage/all-foods', locationPayload, { params });
         return response.data;
     },
 
-    // ===================================================
-    // --- USER CUSTOM TIFFIN BUILDER APIS --------------
-    // ===================================================
-
-    // --- 1. Get Available Food & Slots (Builder Loader) ---
     getCustomTiffinBuilderLoader: async () => {
-        // Fetches Breakfast, Lunch, and Dinner slot configurations and their available clinical food items
         const response = await authApi.get('/api/food/custom-tiffin/menu-config');
         return response.data;
     },
 
-    // --- 2. Calculate / Preview Custom Tiffin Package Bill (With COD & Peak Charges) ---
     previewCustomTiffinBill: async (calculationPayload) => {
-        // calculationPayload: { packageDays, startDate, dietaryType, spiceLevel, clinicalNotes, selectedMeals, selectedFoods, deliverySlots, userLat, userLng, address, couponCode }
         const response = await authApi.post('/api/food/custom-tiffin/calculate', calculationPayload);
         return response.data;
     },
 
-    // --- 3. Direct Create & Buy Custom Tiffin Package (Order Placement) ---
     createCustomTiffinOrder: async (orderPayload) => {
-        // orderPayload: { packageDays, startDate, paymentMethod, dietaryType, spiceLevel, clinicalNotes, selectedMeals, selectedFoods, deliverySlots, userLat, userLng, address }
         const response = await authApi.post('/api/food/custom-tiffin/create', orderPayload);
         return response.data;
     },
 
-    // --- 4. Get Active Custom Tiffin Full Details ---
     getCustomTiffinPlanDetails: async (bookingId) => {
-        // bookingId: Custom Booking ID (e.g. "CTM-FD-593326") or Mongoose Object ID
         const response = await authApi.get(`/api/food/custom-tiffin/my-custom-plan/${bookingId}`);
         return response.data;
     },
 
-    // ===================================================
-    // --- USER CUSTOM TIFFIN SUBSCRIPTION DETAILS -------
-    // ===================================================
-
-    // --- 1. Get All My Custom Tiffin Subscriptions (Lightweight List View) ---
     getUserCustomTiffinPlans: async (params) => {
-        // params (optional): { status: 'New' | 'Active' | etc. }
         const response = await authApi.get('/api/food/custom-tiffin/my-custom-plans', { params });
         return response.data;
     },
 
-    // --- 2. Get Single Custom Tiffin Full Details By ID ---
     getSingleCustomTiffinDetails: async (bookingId) => {
-        // bookingId: Custom Booking ID (e.g. "CTM-FD-593326") or dynamic Mongoose Object ID
         const response = await authApi.get(`/api/food/custom-tiffin/my-custom-plan/${bookingId}`);
         return response.data;
     },
@@ -258,7 +231,6 @@ const UserAPI = {
     // --- USER PHARMACY DISCOVERY & CATALOG APIS -------
     // ===================================================
     getAllProducts: async (params) => {
-        // params: { page, category, subCategory }
         const response = await publicApi.get('/user/pharmacy/standard-list', { params });
         return response.data;
     },
@@ -268,10 +240,7 @@ const UserAPI = {
         return response.data
     },
 
-
     getProductFullDetail: async (productId, params) => {
-        // vendorId example: "69df18ad0cf05769b93d6761"
-        // params example: { lat: 30.7333, lng: 76.7233 }
         const response = await publicApi.get(`/user/pharmacy/medicine-details/${productId}`, { params });
         return response.data;
     },
@@ -316,12 +285,15 @@ const UserAPI = {
     // ===================================================
     // --- USER-END FOOD PAGE & DISCOVERY APIS -----------
     // ===================================================
-    getUserFoodPageDaywise: async () => {
-        const response = await publicApi.get('/api/foodpage/daywise');
+    getUserFoodPageDaywise: async (locationPayload, params) => {
+        // locationPayload: { lat: 30.7046, lng: 76.7179 } to calculate nearest vendor offsets
+        // params (optional): { search, dietType, page, limit } for cross-section search filtering
+        const response = await publicApi.post('/api/foodpage/daywise', locationPayload, { params });
         return response.data;
     },
-    getUserFoodPageWeeklyMenu: async () => {
-        const response = await publicApi.get('/api/foodpage/weekly');
+
+    getUserFoodPageWeeklyMenu: async (locationPayload, params) => {
+        const response = await publicApi.post('/api/foodpage/weekly', locationPayload, { params });
         return response.data;
     },
     // ===================================================
@@ -389,6 +361,7 @@ const UserAPI = {
         const response = await authApi.get(`/api/food/checkout/order/${id}`);
         return response.data;
     },
+
     getFoodAddons: async () => {
         const response = await publicApi.get('/api/food/checkout/addons');
         return response.data;
@@ -397,71 +370,50 @@ const UserAPI = {
     // ===================================================
     // --- USER TIFFIN PLANS DISCOVERY & DETAILS APIS ----
     // ===================================================
-
-    // --- 1. Fetch Geolocated Nearest Tiffin Plans (Storefront Grid View) ---
+    //Tiffin plans and checkout all
     getNearestTiffinPlans: async (locationPayload, params) => {
-        // locationPayload: { lat: 30.7114, lng: 76.6908 }
-        // params (optional): { page: 1, limit: 20 }
         const response = await publicApi.post('/api/foodpage/nearest-plans', locationPayload, { params });
         return response.data;
     },
 
-    // --- 2. Get Single Tiffin Plan Details By ID (Plan Overlay / Details Screen) ---
     getUserTiffinPlanDetails: async (id, params) => {
-        // id: Document Mongoose Object ID (_id) or custom planId (e.g. PLN-103)
-        // params (optional): { lat: 30.7114, lng: 76.6908 } to calculate nearest vendor offsets
         const response = await publicApi.get(`/api/foodpage/plans/${id}`, { params });
         return response.data;
     },
-    // ===================================================
-    // --- USER TIFFIN SUBSCRIPTION & CHECKOUT APIS ------
-    // ===================================================
 
-    // --- 1. Calculate / Preview Tiffin Subscription Bill ---
     previewTiffinSubscriptionBill: async (calculationPayload) => {
-        // calculationPayload: { foodId, bookingType: "Subscription", planId, billingCycle, userLat, userLng, address, universalDeliveryTimes, dailyMealSchedule, couponCode }
         const response = await authApi.post('/api/food/tiffin/calculate', calculationPayload);
         return response.data;
     },
 
-    // --- 2. Subscribe & Initiate Online Payment (Direct Buy) ---
     subscribeTiffinPlan: async (subscriptionPayload) => {
-        // subscriptionPayload: { foodId, bookingType: "Subscription", planId, planName, billingCycle, paymentMethod: "Online", userLat, userLng, address, universalDeliveryTimes, dailyMealSchedule }
         const response = await authApi.post('/api/food/tiffin/subscribe', subscriptionPayload);
         return response.data;
     },
 
-    // --- 3. Verify Razorpay Payment (Order Finalization) ---
     verifyTiffinRazorpayPayment: async (paymentPayload) => {
-        // paymentPayload: { appointmentId, bookingId, razorpayOrderId, razorpayPaymentId, razorpaySignature }
         const response = await authApi.post('/api/food/checkout/verify-payment', paymentPayload);
         return response.data;
     },
 
-    // --- 4. Modify Daily Slot Schedule (4-Hour Lockout Guard) ---
     modifyTiffinDailySchedule: async (bookingId, schedulePayload) => {
-        // bookingId: Custom subscription booking ID (e.g. "SUB-FD-582910")
-        // schedulePayload: { dailyMealSchedule: [...] } - Updated daily meal slot layout
         const response = await authApi.put(`/api/food/tiffin/schedule/${bookingId}`, schedulePayload);
         return response.data;
     },
+
     // ===================================================
     // --- USER TIFFIN SUBSCRIPTION MANAGEMENT APIS ------
     // ===================================================
 
-    // --- 1. Get All My Tiffin Subscriptions ---
     getUserTiffinSubscriptions: async () => {
-        // Retrieves a list of active and historical tiffin subscriptions for the logged-in user
         const response = await authApi.get('/api/food/tiffin/my-subscriptions');
         return response.data;
     },
 
-    // --- 2. Get Single Tiffin Subscription Details by ID ---
     getUserTiffinSubscriptionDetails: async (id) => {
-        // id: The Mongoose Object ID (_id) of the specific tiffin subscription (e.g. "6a9545086d14dca404eabecb")
         const response = await authApi.get(`/api/food/tiffin/my-subscription/${id}`);
         return response.data;
-    }
+    },
 
 
 }

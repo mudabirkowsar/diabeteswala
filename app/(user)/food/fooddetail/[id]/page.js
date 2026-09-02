@@ -174,7 +174,7 @@ export default function FoodDetailPage() {
     const tagsList = Array.isArray(dish.tags) ? dish.tags : [];
 
     return (
-        <div className="min-h-screen bg-[#f8fbff] py-8 px-4 sm:px-6 lg:px-10 max-w-[1200px] mx-auto space-y-8 antialiased select-none text-left">
+        <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-10 max-w-[1200px] mx-auto space-y-8 antialiased select-none text-left">
             
             {/* Breadcrumb Back Button */}
             <button 
