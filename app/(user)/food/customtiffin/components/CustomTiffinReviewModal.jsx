@@ -274,7 +274,7 @@ export default function CustomTiffinReviewModal({
                     </div>
 
                     {/* Promo Coupon */}
-                    <div className="space-y-2 pt-2 border-t border-slate-100">
+                    {/* <div className="space-y-2 pt-2 border-t border-slate-100">
                         <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-1.5">
                             <Percent size={13} className="text-[#3d3f96]" /> Apply Coupon
                         </label>
@@ -310,7 +310,7 @@ export default function CustomTiffinReviewModal({
                                 <TicketCheck size={14} /> Coupon <strong>{appliedCoupon}</strong> active!
                             </div>
                         )}
-                    </div>
+                    </div> */}
 
                     {/* Bill Breakdown Summary */}
                     <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4.5 space-y-2">

@@ -13,7 +13,8 @@ import {
     Coffee,
     Moon,
     Copy,
-    RefreshCw
+    RefreshCw,
+    Filter
 } from 'lucide-react';
 
 const BASE_SERVER_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.3:5002";
@@ -38,7 +39,8 @@ export default function CustomTiffinSlotsPicker({
     onSyncCurrentDayToAll,
     getDayOfWeekName,
     universalDeliveryTimes,
-    onDeliveryTimeChange
+    onDeliveryTimeChange,
+    dietaryType // Filter based on Step 3
 }) {
     const slots = ['breakfast', 'lunch', 'dinner'];
     const activeSlotsList = slots.filter((s) => selectedMeals[s]);
@@ -62,7 +64,27 @@ export default function CustomTiffinSlotsPicker({
         );
     };
 
-    // Total days array: [1, 2, 3, ... packageDays]
+    // Filter food list based on Step 3 Dietary Selection
+    const filterDishesByDiet = (dishes = []) => {
+        if (!dietaryType) return dishes;
+        const currentDiet = dietaryType.toLowerCase().trim();
+
+        return dishes.filter((dish) => {
+            const dishDiet = (dish.dietType || "").toLowerCase().trim();
+            if (currentDiet === 'veg') {
+                return dishDiet === 'veg' || dishDiet === 'jain';
+            }
+            if (currentDiet === 'egg') {
+                return dishDiet === 'egg' || dishDiet === 'veg' || dishDiet === 'jain';
+            }
+            if (currentDiet === 'jain') {
+                return dishDiet === 'jain' || dishDiet === 'veg';
+            }
+            return true;
+        });
+    };
+
+    // Days array: [1, 2, 3, ... packageDays]
     const daysArray = Array.from({ length: packageDays }, (_, i) => i + 1);
     const currentDayOfWeek = getDayOfWeekName(selectedDayNumber);
 
@@ -74,7 +96,7 @@ export default function CustomTiffinSlotsPicker({
                 <div className="flex items-center justify-between">
                     <div>
                         <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">
-                            Step 2 • Active Meal Slots
+                            Step 3 • Active Meal Slots
                         </span>
                         <p className="text-xs text-slate-500 font-medium">
                             Choose which daily meal slots to include in your package
@@ -88,7 +110,8 @@ export default function CustomTiffinSlotsPicker({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {slots.map((slotKey) => {
                         const isSelected = !!selectedMeals[slotKey];
-                        const availableDishesCount = loaderData?.[slotKey]?.foodList?.length || 0;
+                        const allDishes = loaderData?.[slotKey]?.foodList || [];
+                        const filteredCount = filterDishesByDiet(allDishes).length;
 
                         return (
                             <div
@@ -111,7 +134,7 @@ export default function CustomTiffinSlotsPicker({
                                             {slotKey}
                                         </h4>
                                         <span className="text-[10px] text-slate-400 font-bold">
-                                            {availableDishesCount} Items
+                                            {filteredCount} Items Available
                                         </span>
                                     </div>
                                 </div>
@@ -163,15 +186,20 @@ export default function CustomTiffinSlotsPicker({
                 </div>
             )}
 
-            {/* 3. N-DAY CUSTOMIZATION (DAYS 1 TO N) WITH 1-WEEK SYNC BUTTONS */}
+            {/* 3. N-DAY DISH CUSTOMIZATION FILTERED BY DIETARY SELECTION */}
             <div className="space-y-4 pt-4 border-t border-slate-100">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                     <div>
-                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">
-                            Step 3 • Customize All {packageDays} Days or Sync
-                        </span>
-                        <p className="text-xs text-slate-500 font-medium">
-                            Pick dishes for each day individually, or use sync options below.
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">
+                                Step 4 • Customize Daily Meals
+                            </span>
+                            <span className="text-[9px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md flex items-center gap-1 uppercase">
+                                <Filter size={9} /> Showing {dietaryType} Items Only
+                            </span>
+                        </div>
+                        <p className="text-xs text-slate-500 font-medium pt-0.5">
+                            Pick dishes for each day individually, or sync across all {packageDays} days.
                         </p>
                     </div>
 
@@ -184,7 +212,7 @@ export default function CustomTiffinSlotsPicker({
                                 className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50/80 text-[#3d3f96] hover:bg-indigo-100 transition-all cursor-pointer shrink-0"
                             >
                                 <RefreshCw size={13} />
-                                <span>Sync Week 1 (7-Day Cycle) to All</span>
+                                <span>Sync Week 1 Cycle to All</span>
                             </button>
                         )}
 
@@ -199,7 +227,7 @@ export default function CustomTiffinSlotsPicker({
                     </div>
                 </div>
 
-                {/* Day Buttons Horizontal Carousel (Day 1, Day 2 ... Day N) */}
+                {/* Day Buttons Carousel (Day 1..N) */}
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden">
                     {daysArray.map((dayNum) => {
                         const isSelected = selectedDayNumber === dayNum;
@@ -230,12 +258,13 @@ export default function CustomTiffinSlotsPicker({
                     })}
                 </div>
 
-                {/* Slot-wise Dish Selection Cards for Currently Selected Day Number */}
+                {/* Slot-wise Filtered Dish Cards (Scrollable: 6 items visible) */}
                 {activeSlotsList.length > 0 ? (
                     <div className="space-y-4">
                         {activeSlotsList.map((slotKey) => {
                             const slotData = loaderData?.[slotKey] || { foodList: [] };
-                            const availableDishes = slotData.foodList || [];
+                            const rawDishes = slotData.foodList || [];
+                            const availableDishes = filterDishesByDiet(rawDishes);
                             const currentSelectedDishId = dailySchedule[selectedDayNumber]?.[slotKey];
 
                             return (
@@ -252,11 +281,12 @@ export default function CustomTiffinSlotsPicker({
                                         </span>
                                     </div>
 
-                                    {/* Scrollable Container (Shows 6 dishes cleanly, scrolls smoothly for more) */}
+                                    {/* Scrollable Container (Shows 6 dishes, scrolls smoothly for more) */}
                                     <div className="p-3.5">
                                         {availableDishes.length === 0 ? (
-                                            <div className="py-4 text-center text-xs text-slate-400">
-                                                No items available in {slotKey}.
+                                            <div className="py-6 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                                                <AlertCircle size={14} className="text-amber-500" />
+                                                No {dietaryType.toUpperCase()} dishes available in {slotKey}.
                                             </div>
                                         ) : (
                                             <div className="max-h-[300px] overflow-y-auto pr-1.5 space-y-2.5 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-100">

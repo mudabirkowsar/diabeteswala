@@ -38,45 +38,44 @@ export default function CustomTiffinBuilderPage() {
     const router = useRouter();
     const { showNotification } = useNotification();
 
-    // Loader & Base States
+    // Loader & Data States
     const [loading, setLoading] = useState(true);
     const [loaderData, setLoaderData] = useState(null);
 
-    // 1. TOP DURATION PARAMETERS (Supports 10, 11, 12, 15, 30, etc.)
+    // 1. STEP 1: PACKAGE DURATION & STARTING DATE
     const [packageDays, setPackageDays] = useState(10);
     const [customDaysInput, setCustomDaysInput] = useState('10');
-
-    // Starting Date
     const [startDate, setStartDate] = useState(() => {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         return tomorrow.toISOString().split('T')[0];
     });
 
-    // Dietary & Spice Preferences
-    const [dietaryType, setDietaryType] = useState('veg');
-    const [spiceLevel, setSpiceLevel] = useState('mild');
-    const [clinicalNotes, setClinicalNotes] = useState('');
-
-    // Slot Selections & Universal Delivery Times
+    // 2. STEP 2: ACTIVE MEAL SLOTS & UNIVERSAL DELIVERY TIMES
     const [selectedMeals, setSelectedMeals] = useState({ breakfast: true, lunch: true, dinner: true });
-    
-    // N-Day Customization State: { 1: { breakfast: "id", ... }, 2: { ... }, ... 11: { ... } }
-    const [selectedDayNumber, setSelectedDayNumber] = useState(1);
-    const [dailySchedule, setDailySchedule] = useState({});
-
     const [universalDeliveryTimes, setUniversalDeliveryTimes] = useState({
         breakfastTime: '08:30 AM - 09:30 AM',
         lunchTime: '12:00 PM - 01:00 PM',
         dinnerTime: '07:00 PM - 08:00 PM'
     });
 
-    // Delivery Address & Modals
+    // 3. STEP 3: DIETARY CATEGORY & SPICE LEVEL
+    const [dietaryType, setDietaryType] = useState('veg');
+    const [spiceLevel, setSpiceLevel] = useState('mild');
+
+    // 4. STEP 4: N-DAY DISH CUSTOMIZATION STATE
+    const [selectedDayNumber, setSelectedDayNumber] = useState(1);
+    const [dailySchedule, setDailySchedule] = useState({});
+
+    // 5. STEP 5: CLINICAL NOTES FOR KITCHEN
+    const [clinicalNotes, setClinicalNotes] = useState('');
+
+    // 6. STEP 6: DELIVERY ADDRESS & MODALS
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
-    // Calculation & Coupon States
+    // Calculations & Coupon
     const [appliedCoupon, setAppliedCoupon] = useState('');
     const [calculatedData, setCalculatedData] = useState(null);
     const [calculatingBill, setCalculatingBill] = useState(false);
@@ -94,12 +93,12 @@ export default function CustomTiffinBuilderPage() {
         return { lat: 30.7046, lng: 76.7179 };
     };
 
-    // Calculate day-of-week for any Day Number (1..N) based on startDate
+    // Calculate day-of-week for any Day Number (1..N)
     const getDayOfWeekName = useCallback((dayNum) => {
         try {
             const dateObj = new Date(startDate);
             dateObj.setDate(dateObj.getDate() + (dayNum - 1));
-            const dayIdx = dateObj.getDay(); // 0 = Sunday, 1 = Monday ... 6 = Saturday
+            const dayIdx = dateObj.getDay();
             const mappedDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
             return mappedDays[dayIdx] || 'monday';
         } catch {
@@ -107,12 +106,11 @@ export default function CustomTiffinBuilderPage() {
         }
     }, [startDate]);
 
-    // Format weeklyCustomSchedule Array from N-day customized schedule for API compatibility
+    // Format weeklyCustomSchedule for API compatibility
     const formatWeeklyCustomSchedule = useCallback(() => {
         return DAYS_OF_WEEK.map((dayName) => {
             const dayObj = { dayOfWeek: dayName };
 
-            // Find the dish configured for this day-of-week from dailySchedule
             for (let d = 1; d <= packageDays; d++) {
                 if (getDayOfWeekName(d).toLowerCase() === dayName.toLowerCase()) {
                     const cfg = dailySchedule[d] || {};
@@ -123,7 +121,6 @@ export default function CustomTiffinBuilderPage() {
                 }
             }
 
-            // Fallback to Day 1 configuration if empty
             const fallbackCfg = dailySchedule[1] || {};
             if (selectedMeals.breakfast && !dayObj.breakfast && fallbackCfg.breakfast) dayObj.breakfast = fallbackCfg.breakfast;
             if (selectedMeals.lunch && !dayObj.lunch && fallbackCfg.lunch) dayObj.lunch = fallbackCfg.lunch;
@@ -142,7 +139,7 @@ export default function CustomTiffinBuilderPage() {
         return times;
     }, [selectedMeals, universalDeliveryTimes]);
 
-    // Initial Load
+    // Initial Data Fetch
     useEffect(() => {
         (async () => {
             setLoading(true);
@@ -164,7 +161,6 @@ export default function CustomTiffinBuilderPage() {
                         }
                     });
 
-                    // Pre-fill days 1 through 30 with default selections
                     const initSchedule = {};
                     for (let i = 1; i <= 30; i++) {
                         initSchedule[i] = { ...defaultDishes };
@@ -241,7 +237,6 @@ export default function CustomTiffinBuilderPage() {
         if (!isNaN(parsed) && parsed > 0) {
             setPackageDays(parsed);
 
-            // Ensure dailySchedule has keys up to parsed
             setDailySchedule((prev) => {
                 const updated = { ...prev };
                 const sample = prev[1] || {};
@@ -364,7 +359,6 @@ export default function CustomTiffinBuilderPage() {
                 throw new Error(orderRes?.message || "Failed to create custom tiffin order.");
             }
 
-            // Online Payment Flow (Razorpay)
             if (orderRes.isOnlinePayment) {
                 const loaded = await loadRazorpaySDK();
                 if (!loaded) throw new Error("Payment gateway is currently unavailable.");
@@ -401,7 +395,6 @@ export default function CustomTiffinBuilderPage() {
                 });
                 rzp.open();
             } else {
-                // COD Flow
                 setConfirmedOrder(orderRes.data || { bookingId: orderRes.bookingId, deliveryOTP: orderRes.data?.deliveryOTP });
                 setSubscribing(false);
             }
@@ -425,7 +418,7 @@ export default function CustomTiffinBuilderPage() {
 
     return (
         <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-10 max-w-[1100px] mx-auto space-y-8 antialiased select-none text-left">
-            
+
             {/* Modal 1: Address Selector */}
             <AddressModal
                 isOpen={isAddressModalOpen}
@@ -454,7 +447,7 @@ export default function CustomTiffinBuilderPage() {
                 subscribing={subscribing}
                 onConfirmOrder={handleConfirmOrder}
                 confirmedOrder={confirmedOrder}
-                onViewOrderDetails={() => router.push('/otherscreens/tiffinorders')}
+                onViewOrderDetails={() => router.push('/otherscreens/foodbookingconfirmation')}
                 dailySchedule={dailySchedule}
                 getDayOfWeekName={getDayOfWeekName}
                 loaderData={loaderData}
@@ -477,14 +470,14 @@ export default function CustomTiffinBuilderPage() {
                     Build Your Custom Tiffin Package
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                    Choose your exact package duration on top, configure dishes day-by-day, or sync with a 1-week pattern.
+                    Choose duration, active slots, and dietary preferences to filter matching clinical meals.
                 </p>
             </div>
 
             {/* Workspace Card */}
             <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border border-slate-100 shadow-sm space-y-8">
-                
-                {/* 1. TOP DURATION SELECTION & STARTING DATE (PRIMARY CONTROL) */}
+
+                {/* 1. STEP 1 • PACKAGE DURATION & STARTING DATE */}
                 <div className="space-y-4">
                     <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">
                         Step 1 • Package Duration &amp; Starting Date
@@ -509,11 +502,10 @@ export default function CustomTiffinBuilderPage() {
                                             setPackageDays(days);
                                             setCustomDaysInput(String(days));
                                         }}
-                                        className={`flex-1 py-2 rounded-xl text-xs font-black transition-all cursor-pointer border ${
-                                            packageDays === days
+                                        className={`flex-1 py-2 rounded-xl text-xs font-black transition-all cursor-pointer border ${packageDays === days
                                                 ? 'bg-[#3d3f96] text-white border-[#3d3f96] shadow-sm'
                                                 : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                                        }`}
+                                            }`}
                                     >
                                         {days}D
                                     </button>
@@ -553,7 +545,64 @@ export default function CustomTiffinBuilderPage() {
                     </div>
                 </div>
 
-                {/* 2. MEAL SLOTS PICKER, UNIVERSAL DELIVERY TIMES & N-DAY CUSTOMIZATION */}
+                {/* 2. STEP 2 (ON TOP OF FOOD PICKER) • CLINICAL DIETARY & SPICE PREFERENCES */}
+                <div className="space-y-4 pt-6 border-t border-slate-100">
+                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">
+                        Step 2 • Dietary Category &amp; Spice Level
+                    </span>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Dietary Type Selection */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-700">Dietary Category</label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {[
+                                    { key: 'veg', label: 'Vegetarian' },
+                                    { key: 'egg', label: 'Eggetarian' },
+                                    { key: 'non veg', label: 'Non Veg' }
+                                ].map((d) => (
+                                    <button
+                                        key={d.key}
+                                        type="button"
+                                        onClick={() => setDietaryType(d.key)}
+                                        className={`py-2 rounded-xl text-xs font-black transition-all cursor-pointer border ${dietaryType === d.key
+                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 font-black'
+                                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                            }`}
+                                    >
+                                        {d.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Spice Level */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-700">Spice &amp; Salt Level</label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {[
+                                    { key: 'mild', label: 'Mild Spice' },
+                                    { key: 'medium', label: 'Medium' },
+                                    { key: 'low-sodium', label: 'Low Sodium' }
+                                ].map((s) => (
+                                    <button
+                                        key={s.key}
+                                        type="button"
+                                        onClick={() => setSpiceLevel(s.key)}
+                                        className={`py-2 rounded-xl text-xs font-black transition-all cursor-pointer border ${spiceLevel === s.key
+                                                ? 'bg-amber-50 text-amber-800 border-amber-300 font-black'
+                                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                            }`}
+                                    >
+                                        {s.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 3. STEP 2 & STEP 4 • SLOTS PICKER, DELIVERY TIMES & FILTERED DISHES */}
                 <div className="pt-6 border-t border-slate-100">
                     <CustomTiffinSlotsPicker
                         loaderData={loaderData}
@@ -569,71 +618,15 @@ export default function CustomTiffinBuilderPage() {
                         getDayOfWeekName={getDayOfWeekName}
                         universalDeliveryTimes={universalDeliveryTimes}
                         onDeliveryTimeChange={handleDeliveryTimeChange}
+                        dietaryType={dietaryType}
                     />
                 </div>
 
-                {/* 3. CLINICAL DIETARY & SPICE PREFERENCES */}
-                <div className="space-y-4 pt-6 border-t border-slate-100">
-                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">
-                        Step 4 • Dietary Type &amp; Spice Level
-                    </span>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-700">Dietary Category</label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {[
-                                    { key: 'veg', label: 'Vegetarian' },
-                                    { key: 'egg', label: 'Eggetarian' },
-                                    { key: 'jain', label: 'Jain Meal' }
-                                ].map((d) => (
-                                    <button
-                                        key={d.key}
-                                        type="button"
-                                        onClick={() => setDietaryType(d.key)}
-                                        className={`py-2 rounded-xl text-xs font-black transition-all cursor-pointer border ${
-                                            dietaryType === d.key
-                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 font-black'
-                                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                                        }`}
-                                    >
-                                        {d.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-700">Spice &amp; Salt Level</label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {[
-                                    { key: 'mild', label: 'Mild Spice' },
-                                    { key: 'medium', label: 'Medium' },
-                                    { key: 'low-sodium', label: 'Low Sodium' }
-                                ].map((s) => (
-                                    <button
-                                        key={s.key}
-                                        type="button"
-                                        onClick={() => setSpiceLevel(s.key)}
-                                        className={`py-2 rounded-xl text-xs font-black transition-all cursor-pointer border ${
-                                            spiceLevel === s.key
-                                                ? 'bg-amber-50 text-amber-800 border-amber-300 font-black'
-                                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                                        }`}
-                                    >
-                                        {s.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 4. CLINICAL NOTES */}
+                {/* 4. STEP 5 • CLINICAL NOTES */}
                 <div className="space-y-2.5 pt-6 border-t border-slate-100">
                     <div className="flex items-center justify-between">
                         <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-1.5">
-                            <MessageSquareText size={13} className="text-[#3d3f96]" /> Special Clinical Notes for Kitchen
+                            <MessageSquareText size={13} className="text-[#3d3f96]" /> Step 5 • Special Clinical Notes for Kitchen
                         </label>
                         <span className="text-[10px] font-bold text-slate-400">Optional</span>
                     </div>
@@ -647,11 +640,11 @@ export default function CustomTiffinBuilderPage() {
                     />
                 </div>
 
-                {/* 5. DELIVERY ADDRESS CARD */}
+                {/* 5. STEP 6 • DELIVERY ADDRESS CARD */}
                 <div className="space-y-3 pt-6 border-t border-slate-100">
                     <div className="flex items-center justify-between">
                         <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">
-                            Delivery Address
+                            Step 6 • Delivery Address
                         </span>
                         <button
                             type="button"
@@ -665,9 +658,8 @@ export default function CustomTiffinBuilderPage() {
 
                     <div
                         onClick={() => setIsAddressModalOpen(true)}
-                        className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-start gap-3.5 ${
-                            selectedAddress ? 'bg-slate-50/70 border-slate-200 hover:border-indigo-200' : 'bg-amber-50/50 border-amber-200'
-                        }`}
+                        className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-start gap-3.5 ${selectedAddress ? 'bg-slate-50/70 border-slate-200 hover:border-indigo-200' : 'bg-amber-50/50 border-amber-200'
+                            }`}
                     >
                         <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0 text-[#3d3f96]">
                             <MapPin size={17} />
