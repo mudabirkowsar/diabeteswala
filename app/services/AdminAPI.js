@@ -99,6 +99,49 @@ const AdminAPI = {
     },
 
     // ===================================================
+    // --- DOCTOR MASTER DATA (SPECIALIZATION & QUAL) -----
+    // ===================================================
+    addSpecialization: async (specializationData) => {
+        const response = await authApi.post('/admin/doctor-data/add-specialization', specializationData);
+        return response.data;
+    },
+
+    getSpecializations: async () => {
+        const response = await publicApi.get('/admin/doctor-data/specializations');
+        return response.data;
+    },
+
+    updateSpecialization: async (id, specializationData) => {
+        const response = await authApi.put(`/admin/doctor-data/update-specialization/${id}`, specializationData);
+        return response.data;
+    },
+
+    deleteSpecialization: async (id) => {
+        const response = await authApi.delete(`/admin/doctor-data/delete-specialization/${id}`);
+        return response.data;
+    },
+
+    addQualification: async (qualificationData) => {
+        const response = await authApi.post('/admin/doctor-data/add-qualification', qualificationData);
+        return response.data;
+    },
+
+    getQualifications: async () => {
+        const response = await publicApi.get('/admin/doctor-data/qualifications');
+        return response.data;
+    },
+
+    updateQualification: async (id, qualificationData) => {
+        const response = await authApi.put(`/admin/doctor-data/update-qualification/${id}`, qualificationData);
+        return response.data;
+    },
+
+    deleteQualification: async (id) => {
+        const response = await authApi.delete(`/admin/doctor-data/delete-qualification/${id}`);
+        return response.data;
+    },
+
+    // ===================================================
     // --- ADMIN PEAK ORDER CHARGES APIS -----------------
     // ===================================================
 

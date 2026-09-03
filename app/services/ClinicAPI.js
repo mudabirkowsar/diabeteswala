@@ -48,10 +48,100 @@ const ClinicAPI = {
         return response.data;
     },
 
+    // ===================================================
+    // --- CLINIC PROFILE & VERIFICATION APIS -----------
+    // ===================================================
     getClinicProfile: async () => {
         const response = await authApi.get('/api/auth/clinic/profile');
         return response.data;
     },
+
+    updateClinicProfile: async (formData) => {
+        const response = await authApi.put('/api/auth/clinic/profile/update', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    getClinicProfileUpdateStatus: async () => {
+        const response = await authApi.get('/api/auth/clinic/profile/update-status');
+        return response.data;
+    },
+
+    toggleClinicOnlineStatus: async (payload) => {
+        const response = await authApi.patch('/api/auth/clinic/status/toggle', payload);
+        return response.data;
+    },
+
+    // ===================================================
+    // --- CLINIC DOCTOR MANAGEMENT & ONBOARDING APIS ----
+    // ===================================================
+
+    // --- SECTION 1: Public Master Data (Dropdown APIs) ---
+
+    // --- 1.1 Get Active Specializations (Dropdown Preload) ---
+    getClinicActiveSpecializations: async () => {
+        // Public API (No Token Required) - Populates Primary Specialization Select input
+        const response = await publicApi.get('/admin/doctor-data/specializations');
+        return response.data;
+    },
+
+    // --- 1.2 Get Active Qualifications (Dropdown Preload) ---
+    getClinicActiveQualifications: async () => {
+        // Public API (No Token Required) - Populates Degrees Multi-Select input
+        const response = await publicApi.get('/admin/doctor-data/qualifications');
+        return response.data;
+    },
+
+
+    // --- SECTION 2: Clinic Doctor Management APIs ---
+
+    // --- 2.1 Register New Clinic Doctor ---
+    registerClinicDoctor: async (formData) => {
+        // formData: Must be an instance of FormData to process multiple binary file attachments and JSON strings
+        const response = await authApi.post('/api/clinic/doctors/add', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    // --- 2.2 Get Clinic Doctor Directory ---
+    getClinicDoctorsDirectory: async () => {
+        // Fetches all doctors registered under the logged-in clinic's profile
+        const response = await authApi.get('/api/clinic/doctors/my-doctors');
+        return response.data;
+    },
+
+    // --- 2.3 Update Clinic Doctor Details & Documents ---
+    updateClinicDoctor: async (id, formData) => {
+        // id: Target Doctor unique ObjectID (_id)
+        // formData: Must be an instance of FormData to handle optional file replacements and partial field updates
+        const response = await authApi.put(`/api/clinic/doctors/update/${id}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    // --- 2.4 Toggle Doctor Duty Status ---
+    toggleDoctorDutyStatus: async (id, statusPayload) => {
+        // id: Target Doctor unique ObjectID (_id)
+        // statusPayload: { dutyStatus: "On Duty" | "Off Duty" | "On Leave" | "Busy" }
+        const response = await authApi.patch(`/api/clinic/doctors/${id}/duty-status`, statusPayload);
+        return response.data;
+    },
+
+    // --- 2.5 Remove Doctor from Clinic (Unlink) ---
+    removeDoctorFromClinic: async (id) => {
+        // id: Target Doctor unique ObjectID (_id) to remove from the clinic directory
+        const response = await authApi.delete(`/api/clinic/doctors/${id}`);
+        return response.data;
+    }
 
 }
 
