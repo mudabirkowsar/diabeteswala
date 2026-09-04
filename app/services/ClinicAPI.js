@@ -75,11 +75,48 @@ const ClinicAPI = {
         return response.data;
     },
 
+    // ==========================================================
+    // --- CLINIC TIMINGS, FACILITIES & 24/7 SHIFT APIS ---------
+    // ==========================================================
+    getClinicTimingsAndFacilities: async () => {
+        const response = await authApi.get('/api/clinic/timings');
+        return response.data;
+    },
+
+    createClinicTimingsAndFacilities: async (configData) => {
+        const response = await authApi.post('/api/clinic/timings/create', configData);
+        return response.data;
+    },
+
+    updateClinicTimingsAndFacilities: async (configData) => {
+        const response = await authApi.put('/api/clinic/timings/update', configData);
+        return response.data;
+    },
+
+    resetClinicTimingsAndFacilities: async () => {
+        const response = await authApi.delete('/api/clinic/timings/delete');
+        return response.data;
+    },
+
+    // ===================================================
+    // --- CLINIC DOCTOR MANAGEMENT & ONBOARDING APIS ----
+    // ===================================================
+    getClinicActiveSpecializations: async () => {
+        const response = await publicApi.get('/admin/doctor-data/specializations');
+        return response.data;
+    },
+
+    getClinicActiveQualifications: async () => {
+        const response = await publicApi.get('/admin/doctor-data/qualifications');
+        return response.data;
+    },
+
+
     // ===================================================
     // --- CLINIC DOCTOR MANAGEMENT & ONBOARDING APIS ----
     // ===================================================
 
-    // --- SECTION 1: Public Master Data (Dropdown APIs) ---
+    // --- SECTION 1: Public Master Metadata (Dropdown APIs) ---
 
     // --- 1.1 Get Active Specializations (Dropdown Preload) ---
     getClinicActiveSpecializations: async () => {
@@ -90,7 +127,7 @@ const ClinicAPI = {
 
     // --- 1.2 Get Active Qualifications (Dropdown Preload) ---
     getClinicActiveQualifications: async () => {
-        // Public API (No Token Required) - Populates Degrees Multi-Select input
+        // Public API (No Token Required) - Populates Educational Degrees Select input
         const response = await publicApi.get('/admin/doctor-data/qualifications');
         return response.data;
     },
@@ -100,7 +137,7 @@ const ClinicAPI = {
 
     // --- 2.1 Register New Clinic Doctor ---
     registerClinicDoctor: async (formData) => {
-        // formData: Must be an instance of FormData to process multiple binary file attachments and JSON strings
+        // formData: Must be an instance of FormData to handle 3-Way Fees (clinicFee, onlineFee, homeFee), files, and JSON strings
         const response = await authApi.post('/api/clinic/doctors/add', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
@@ -140,6 +177,51 @@ const ClinicAPI = {
     removeDoctorFromClinic: async (id) => {
         // id: Target Doctor unique ObjectID (_id) to remove from the clinic directory
         const response = await authApi.delete(`/api/clinic/doctors/${id}`);
+        return response.data;
+    },
+
+
+    // ===================================================
+    // --- CLINIC WARD & BED MANAGEMENT APIS -------------
+    // ===================================================
+
+    createClinicWard: async (wardData) => {
+        const response = await authApi.post('/api/clinic/wards/create', wardData);
+        return response.data;
+    },
+
+    getClinicWardsList: async () => {
+        const response = await authApi.get('/api/clinic/wards/list');
+        return response.data;
+    },
+
+    getClinicWardBeds: async (wardId) => {
+        const response = await authApi.get(`/api/clinic/wards/${wardId}/beds`);
+        return response.data;
+    },
+
+    updateClinicWardBedsCapacity: async (bedsData) => {
+        const response = await authApi.put('/api/clinic/wards/update-beds', bedsData);
+        return response.data;
+    },
+
+    updateClinicWardInfo: async (wardId, wardData) => {
+        const response = await authApi.put(`/api/clinic/wards/update/${wardId}`, wardData);
+        return response.data;
+    },
+
+    updateClinicBedStatus: async (bedPayload) => {
+        const response = await authApi.patch('/api/clinic/wards/bed/status', bedPayload);
+        return response.data;
+    },
+
+    deleteClinicBed: async (bedId) => {
+        const response = await authApi.delete(`/api/clinic/wards/bed/${bedId}`);
+        return response.data;
+    },
+
+    deleteClinicWard: async (wardId) => {
+        const response = await authApi.delete(`/api/clinic/wards/delete/${wardId}`);
         return response.data;
     }
 

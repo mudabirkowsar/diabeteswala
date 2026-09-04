@@ -15,17 +15,18 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaCheckCircle,
-  FaEye
+  FaEye,
+  FaClinicMedical,
+  FaVideo,
+  FaHome
 } from 'react-icons/fa';
 
 import ClinicAPI from '../../../../services/ClinicAPI';
 import AddDoctor from './components/AddDoctor';
 import ViewDoctor from './components/ViewDoctor';
 
-// Base backend URL from environment
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://192.168.1.7:5002';
 
-// Helper function to resolve backend image paths
 const getImageUrl = (path) => {
   if (!path) return 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=200';
   if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('blob:') || path.startsWith('data:')) {
@@ -79,7 +80,7 @@ export default function ClinicDoctors() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Live Duty Status Patch
+  // Live Duty Status Patch API Call
   const handleDutyStatusChange = async (e, doctorId) => {
     e.stopPropagation();
     const newStatus = e.target.value;
@@ -88,7 +89,7 @@ export default function ClinicDoctors() {
       const res = await ClinicAPI.toggleDoctorDutyStatus(doctorId, { dutyStatus: newStatus });
       if (res?.success) {
         setDoctors(prev => prev.map(d => d._id === doctorId ? { ...d, dutyStatus: newStatus } : d));
-        showToast(`Status updated to "${newStatus}"`);
+        showToast(`Dr. status changed to "${newStatus}"`);
       }
     } catch (err) {
       console.error("Duty status toggle failed:", err);
@@ -99,7 +100,7 @@ export default function ClinicDoctors() {
   // Remove doctor from clinic
   const handleDelete = async (e, doctor) => {
     e.stopPropagation();
-    if (!window.confirm(`Are you sure you want to remove Dr. ${doctor.name} from your clinic?`)) return;
+    if (!window.confirm(`Are you sure you want to unlink Dr. ${doctor.name} from your clinic?`)) return;
 
     try {
       const res = await ClinicAPI.removeDoctorFromClinic(doctor._id);
@@ -115,13 +116,13 @@ export default function ClinicDoctors() {
 
   const handleDoctorAdded = (newDoc) => {
     setDoctors(prev => [newDoc, ...prev]);
-    showToast(`Dr. ${newDoc.name} registered successfully!`);
+    showToast(`Dr. ${newDoc.name} onboarded successfully!`);
   };
 
   const handleDoctorUpdated = (updatedDoc) => {
     setDoctors(prev => prev.map(d => d._id === updatedDoc._id ? { ...d, ...updatedDoc } : d));
     setSelectedDoctor(updatedDoc);
-    showToast("Profile updated successfully!");
+    showToast("Profile details updated successfully!");
   };
 
   const handleRowClick = (doctor) => {
@@ -158,10 +159,9 @@ export default function ClinicDoctors() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-6">
         <div>
           <h2 className="text-2xl font-black text-gray-800">Clinic Doctors</h2>
-          <p className="text-xs text-gray-400 mt-1">Manage verified practitioner directory, duties, and profiles.</p>
+          <p className="text-xs text-gray-400 mt-1">Manage verified practitioner directory, 3-way consultation fees, and duty availability.</p>
         </div>
 
-        {/* ADD DOCTOR MODAL BUTTON */}
         <button
           onClick={() => setShowAddModal(true)}
           className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#3D3F96] hover:bg-[#2C2E75] text-white text-xs font-bold tracking-wide transition-all shadow-lg shadow-indigo-950/10 self-start sm:self-auto"
@@ -178,12 +178,11 @@ export default function ClinicDoctors() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Quick Search */}
           <div className="relative">
             <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
             <input
               type="text"
-              placeholder="Search by name or phone..."
+              placeholder="Search by name, specialist, phone..."
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none focus:border-[#3D3F96] w-64"
@@ -191,7 +190,7 @@ export default function ClinicDoctors() {
           </div>
 
           <span className="inline-block px-4 py-2 rounded-2xl text-xs font-bold bg-[#3D3F96]/10 text-[#3D3F96] shrink-0">
-            {filteredDoctors.length} Registered Staff
+            {filteredDoctors.length} Registered Doctors
           </span>
         </div>
       </div>
@@ -215,7 +214,6 @@ export default function ClinicDoctors() {
                 <th className="p-4">Contact</th>
                 <th className="p-4">Specialization</th>
                 <th className="p-4 text-center">Experience</th>
-                <th className="p-4 text-center">OPD Fee</th>
                 <th className="p-4">Duty Status</th>
                 <th className="p-4 text-center w-28">Actions</th>
               </tr>
@@ -262,17 +260,14 @@ export default function ClinicDoctors() {
                     <td className="p-4 text-center font-bold text-gray-700">
                       {doc.experienceYears || doc.experience || 0} Yrs
                     </td>
-                    <td className="p-4 text-center font-bold text-emerald-600">
-                      ₹{doc.fees?.clinic || 0}
-                    </td>
                     <td className="p-4" onClick={(e) => e.stopPropagation()}>
                       <select
                         value={doc.dutyStatus || "On Duty"}
                         onChange={(e) => handleDutyStatusChange(e, doc._id)}
                         className={`text-xs font-bold px-2.5 py-1 rounded-lg border outline-none cursor-pointer ${doc.dutyStatus === 'Off Duty' ? 'bg-slate-100 text-slate-600 border-slate-200' :
-                            doc.dutyStatus === 'On Leave' ? 'bg-amber-50 text-amber-600 border-amber-200' :
-                              doc.dutyStatus === 'Busy' ? 'bg-rose-50 text-rose-600 border-rose-200' :
-                                'bg-emerald-50 text-emerald-600 border-emerald-200'
+                          doc.dutyStatus === 'On Leave' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                            doc.dutyStatus === 'Busy' ? 'bg-rose-50 text-rose-600 border-rose-200' :
+                              'bg-emerald-50 text-emerald-600 border-emerald-200'
                           }`}
                       >
                         <option value="On Duty">On Duty</option>
@@ -281,6 +276,7 @@ export default function ClinicDoctors() {
                         <option value="Busy">Busy</option>
                       </select>
                     </td>
+
                     <td className="p-4 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button
@@ -352,7 +348,7 @@ export default function ClinicDoctors() {
         )}
       </div>
 
-      {/* --- ADD DOCTOR COMPONENT MODAL --- */}
+      {/* --- ADD DOCTOR MODAL --- */}
       {showAddModal && (
         <AddDoctor
           onClose={() => setShowAddModal(false)}
