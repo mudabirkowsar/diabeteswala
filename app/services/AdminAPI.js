@@ -48,6 +48,25 @@ const AdminAPI = {
     },
 
     // ===================================================
+    // --- ADMIN PROFILE UPDATE APPROVAL APIS ------------
+    // ===================================================
+
+    getProfileUpdateRequests: async (params) => {
+        const response = await authApi.get('/api/admin/profile-update', { params });
+        return response.data;
+    },
+
+    getProfileUpdateRequestDetails: async (requestId) => {
+        const response = await authApi.get(`/api/admin/profile-update/${requestId}`);
+        return response.data;
+    },
+
+    processProfileUpdateRequest: async (requestId, actionPayload) => {
+        const response = await authApi.post(`/api/admin/profile-update/${requestId}/action`, actionPayload);
+        return response.data;
+    },
+
+    // ===================================================
     // --- ADMIN COD POLICY CONFIGURATION APIS -----------
     // ===================================================
     getAllVendorsCodConfig: async () => {
@@ -80,37 +99,18 @@ const AdminAPI = {
     },
 
     // ===================================================
-    // --- ADMIN PROFILE UPDATE APPROVAL APIS ------------
-    // ===================================================
-
-    getProfileUpdateRequests: async (params) => {
-        const response = await authApi.get('/api/admin/profile-update', { params });
-        return response.data;
-    },
-
-    getProfileUpdateRequestDetails: async (requestId) => {
-        const response = await authApi.get(`/api/admin/profile-update/${requestId}`);
-        return response.data;
-    },
-
-    processProfileUpdateRequest: async (requestId, actionPayload) => {
-        const response = await authApi.post(`/api/admin/profile-update/${requestId}/action`, actionPayload);
-        return response.data;
-    },
-
-    // ===================================================
     // --- DOCTOR MASTER DATA (SPECIALIZATION & QUAL) -----
     // ===================================================
     addSpecialization: async (specializationData) => {
         const response = await authApi.post('/admin/doctor-data/add-specialization', specializationData);
         return response.data;
     },
-
+    
     getSpecializations: async () => {
         const response = await publicApi.get('/admin/doctor-data/specializations');
         return response.data;
     },
-
+    
     updateSpecialization: async (id, specializationData) => {
         const response = await authApi.put(`/admin/doctor-data/update-specialization/${id}`, specializationData);
         return response.data;
@@ -120,24 +120,42 @@ const AdminAPI = {
         const response = await authApi.delete(`/admin/doctor-data/delete-specialization/${id}`);
         return response.data;
     },
-
+    
     addQualification: async (qualificationData) => {
         const response = await authApi.post('/admin/doctor-data/add-qualification', qualificationData);
         return response.data;
     },
-
+    
     getQualifications: async () => {
         const response = await publicApi.get('/admin/doctor-data/qualifications');
         return response.data;
     },
-
+    
     updateQualification: async (id, qualificationData) => {
         const response = await authApi.put(`/admin/doctor-data/update-qualification/${id}`, qualificationData);
         return response.data;
     },
-
+    
     deleteQualification: async (id) => {
         const response = await authApi.delete(`/admin/doctor-data/delete-qualification/${id}`);
+        return response.data;
+    },
+
+    // ===================================================
+    // --- ADMIN CLINIC DOCTOR APPROVAL APIS -------------
+    // ===================================================
+    getClinicDoctorsApprovalList: async (params) => {
+        const response = await authApi.get('/api/admin/clinic/doctors/list', { params });
+        return response.data;
+    },
+
+    getClinicDoctorApprovalDetails: async (id) => {
+        const response = await authApi.get(`/api/admin/clinic/doctors/details/${id}`);
+        return response.data;
+    },
+
+    approveRejectClinicDoctor: async (id, payload) => {
+        const response = await authApi.patch(`/api/admin/clinic/doctors/approve/${id}`, payload);
         return response.data;
     },
 
@@ -145,21 +163,18 @@ const AdminAPI = {
     // --- ADMIN PEAK ORDER CHARGES APIS -----------------
     // ===================================================
 
-    // --- 1. Get Selected Peak Order Charges (Dashboard Grid) ---
     getPeakCharges: async () => {
         // Fetches Breakfast, Lunch, Dinner, and Global active peak surcharges and toggle states
         const response = await authApi.get('/admin/food/peak-charges');
         return response.data;
     },
 
-    // --- 2. Save / Update Slot-Wise Peak Order Charges ---
     savePeakCharges: async (chargesPayload) => {
         // chargesPayload: { isGlobalActive, breakfast: { charge, isActive }, lunch: { charge, isActive }, dinner: { charge, isActive } }
         const response = await authApi.post('/admin/food/peak-charges/save', chargesPayload);
         return response.data;
     },
 
-    // --- 3. Instant Toggle Specific Slot Status (1-Click Switch) ---
     togglePeakChargeSlot: async (slotName) => {
         // slotName: 'breakfast' | 'lunch' | 'dinner' | 'global'
         const response = await authApi.patch(`/admin/food/peak-charges/toggle-slot/${slotName}`);
@@ -482,52 +497,37 @@ const AdminAPI = {
     // ===================================================
     // --- ADMIN TIFFIN SUBSCRIPTION PLANS APIS ---------
     // ===================================================
-
-    // --- 1. Get Catalog Pool for Modal Tabs (Dishes + Combos) ---
     getTiffinCatalogPool: async (params) => {
-        // params (optional): { search: "Quinoa" }
         const response = await authApi.get('/admin/food/tiffin/plans/catalog-pool', { params });
         return response.data;
     },
 
-    // --- 2. Create Tiffin Subscription Plan Tier ---
     createTiffinPlanTier: async (planData) => {
-        // planData: { name, planCycle, mealsPerDay, price, permittedSlots, slotDishes, description }
         const response = await authApi.post('/admin/food/tiffin/plans/add', planData);
         return response.data;
     },
 
-    // --- 3. Get All Tiffin Subscription Plans (Grid View) ---
     getTiffinPlansList: async () => {
         const response = await authApi.get('/admin/food/tiffin/plans/get');
         return response.data;
     },
 
-    // --- 4. Get Single Plan Full Details By ID ---
     getTiffinPlanDetails: async (id) => {
-        // id: Document Mongoose Object ID (_id) or custom planId (e.g. PLN-105)
         const response = await authApi.get(`/admin/food/tiffin/plans/get/${id}`);
         return response.data;
     },
 
-    // --- 5. Update Subscription Plan ---
     updateTiffinPlan: async (id, planData) => {
-        // id: Document Mongoose Object ID (_id) or custom planId
-        // planData: Partial object containing fields to update (e.g. price, description, etc.)
         const response = await authApi.put(`/admin/food/tiffin/plans/update/${id}`, planData);
         return response.data;
     },
 
-    // --- 6. Delete Subscription Plan ---
     deleteTiffinPlan: async (id) => {
-        // id: Document Mongoose Object ID (_id) or custom planId to permanently delete
         const response = await authApi.delete(`/admin/food/tiffin/plans/delete/${id}`);
         return response.data;
     },
 
-    // --- 7. Toggle Plan Active / Inactive Status ---
     toggleTiffinPlanStatus: async (id) => {
-        // id: Document Mongoose Object ID (_id) or custom planId
         const response = await authApi.patch(`/admin/food/tiffin/plans/toggle-status/${id}`);
         return response.data;
     },

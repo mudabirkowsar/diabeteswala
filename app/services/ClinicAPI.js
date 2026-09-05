@@ -99,6 +99,46 @@ const ClinicAPI = {
     },
 
     // ===================================================
+    // --- CLINIC & VENDOR COUPON MANAGEMENT APIS -------
+    // ===================================================
+
+    // --- 1.1 Create Clinic Coupon ---
+    createClinicCoupon: async (couponData) => {
+        // couponData: { couponName, discountPercentage, maxDiscount, expiryDate, minOrderAmount, maxUsagePerUser, startDate }
+        const response = await authApi.post('/provider/coupons/add', couponData);
+        return response.data;
+    },
+
+    // --- 1.2 List My Coupons (Clinic's Own + Admin Global Coupons) ---
+    getClinicCouponsList: async () => {
+        // Fetches clinic's own coupons along with active admin global campaigns
+        const response = await authApi.get('/provider/coupons/list');
+        return response.data;
+    },
+
+    // --- 1.3 Toggle Coupon Status (Active / Inactive) ---
+    toggleClinicCouponStatus: async (id) => {
+        // id: Coupon unique ObjectID (_id)
+        const response = await authApi.patch(`/provider/coupons/toggle/${id}`);
+        return response.data;
+    },
+
+    // --- 1.4 Update Clinic Coupon ---
+    updateClinicCoupon: async (id, couponData) => {
+        // id: Coupon unique ObjectID (_id) to update
+        // couponData: Partial object containing the fields needing update (e.g. discountPercentage, maxDiscount)
+        const response = await authApi.put(`/provider/coupons/update/${id}`, couponData);
+        return response.data;
+    },
+
+    // --- 1.5 Delete Clinic Coupon ---
+    deleteClinicCoupon: async (id) => {
+        // id: Coupon unique ObjectID (_id) to permanently delete from the database
+        const response = await authApi.delete(`/provider/coupons/delete/${id}`);
+        return response.data;
+    },
+
+    // ===================================================
     // --- CLINIC DOCTOR MANAGEMENT & ONBOARDING APIS ----
     // ===================================================
     getClinicActiveSpecializations: async () => {

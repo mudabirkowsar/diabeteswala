@@ -15,16 +15,14 @@ import {
   CheckCircle2,
   AlertCircle,
   Percent,
-  Sparkles,
-  Layers,
-  Clock
+  Ticket
 } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
 
-// Import your API service functions
-import AdminAPI from '../../../../services/AdminAPI';
+// Import Clinic API service functions
+import ClinicAPI from '../../../../services/ClinicAPI'; // Adjust relative path based on your folder structure
 
-export default function PromotionsPage() {
+export default function ClinicCouponsPage() {
   // --- Data States ---
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,9 +36,8 @@ export default function PromotionsPage() {
 
   // --- Form Field States ---
   const [formCode, setFormCode] = useState('');
-  const [formVendorType, setFormVendorType] = useState('All');
   const [formDiscount, setFormDiscount] = useState('');
-  const [formMinOrder, setFormMinOrder] = useState('');
+  const [formMinOrder, setFormMinOrder] = useState('0');
   const [formMaxDiscount, setFormMaxDiscount] = useState('');
   const [formUserLimit, setFormUserLimit] = useState('1'); 
   const [formStartDate, setFormStartDate] = useState('');
@@ -71,15 +68,15 @@ export default function PromotionsPage() {
     }
   };
 
-  // --- 1. Fetch All Admin Coupons ---
+  // --- 1. Fetch All Clinic & Global Coupons ---
   const fetchCoupons = async () => {
     setLoading(true);
     try {
-      const response = await AdminAPI.getAdminCouponsList();
+      const response = await ClinicAPI.getClinicCouponsList();
       if (response && response.success) {
         setCoupons(response.data || []);
       } else {
-        toast.error("Failed to load promotion coupons.");
+        toast.error("Failed to load clinic coupons.");
       }
     } catch (err) {
       console.error(err);
@@ -94,15 +91,20 @@ export default function PromotionsPage() {
   }, []);
 
   // --- 2. Toggle Live / Paused State ---
-  const handleToggleStatus = async (id) => {
-    setTogglingId(id);
+  const handleToggleStatus = async (coupon) => {
+    if (coupon.isAdminCreated) {
+      toast.error("Cannot toggle platform-managed admin coupons.");
+      return;
+    }
+
+    setTogglingId(coupon._id);
     try {
-      const response = await AdminAPI.toggleAdminCouponStatus(id);
+      const response = await ClinicAPI.toggleClinicCouponStatus(coupon._id);
       if (response && response.success) {
-        toast.success(response.message || "Coupon status updated.");
+        toast.success(response.message || `Coupon is now ${response.isActive ? 'Live' : 'Paused'}`);
         // Toggle locally for instant UI update
         setCoupons(prev => prev.map(c => 
-          c._id === id ? { ...c, isActive: !c.isActive } : c
+          c._id === coupon._id ? { ...c, isActive: !c.isActive } : c
         ));
       } else {
         toast.error("Failed to update coupon status.");
@@ -116,14 +118,19 @@ export default function PromotionsPage() {
   };
 
   // --- 3. Delete Coupon ---
-  const handleDeleteCoupon = async (id) => {
-    if (!window.confirm("Are you sure you want to permanently delete this coupon?")) return;
+  const handleDeleteCoupon = async (coupon) => {
+    if (coupon.isAdminCreated) {
+      toast.error("Admin global coupons cannot be deleted by clinic.");
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to permanently delete coupon "${coupon.couponName}"?`)) return;
     setActionLoading(true);
     try {
-      const response = await AdminAPI.deleteAdminCoupon(id);
+      const response = await ClinicAPI.deleteClinicCoupon(coupon._id);
       if (response && response.success) {
         toast.success(response.message || "Coupon deleted successfully.");
-        setCoupons(prev => prev.filter(c => c._id !== id));
+        setCoupons(prev => prev.filter(c => c._id !== coupon._id));
       } else {
         toast.error("Failed to delete coupon.");
       }
@@ -140,7 +147,6 @@ export default function PromotionsPage() {
     setModalMode('create');
     resetForm();
     
-    // Set default start date to today and expiry date to 30 days ahead
     const today = new Date();
     const future = new Date();
     future.setDate(today.getDate() + 30);
@@ -152,11 +158,15 @@ export default function PromotionsPage() {
 
   // --- Open Edit Modal ---
   const openEditModal = (coupon) => {
+    if (coupon.isAdminCreated) {
+      toast.error("Admin global coupons cannot be edited by clinic.");
+      return;
+    }
+
     setModalMode('edit');
     setEditingId(coupon._id);
     
     setFormCode(coupon.couponName || '');
-    setFormVendorType(coupon.vendorType || 'All');
     setFormDiscount((coupon.discountPercentage || 0).toString());
     setFormMinOrder((coupon.minOrderAmount || 0).toString());
     setFormMaxDiscount((coupon.maxDiscount || 0).toString());
@@ -169,9 +179,8 @@ export default function PromotionsPage() {
 
   const resetForm = () => {
     setFormCode('');
-    setFormVendorType('All');
     setFormDiscount('');
-    setFormMinOrder('');
+    setFormMinOrder('0');
     setFormMaxDiscount('');
     setFormUserLimit('1');
     setFormStartDate('');
@@ -202,20 +211,19 @@ export default function PromotionsPage() {
     try {
       const payload = {
         couponName: formCode.toUpperCase().replace(/\s+/g, ''),
-        vendorType: formVendorType,
         discountPercentage: Number(formDiscount),
         maxDiscount: Number(formMaxDiscount),
         minOrderAmount: Number(formMinOrder) || 0,
         maxUsagePerUser: Number(formUserLimit) || 1,
-        startDate: formStartDate ? new Date(formStartDate).toISOString() : new Date().toISOString(),
-        expiryDate: new Date(formExpiry).toISOString()
+        startDate: formStartDate || new Date().toISOString().split('T')[0],
+        expiryDate: formExpiry
       };
 
       let response;
       if (modalMode === 'create') {
-        response = await AdminAPI.createAdminCoupon(payload);
+        response = await ClinicAPI.createClinicCoupon(payload);
       } else {
-        response = await AdminAPI.updateAdminCoupon(editingId, payload);
+        response = await ClinicAPI.updateClinicCoupon(editingId, payload);
       }
 
       if (response && response.success) {
@@ -242,11 +250,11 @@ export default function PromotionsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-3xl bg-[#3d3f96]/10 text-[#3d3f96] flex items-center justify-center border border-[#3d3f96]/10 shrink-0 shadow-sm">
-            <Tag className="w-7 h-7" />
+            <Ticket className="w-7 h-7" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Active Coupons & Promotions</h1>
-            <p className="text-xs text-slate-500 font-bold mt-1">Configure and manage platform-wide global discount coupons across service verticals.</p>
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Clinic Coupons &amp; Promotions</h1>
+            <p className="text-xs text-slate-500 font-bold mt-1">Configure and manage discount vouchers for patient OPD visits, consultations, and packages.</p>
           </div>
         </div>
 
@@ -265,7 +273,7 @@ export default function PromotionsPage() {
             onClick={openCreateModal}
             className="px-6 py-3.5 bg-[#3d3f96] hover:bg-[#2d2f75] text-white font-bold text-xs rounded-2xl transition-all shadow-lg shadow-indigo-950/10 flex items-center gap-2 cursor-pointer"
           >
-            <Plus size={15} /> CREATE GLOBAL COUPON
+            <Plus size={15} /> CREATE CLINIC COUPON
           </button>
         </div>
       </div>
@@ -291,8 +299,8 @@ export default function PromotionsPage() {
                 } text-white flex flex-col items-center justify-center relative transition-all duration-300 select-none`}>
                   
                   {/* Ticket Edge Circle Cutouts */}
-                  <div className="w-5 h-5 rounded-full bg-slate-50 absolute -top-2.5 -right-2.5 border-b border-slate-200/60" />
-                  <div className="w-5 h-5 rounded-full bg-slate-50 absolute -bottom-2.5 -right-2.5 border-t border-slate-200/60" />
+                  <div className="w-5 h-5 rounded-full bg-[#f8fbff] absolute -top-2.5 -right-2.5 border-b border-slate-200/60" />
+                  <div className="w-5 h-5 rounded-full bg-[#f8fbff] absolute -bottom-2.5 -right-2.5 border-t border-slate-200/60" />
 
                   <div className="text-center p-2">
                     <span className="text-3xl sm:text-4xl font-black tracking-tighter font-mono">{coupon.discountPercentage}</span>
@@ -307,8 +315,12 @@ export default function PromotionsPage() {
                   <div className="space-y-1">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <h3 className="text-lg font-black text-slate-800 tracking-tight font-mono">{coupon.couponName}</h3>
-                      <span className="text-[9px] font-black border px-2.5 py-0.5 rounded-lg bg-indigo-50 border-indigo-100 text-[#3d3f96] uppercase tracking-wider">
-                        {coupon.vendorType || "ALL"}
+                      <span className={`text-[9px] font-black border px-2.5 py-0.5 rounded-lg uppercase tracking-wider ${
+                        coupon.isAdminCreated 
+                          ? 'bg-purple-50 border-purple-100 text-purple-700' 
+                          : 'bg-indigo-50 border-indigo-100 text-[#3d3f96]'
+                      }`}>
+                        {coupon.isAdminCreated ? "ADMIN CAMPAIGN" : (coupon.vendorType || "CLINIC")}
                       </span>
                     </div>
 
@@ -324,7 +336,7 @@ export default function PromotionsPage() {
                       </div>
                       <div className="flex items-center gap-1.5 col-span-2">
                         <Users size={12} className="text-slate-400 shrink-0" />
-                        <span>Limit: <strong className="text-slate-700">{coupon.maxUsagePerUser || 1} per customer</strong></span>
+                        <span>Limit: <strong className="text-slate-700">{coupon.maxUsagePerUser || 1} per patient</strong></span>
                       </div>
                       <div className="col-span-2 flex items-center gap-1.5 mt-0.5 text-slate-400">
                         <Calendar size={12} className="shrink-0" />
@@ -336,34 +348,42 @@ export default function PromotionsPage() {
                   {/* Footer Actions */}
                   <div className="flex justify-between items-center pt-3 border-t border-slate-100 mt-2">
                     <div className="flex items-center gap-1.5">
-                      <button 
-                        onClick={() => openEditModal(coupon)}
-                        className="p-1.5 rounded-xl border border-slate-200 text-slate-400 hover:text-[#3d3f96] hover:bg-slate-50 transition cursor-pointer"
-                        title="Edit Coupon"
-                      >
-                        <Edit3 size={14} />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteCoupon(coupon._id)}
-                        disabled={actionLoading}
-                        className="p-1.5 rounded-xl border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                        title="Delete Coupon"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {coupon.isAdminCreated ? (
+                        <span className="text-[10px] font-bold text-slate-400 italic">Platform Managed</span>
+                      ) : (
+                        <>
+                          <button 
+                            onClick={() => openEditModal(coupon)}
+                            className="p-1.5 rounded-xl border border-slate-200 text-slate-400 hover:text-[#3d3f96] hover:bg-slate-50 transition cursor-pointer"
+                            title="Edit Coupon"
+                          >
+                            <Edit3 size={14} />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteCoupon(coupon)}
+                            disabled={actionLoading}
+                            className="p-1.5 rounded-xl border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                            title="Delete Coupon"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </>
+                      )}
                     </div>
 
                     {/* Status Badge Toggle */}
                     <button
                       type="button"
-                      disabled={togglingId === coupon._id}
-                      onClick={() => handleToggleStatus(coupon._id)}
-                      className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider border px-3 py-1 rounded-full transition-all cursor-pointer disabled:opacity-50 ${
-                        isLive
-                          ? "text-emerald-700 border-emerald-100 bg-emerald-50 hover:bg-emerald-100"
-                          : "text-slate-500 border-slate-200 bg-slate-100 hover:bg-slate-200"
+                      disabled={coupon.isAdminCreated || togglingId === coupon._id}
+                      onClick={() => handleToggleStatus(coupon)}
+                      className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider border px-3 py-1 rounded-full transition-all ${
+                        coupon.isAdminCreated 
+                          ? "opacity-60 cursor-not-allowed bg-slate-50 border-slate-200 text-slate-500" 
+                          : isLive
+                          ? "text-emerald-700 border-emerald-100 bg-emerald-50 hover:bg-emerald-100 cursor-pointer"
+                          : "text-slate-500 border-slate-200 bg-slate-100 hover:bg-slate-200 cursor-pointer"
                       }`}
-                      title="Click to toggle status"
+                      title={coupon.isAdminCreated ? "Admin managed coupon" : "Click to toggle status"}
                     >
                       <span className={`w-1.5 h-1.5 rounded-full ${
                         isLive ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
@@ -381,7 +401,7 @@ export default function PromotionsPage() {
         <div className="flex flex-col items-center justify-center p-24 text-center bg-white rounded-3xl border border-slate-100 shadow-sm border-dashed">
           <Tag size={40} className="text-slate-300 mb-3" />
           <p className="font-bold text-slate-700">No Active Promotional Coupons</p>
-          <p className="text-xs text-slate-400 mt-1">There are no global promotional codes configured. Click "+ Create" above to launch one.</p>
+          <p className="text-xs text-slate-400 mt-1">There are no discount vouchers configured. Click "+ Create" above to launch one.</p>
         </div>
       )}
 
@@ -398,9 +418,9 @@ export default function PromotionsPage() {
                 </div>
                 <div>
                   <h3 className="font-extrabold text-slate-900 text-base sm:text-lg uppercase tracking-tight">
-                    {modalMode === 'create' ? 'Create Promo Ticket' : 'Update Promotional Code'}
+                    {modalMode === 'create' ? 'Create Clinic Voucher' : 'Update Clinic Voucher'}
                   </h3>
-                  <p className="text-xs text-slate-400 font-semibold mt-0.5">Configure platform-wide discount codes</p>
+                  <p className="text-xs text-slate-400 font-semibold mt-0.5">Configure patient discount codes and usage rules</p>
                 </div>
               </div>
               <button
@@ -415,35 +435,17 @@ export default function PromotionsPage() {
             {/* Input Form */}
             <form onSubmit={handleFormSubmit} className="space-y-4">
               
-              {/* Coupon Code & Service Vertical */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Coupon Code *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formCode}
-                    onChange={(e) => setFormCode(e.target.value)}
-                    placeholder="e.g. DIABETES50"
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:border-[#3d3f96] uppercase font-mono"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Service Vertical *</label>
-                  <select
-                    value={formVendorType}
-                    onChange={(e) => setFormVendorType(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-700 focus:outline-none focus:border-[#3d3f96] cursor-pointer"
-                  >
-                    <option value="All">All Services</option>
-                    <option value="Food">Food & Diet</option>
-                    <option value="Pharmacy">Pharmacy</option>
-                    <option value="Lab">Diagnostic Labs</option>
-                    <option value="Doctor">Doctor Consultations</option>
-                    <option value="Clinic">Clinic Visits</option>
-                    <option value="Ambulance">Ambulance</option>
-                  </select>
-                </div>
+              {/* Coupon Code */}
+              <div className="space-y-1">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Coupon Code *</label>
+                <input
+                  type="text"
+                  required
+                  value={formCode}
+                  onChange={(e) => setFormCode(e.target.value.toUpperCase().replace(/\s+/g, ''))}
+                  placeholder="e.g. CLINIC20"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:border-[#3d3f96] uppercase font-mono"
+                />
               </div>
 
               {/* Discount Percentage & User Limit */}
@@ -457,12 +459,12 @@ export default function PromotionsPage() {
                     max="100"
                     value={formDiscount}
                     onChange={(e) => setFormDiscount(e.target.value)}
-                    placeholder="e.g. 50"
+                    placeholder="e.g. 20"
                     className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:border-[#3d3f96]"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Max Redemptions Per User</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Max Uses Per Patient</label>
                   <input
                     type="number"
                     min="1"
@@ -477,12 +479,12 @@ export default function PromotionsPage() {
               {/* Min Order & Max Discount limits */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Min Cart Subtotal (₹)</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Min Bill Subtotal (₹)</label>
                   <input
                     type="number"
                     value={formMinOrder}
                     onChange={(e) => setFormMinOrder(e.target.value)}
-                    placeholder="e.g. 800"
+                    placeholder="e.g. 500"
                     className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:border-[#3d3f96]"
                   />
                 </div>
@@ -493,7 +495,7 @@ export default function PromotionsPage() {
                     required
                     value={formMaxDiscount}
                     onChange={(e) => setFormMaxDiscount(e.target.value)}
-                    placeholder="e.g. 1000"
+                    placeholder="e.g. 300"
                     className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:border-[#3d3f96]"
                   />
                 </div>

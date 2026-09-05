@@ -422,6 +422,44 @@ const UserAPI = {
         return response.data;
     },
 
+    // ===================================================
+    // --- USER CLINIC DISCOVERY & DOCTOR DETAILS APIS ---
+    // ===================================================
 
+    // --- 1. Get Nearest Clinics (Lightweight Cards List) ---
+    getUserNearestClinics: async (locationPayload, params) => {
+        // locationPayload: { lat: 30.6770, lng: 76.7171, city: "Mohali" }
+        // params (optional): { page: 1, limit: 12, search: "Sharma" }
+        const response = await publicApi.post('/api/user/clinics/nearest', locationPayload, { params });
+        return response.data;
+    },
+
+    // --- 2. Get Single Clinic Details & Doctors List (Full Data on Card Click) ---
+    getUserClinicProfileDetails: async (id, params) => {
+        // id: Clinic Mongoose Object ID (_id) (e.g. "6a7d99429438532bd566a714")
+        // params (optional): { lat: 30.6770, lng: 76.7171 } to calculate exact live distance offsets
+        const response = await publicApi.get(`/api/user/clinics/${id}`, { params });
+        return response.data;
+    },
+    // ==========================================================
+    // --- USER CLINIC DOCTORS, WARDS & BED DETAILS APIS -------
+    // ==========================================================
+
+    // --- 1. Get Clinic Doctors, Wards & Bed Details (Combined API) ---
+    getClinicDoctorsAndBeds: async (clinicId) => {
+        // clinicId: Clinic unique ObjectID (_id) (e.g. "6a7d99429438532bd566a714")
+        const response = await publicApi.get(`/api/user/clinics/${clinicId}/doctors-and-beds`);
+        return response.data;
+    },
+    // ==========================================================
+    // --- USER CLINIC COUPONS DISCOVERY APIS ------------------
+    // ==========================================================
+
+    // --- 1. Get Applicable Coupons for Clinic (Combined) ---
+    getUserClinicCoupons: async (clinicId) => {
+        // clinicId: Selected Clinic's unique ObjectID (_id) (e.g. "6a7d99429438532bd566a714")
+        const response = await publicApi.get(`/api/user/clinics/coupons/${clinicId}`);
+        return response.data;
+    },
 }
 export default UserAPI;
