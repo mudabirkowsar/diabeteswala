@@ -75,6 +75,42 @@ const ClinicAPI = {
         return response.data;
     },
 
+    // ===================================================
+    // --- CLINIC AMBULANCE & DRIVER OPERATIONS APIS -----
+    // ===================================================
+    registerClinicAmbulance: async (formData) => {
+        const response = await authApi.post('/api/clinic/ambulance/add', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    getClinicAmbulancesList: async () => {
+        const response = await authApi.get('/api/clinic/ambulance/my-ambulances');
+        return response.data;
+    },
+
+    updateClinicAmbulance: async (id, formData) => {
+        const response = await authApi.put(`/api/clinic/ambulance/update/${id}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    toggleAmbulanceEmergencyStatus: async (id) => {
+        const response = await authApi.patch(`/api/clinic/ambulance/toggle-status/${id}`);
+        return response.data;
+    },
+
+    deleteClinicAmbulance: async (id) => {
+        const response = await authApi.delete(`/api/clinic/ambulance/delete/${id}`);
+        return response.data;
+    },
+
     // ==========================================================
     // --- CLINIC TIMINGS, FACILITIES & 24/7 SHIFT APIS ---------
     // ==========================================================

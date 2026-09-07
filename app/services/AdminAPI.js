@@ -160,6 +160,24 @@ const AdminAPI = {
     },
 
     // ===================================================
+    // --- ADMIN CLINIC AMBULANCE APPROVAL APIS ---------
+    // ===================================================
+    getClinicAmbulancesApprovalList: async (params) => {
+        const response = await authApi.get('/api/admin/approval/ambulance', { params });
+        return response.data;
+    },
+
+    approveClinicAmbulance: async (id) => {
+        const response = await authApi.patch(`/api/admin/approval/ambulance/approve/${id}`);
+        return response.data;
+    },
+
+    rejectClinicAmbulance: async (id, payload) => {
+        const response = await authApi.patch(`/api/admin/approval/ambulance/reject/${id}`, payload);
+        return response.data;
+    },
+
+    // ===================================================
     // --- ADMIN PEAK ORDER CHARGES APIS -----------------
     // ===================================================
 

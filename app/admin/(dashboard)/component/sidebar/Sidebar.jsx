@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
     FaTachometerAlt, FaChartLine, FaWallet, FaUserShield, FaUsers, FaStore,
     FaChevronDown, FaChevronRight, FaSlidersH, FaPills, FaCapsules, FaTruck,
-    FaFlask, FaUserMd, FaStethoscope, FaBoxes, FaHeadset, FaClipboardList, FaAd,
+    FaFlask, FaUserMd, FaStethoscope, FaBoxes, FaHeadset, FaClipboardList, FaAd,FaAmbulance,
     FaUtensils, FaHospital, FaCheck // Added FaUtensils for the Food section icon
 } from "react-icons/fa";
 
@@ -433,6 +433,16 @@ export default function Sidebar({ sidebarOpen }) {
                         <IconChip icon={FaStethoscope} active={isActive("/admin/managedoctors")} />
                         {isExpanded && <span className="truncate">Manage Doctors</span>}
                         <CollapsedTooltip label="Manage Doctors" show={!isExpanded} />
+                    </Link>
+                )}
+
+                {/* Manage Ambulances */}
+                {hasAccess() && (
+                    <Link href="/admin/manageambulances" className={`${rowBase} ${isActive("/admin/manageambulances") ? rowActive : rowInactive}`}>
+                        {isActive("/admin/manageambulances") && <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-md" style={{ backgroundColor: theme.primary }} />}
+                        <IconChip icon={FaAmbulance} active={isActive("/admin/manageambulances")} />
+                        {isExpanded && <span className="truncate">Manage Ambulances</span>}
+                        <CollapsedTooltip label="Manage Ambulances" show={!isExpanded} />
                     </Link>
                 )}
 

@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   FaClock, 
   FaSun, 
@@ -18,7 +20,8 @@ import {
   FaTimes, 
   FaExclamationTriangle,
   FaBolt,
-  FaCoffee
+  FaCoffee,
+  FaPlus
 } from 'react-icons/fa';
 
 import ClinicAPI from '../../../../services/ClinicAPI';
@@ -47,18 +50,20 @@ const TIME_OPTIONS = [
 const SLOT_DURATIONS = [15, 20, 30, 45, 60];
 
 export default function ClinicTimingsFacilitiesPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [toast, setToast] = useState(null);
 
-  // --- 1. DEPARTMENT FACILITIES TOGGLES ---
+  // --- 1. DEPARTMENT FACILITIES TOGGLES (Includes Ambulance) ---
   const [facilities, setFacilities] = useState({
     is24x7: false,
     isOPD: true,
     isIPD: true,
-    isEmergency: true
+    isEmergency: true,
+    isAmbulanceAvailable: false
   });
 
   // --- 2. DEPARTMENT SERVICE TIMINGS ---
@@ -111,7 +116,8 @@ export default function ClinicTimingsFacilitiesPage() {
             is24x7: Boolean(d.facilities.is24x7),
             isOPD: Boolean(d.facilities.isOPD),
             isIPD: Boolean(d.facilities.isIPD),
-            isEmergency: Boolean(d.facilities.isEmergency)
+            isEmergency: Boolean(d.facilities.isEmergency),
+            isAmbulanceAvailable: Boolean(d.facilities.isAmbulanceAvailable)
           });
         }
 
@@ -177,6 +183,7 @@ export default function ClinicTimingsFacilitiesPage() {
 
     if (facilities.is24x7) {
       payload = {
+        isAmbulanceAvailable: Boolean(facilities.isAmbulanceAvailable),
         is24x7: true,
         isOPD: facilities.isOPD,
         isIPD: facilities.isIPD,
@@ -184,6 +191,7 @@ export default function ClinicTimingsFacilitiesPage() {
       };
     } else {
       payload = {
+        isAmbulanceAvailable: Boolean(facilities.isAmbulanceAvailable),
         is24x7: false,
         isOPD: facilities.isOPD,
         isIPD: facilities.isIPD,
@@ -246,7 +254,7 @@ export default function ClinicTimingsFacilitiesPage() {
     }
   };
 
-  const hasAnyFacilitySelected = facilities.isOPD || facilities.isIPD || facilities.isEmergency;
+  const hasAnyFacilitySelected = facilities.isOPD || facilities.isIPD || facilities.isEmergency || facilities.isAmbulanceAvailable;
 
   return (
     <div className="space-y-8 select-none max-w-7xl mx-auto">
@@ -272,7 +280,7 @@ export default function ClinicTimingsFacilitiesPage() {
           <button 
             type="button"
             onClick={() => setShowResetModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold transition-all shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold transition-all shadow-sm cursor-pointer"
           >
             <FaRedo size={11} /> Reset Defaults
           </button>
@@ -281,7 +289,7 @@ export default function ClinicTimingsFacilitiesPage() {
             type="submit" 
             form="timings-facilities-form"
             disabled={saving || loading}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#3D3F96] hover:bg-[#2C2E75] text-white text-xs font-bold transition-all shadow-lg shadow-indigo-950/10 disabled:opacity-60"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#3D3F96] hover:bg-[#2C2E75] text-white text-xs font-bold transition-all shadow-lg shadow-indigo-950/10 disabled:opacity-60 cursor-pointer"
           >
             {saving ? <><FaSpinner className="animate-spin" /> Saving...</> : <><FaSave /> Save & Update</>}
           </button>
@@ -398,7 +406,7 @@ export default function ClinicTimingsFacilitiesPage() {
               <span className="w-2 h-2 rounded-full bg-[#3D3F96]"></span> Select Active Facilities (Toggle to set their timings below)
             </h4>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               
               {/* OPD Card */}
               <div 
@@ -469,7 +477,7 @@ export default function ClinicTimingsFacilitiesPage() {
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-base ${
                     facilities.isEmergency ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-400'
                   }`}>
-                    <FaAmbulance />
+                    <FaExclamationTriangle />
                   </div>
                   <div>
                     <h5 className="text-xs font-black text-slate-800">Emergency Desk</h5>
@@ -482,6 +490,48 @@ export default function ClinicTimingsFacilitiesPage() {
                 }`}>
                   {facilities.isEmergency && "✓"}
                 </div>
+              </div>
+
+              {/* Ambulance Fleet Card */}
+              <div 
+                className={`p-4 rounded-2xl border transition-all flex flex-col justify-between gap-3 ${
+                  facilities.isAmbulanceAvailable 
+                    ? 'bg-red-50/50 border-red-500 shadow-sm' 
+                    : 'bg-white border-slate-200 opacity-60 hover:opacity-100'
+                }`}
+              >
+                <div 
+                  onClick={() => handleFacilityToggle('isAmbulanceAvailable')}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-base ${
+                      facilities.isAmbulanceAvailable ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-400'
+                    }`}>
+                      <FaAmbulance />
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-black text-slate-800">Ambulance Service</h5>
+                      <span className="text-[10px] text-slate-400 font-semibold">Fleet & Dispatch</span>
+                    </div>
+                  </div>
+
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    facilities.isAmbulanceAvailable ? 'border-red-600 bg-red-600 text-white text-[10px]' : 'border-slate-300'
+                  }`}>
+                    {facilities.isAmbulanceAvailable && "✓"}
+                  </div>
+                </div>
+
+                {facilities.isAmbulanceAvailable && (
+                  <Link
+                    href="/vendors/clinic/dashboard/manageambulances"
+                    className="mt-1 w-full py-1.5 px-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm transition"
+                  >
+                    <FaPlus size={10} />
+                    <span>Manage / Add Ambulance</span>
+                  </Link>
+                )}
               </div>
 
             </div>
@@ -748,7 +798,7 @@ export default function ClinicTimingsFacilitiesPage() {
                 <FaHospital className="text-3xl mx-auto text-slate-300" />
                 <h5 className="text-sm font-bold text-slate-700">No Facilities Selected</h5>
                 <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                  Please select at least one facility (OPD, IPD, or Emergency) from the top cards to configure its timing windows.
+                  Please select at least one facility (OPD, IPD, Emergency, or Ambulance) from the top cards to configure its timing windows.
                 </p>
               </div>
             )}
@@ -773,7 +823,7 @@ export default function ClinicTimingsFacilitiesPage() {
           <div className="bg-white rounded-3xl w-full max-w-md p-6 md:p-8 shadow-2xl border border-slate-100 text-center relative">
             <button 
               onClick={() => setShowResetModal(false)}
-              className="absolute right-6 top-6 p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500"
+              className="absolute right-6 top-6 p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 cursor-pointer"
             >
               <FaTimes size={14} />
             </button>
@@ -792,7 +842,7 @@ export default function ClinicTimingsFacilitiesPage() {
               <button
                 type="button"
                 onClick={() => setShowResetModal(false)}
-                className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50"
+                className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
               >
                 Cancel
               </button>
@@ -800,7 +850,7 @@ export default function ClinicTimingsFacilitiesPage() {
                 type="button"
                 onClick={handleReset}
                 disabled={resetting}
-                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
               >
                 {resetting ? <FaSpinner className="animate-spin" /> : "Confirm Reset"}
               </button>

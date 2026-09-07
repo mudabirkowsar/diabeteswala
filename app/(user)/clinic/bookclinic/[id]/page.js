@@ -24,13 +24,15 @@ import {
     User,
     Sparkles,
     Clock,
-    CreditCard
+    CreditCard,
+    Car
 } from 'lucide-react';
 
 import UserAPI from '../../../../services/UserAPI';
 import WardBeds from './components/WardBeds';
 import AddressModel from './components/AddressModel';
 import ChoosePatient from './components/ChoosePatient';
+import ViewAllAmbulances from './components/ViewAllAmbulances';
 
 // --- MEDIA HELPERS ---
 const BASE_SERVER_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.3:5002";
@@ -70,14 +72,20 @@ export default function ClinicBookingPage() {
     const [selectedConsultModes, setSelectedConsultModes] = useState({});
     const [doctorSearch, setDoctorSearch] = useState("");
 
-    // --- Home Visit Address Selection States ---
+    // --- Home Visit Details & Address States ---
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+    const [homeVisitDetails, setHomeVisitDetails] = useState(null);
+    const [isHomeVisitModalOpen, setIsHomeVisitModalOpen] = useState(false);
 
     // --- Step 4: Ward & Bed Selection ---
     const [selectedWard, setSelectedWard] = useState(null);
     const [selectedBed, setSelectedBed] = useState(null);
     const [isWardModalOpen, setIsWardModalOpen] = useState(false);
+
+    // --- Optional Emergency Ambulance States ---
+    const [selectedAmbulance, setSelectedAmbulance] = useState(null);
+    const [isAmbulanceModalOpen, setIsAmbulanceModalOpen] = useState(false);
 
     // Fetch clinic combined data
     useEffect(() => {
@@ -136,31 +144,51 @@ export default function ClinicBookingPage() {
         return bookingData.doctors.find(d => d._id === selectedDoctorId);
     }, [bookingData?.doctors, selectedDoctorId]);
 
-    // Price Calculations (Doctor Fee + Dynamic Multiplied Bed Fee)
+    // Price Calculations (Doctor Fee + Dynamic Multiplied Bed Fee + Optional Ambulance)
     const selectedDoctorMode = selectedDoctorId ? selectedConsultModes[selectedDoctorId] : null;
     const selectedDoctorPrice = activeDoctor?.fees?.[selectedDoctorMode]?.price || 0;
 
     // Dynamic Bed Total = Days * Price Per Day
     const calculatedBedTotal = selectedBed?.totalBedPrice || 0;
 
+    // Dynamic Ambulance Total
+    const calculatedAmbulanceTotal = (bookingType === 'EMERGENCY' && selectedAmbulance)
+        ? (selectedAmbulance.totalAmbulancePrice || 0)
+        : 0;
+
     // Total Calculation
     const totalPrice = useMemo(() => {
         if (bookingType === 'OPD') {
             return selectedDoctorPrice;
         }
-        return selectedDoctorPrice + calculatedBedTotal;
-    }, [bookingType, selectedDoctorPrice, calculatedBedTotal]);
+        if (bookingType === 'IPD') {
+            return selectedDoctorPrice + calculatedBedTotal;
+        }
+        // EMERGENCY (Doctor Fee + Optional Bed + Optional Ambulance)
+        return selectedDoctorPrice + calculatedBedTotal + calculatedAmbulanceTotal;
+    }, [bookingType, selectedDoctorPrice, calculatedBedTotal, calculatedAmbulanceTotal]);
 
-    // Booking Ready Validation
+    // Booking Ready Validation (Bed is mandatory for IPD, but OPTIONAL for EMERGENCY)
     const isBookingReady = useMemo(() => {
         if (!selectedPatient) return false;
         if (bookingType === 'OPD') {
             if (!selectedDoctorId) return false;
-            if (selectedDoctorMode === 'homeVisitFee' && !selectedAddress) return false;
+            if (selectedDoctorMode === 'homeVisitFee') {
+                if (!selectedAddress) return false;
+                if (!homeVisitDetails || !homeVisitDetails.visitDate || !homeVisitDetails.preferredTime || !homeVisitDetails.reason || !homeVisitDetails.patientCondition) {
+                    return false;
+                }
+            }
             return true;
         }
-        return Boolean(selectedDoctorId && selectedBed);
-    }, [bookingType, selectedDoctorId, selectedDoctorMode, selectedAddress, selectedBed, selectedPatient]);
+        if (bookingType === 'IPD') {
+            return Boolean(selectedDoctorId && selectedBed);
+        }
+        if (bookingType === 'EMERGENCY') {
+            return Boolean(selectedDoctorId); // Bed is OPTIONAL for Emergency!
+        }
+        return Boolean(selectedDoctorId);
+    }, [bookingType, selectedDoctorId, selectedDoctorMode, selectedAddress, homeVisitDetails, selectedBed, selectedPatient]);
 
     // Open Ward Modal
     const handleOpenWardModal = (ward) => {
@@ -168,28 +196,63 @@ export default function ClinicBookingPage() {
         setIsWardModalOpen(true);
     };
 
-    // Proceed to Review Page Handler
+    // Proceed to Review Page Handler (Comprehensive & Complete Payload)
     const handleProceedToReview = () => {
         if (!isBookingReady) return;
 
         const bookingPayload = {
             clinicId,
-            clinicName: bookingData.clinicName,
+            clinicName: bookingData?.clinicName || "Clinic Facility",
             bookingType,
-            patient: selectedPatient,
+            patient: selectedPatient ? {
+                _id: selectedPatient._id,
+                memberName: selectedPatient.memberName,
+                relation: selectedPatient.relation,
+                gender: selectedPatient.gender || null,
+                dob: selectedPatient.dob || null,
+                phone: selectedPatient.phone || null,
+                height: selectedPatient.height || null,
+                weight: selectedPatient.weight || null,
+                hasInsurance: Boolean(selectedPatient.hasInsurance),
+                insuranceNo: selectedPatient.insuranceNo || null,
+                isSelf: Boolean(selectedPatient.isSelf),
+                isManual: Boolean(selectedPatient.isManual)
+            } : null,
             doctor: activeDoctor ? {
                 doctorId: activeDoctor._id,
                 name: activeDoctor.name,
                 speciality: activeDoctor.speciality,
-                profileImage: activeDoctor.profileImage,
+                degree: activeDoctor.degree || null,
+                experience: activeDoctor.experience || null,
+                rating: activeDoctor.rating || null,
+                profileImage: activeDoctor.profileImage || null,
                 mode: selectedDoctorMode,
                 fee: selectedDoctorPrice
             } : null,
-            address: selectedDoctorMode === 'homeVisitFee' ? selectedAddress : null,
-            ward: (bookingType === 'IPD' || bookingType === 'EMERGENCY') && selectedBed ? {
-                wardId: selectedWard?.wardId,
-                wardName: selectedWard?.wardName,
-                wardType: selectedWard?.wardType,
+            address: (selectedDoctorMode === 'homeVisitFee' && selectedAddress) ? {
+                _id: selectedAddress._id || null,
+                name: selectedAddress.name || null,
+                addressType: selectedAddress.addressType || 'Home',
+                houseNo: selectedAddress.houseNo || '',
+                sector: selectedAddress.sector || '',
+                landmark: selectedAddress.landmark || '',
+                city: selectedAddress.city || '',
+                state: selectedAddress.state || '',
+                pincode: selectedAddress.pincode || '',
+                phone: selectedAddress.phone || ''
+            } : null,
+            homeVisitDetails: (selectedDoctorMode === 'homeVisitFee' && homeVisitDetails) ? {
+                visitDate: homeVisitDetails.visitDate,
+                preferredTime: homeVisitDetails.preferredTime,
+                reason: homeVisitDetails.reason,
+                patientCondition: homeVisitDetails.patientCondition,
+                prescription: homeVisitDetails.prescription || null,
+                prescriptionFileName: homeVisitDetails.prescriptionFileName || null
+            } : null,
+            ward: ((bookingType === 'IPD' || bookingType === 'EMERGENCY') && selectedBed) ? {
+                wardId: selectedWard?.wardId || null,
+                wardName: selectedWard?.wardName || null,
+                wardType: selectedWard?.wardType || null,
                 bedId: selectedBed.bedId,
                 bedNumber: selectedBed.bedNumber,
                 startDate: selectedBed.startDate,
@@ -198,7 +261,36 @@ export default function ClinicBookingPage() {
                 pricePerDay: selectedBed.pricePerDay,
                 totalBedPrice: selectedBed.totalBedPrice
             } : null,
-            totalPrice
+            ambulance: (bookingType === 'EMERGENCY' && selectedAmbulance) ? {
+                ambulanceId: selectedAmbulance.ambulanceId,
+                vehicleNumber: selectedAmbulance.vehicleNumber,
+                vehicleType: selectedAmbulance.vehicleType,
+                driverName: selectedAmbulance.driverName,
+                phone: selectedAmbulance.phone || null,
+                rating: selectedAmbulance.rating || null,
+                distanceText: selectedAmbulance.distanceText || null,
+                rideType: selectedAmbulance.rideType,
+                ridePrice: selectedAmbulance.ridePrice || 0,
+                supportStaff: {
+                    nurse: {
+                        selected: Boolean(selectedAmbulance.supportStaff?.nurse?.selected),
+                        price: selectedAmbulance.supportStaff?.nurse?.selected ? (selectedAmbulance.supportStaff?.nurse?.price || 0) : 0
+                    },
+                    doctor: {
+                        selected: Boolean(selectedAmbulance.supportStaff?.doctor?.selected),
+                        price: selectedAmbulance.supportStaff?.doctor?.selected ? (selectedAmbulance.supportStaff?.doctor?.price || 0) : 0
+                    }
+                },
+                totalAmbulancePrice: selectedAmbulance.totalAmbulancePrice || 0
+            } : null,
+            pricingBreakdown: {
+                doctorFee: selectedDoctorPrice,
+                bedFee: calculatedBedTotal,
+                ambulanceFee: calculatedAmbulanceTotal,
+                totalPrice
+            },
+            totalPrice,
+            createdAt: new Date().toISOString()
         };
 
         if (typeof window !== "undefined") {
@@ -350,6 +442,7 @@ export default function ClinicBookingPage() {
                             onClick={() => {
                                 setBookingType('OPD');
                                 setSelectedBed(null);
+                                setSelectedAmbulance(null);
                             }}
                             className={`p-6 rounded-[1.75rem] border text-left transition-all duration-300 cursor-pointer relative flex items-start gap-4.5 bg-white group ${bookingType === 'OPD'
                                 ? 'border-[#3d3f96] ring-3 ring-[#3d3f96]/15 shadow-xl shadow-indigo-950/10 -translate-y-1'
@@ -383,7 +476,10 @@ export default function ClinicBookingPage() {
 
                         {/* IPD Option */}
                         <div
-                            onClick={() => setBookingType('IPD')}
+                            onClick={() => {
+                                setBookingType('IPD');
+                                setSelectedAmbulance(null);
+                            }}
                             className={`p-6 rounded-[1.75rem] border text-left transition-all duration-300 cursor-pointer relative flex items-start gap-4.5 bg-white group ${bookingType === 'IPD'
                                 ? 'border-emerald-600 ring-3 ring-emerald-600/15 shadow-xl shadow-emerald-950/10 -translate-y-1'
                                 : 'border-slate-200/70 hover:border-slate-300 shadow-sm hover:shadow-md'
@@ -416,7 +512,10 @@ export default function ClinicBookingPage() {
 
                         {/* Emergency Option */}
                         <div
-                            onClick={() => setBookingType('EMERGENCY')}
+                            onClick={() => {
+                                setBookingType('EMERGENCY');
+                                setIsAmbulanceModalOpen(true);
+                            }}
                             className={`p-6 rounded-[1.75rem] border text-left transition-all duration-300 cursor-pointer relative flex items-start gap-4.5 bg-white group ${bookingType === 'EMERGENCY'
                                 ? 'border-rose-600 ring-3 ring-rose-600/15 shadow-xl shadow-rose-950/10 -translate-y-1'
                                 : 'border-slate-200/70 hover:border-slate-300 shadow-sm hover:shadow-md'
@@ -439,7 +538,7 @@ export default function ClinicBookingPage() {
                                     )}
                                 </div>
                                 <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
-                                    Priority urgent doctor review + casualty observation bed
+                                    Priority urgent doctor review + optional casualty bed &amp; ambulance
                                 </p>
                                 <span className="inline-block mt-3 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-rose-50 text-rose-600">
                                     Urgent Priority
@@ -448,6 +547,66 @@ export default function ClinicBookingPage() {
                         </div>
                     </div>
                 </div>
+
+                {/* ========================================================================= */}
+                {/* EMERGENCY: AMBULANCE SERVICE CARD (SHOWN WHEN EMERGENCY CHOSEN) */}
+                {/* ========================================================================= */}
+                {bookingType === 'EMERGENCY' && (
+                    <div className="bg-linear-to-r from-rose-50/90 via-white to-rose-50/40 rounded-3xl p-5 sm:p-6 border border-rose-200/80 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="w-13 h-13 rounded-2xl bg-rose-600 text-white flex items-center justify-center shadow-md shadow-rose-950/20 shrink-0">
+                                <Car size={24} />
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-rose-700">
+                                        Emergency Fleet Dispatch
+                                    </span>
+                                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-white border border-rose-200 text-rose-600">
+                                        Optional
+                                    </span>
+                                </div>
+                                <h3 className="text-sm sm:text-base font-black text-slate-900 tracking-tight mt-0.5">
+                                    {selectedAmbulance ? (
+                                        <span>{selectedAmbulance.vehicleType} ({selectedAmbulance.vehicleNumber})</span>
+                                    ) : (
+                                        <span>No Ambulance Attached</span>
+                                    )}
+                                </h3>
+                                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                                    {selectedAmbulance ? (
+                                        <span>
+                                            Driver: {selectedAmbulance.driverName} • {selectedAmbulance.rideType === 'round' ? 'Round-Trip' : 'One-Way'} • Fee: <strong className="font-mono text-slate-900">₹{selectedAmbulance.totalAmbulancePrice}</strong>
+                                        </span>
+                                    ) : (
+                                        <span>Need patient pickup? Browse available clinic ambulances with on-board medical staff.</span>
+                                    )}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                            {selectedAmbulance && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedAmbulance(null)}
+                                    className="px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-rose-600 hover:bg-rose-100/50 transition-colors cursor-pointer"
+                                >
+                                    Remove
+                                </button>
+                            )}
+
+                            <button
+                                type="button"
+                                onClick={() => setIsAmbulanceModalOpen(true)}
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-xs font-black text-white bg-rose-600 hover:bg-rose-700 px-5 py-2.5 rounded-xl transition-all cursor-pointer shadow-md shadow-rose-950/15 active:scale-95"
+                            >
+                                <Car size={14} />
+                                <span>{selectedAmbulance ? 'Change Ambulance' : 'Choose Ambulance'}</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* ========================================================================= */}
                 {/* STEP 3: DOCTOR SELECTION & VISIT TYPE SELECTION */}
@@ -628,14 +787,14 @@ export default function ClinicBookingPage() {
                                                         )}
                                                     </button>
 
-                                                    {/* Home Visit */}
+                                                    {/* Home Visit (Triggers HomeVisit Left-Drawer Modal) */}
                                                     <button
                                                         type="button"
                                                         disabled={bookingType !== 'OPD' || !doc.fees?.homeVisitFee?.isAvailable}
                                                         onClick={() => {
                                                             setSelectedDoctorId(doc._id);
                                                             setSelectedConsultModes({ ...selectedConsultModes, [doc._id]: 'homeVisitFee' });
-                                                            setIsAddressModalOpen(true);
+                                                            setIsHomeVisitModalOpen(true);
                                                         }}
                                                         className={`py-2.5 px-1 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center relative ${activeMode === 'homeVisitFee' && isSelectedDoc
                                                             ? 'border-[#3d3f96] bg-indigo-50/80 text-[#3d3f96] font-black shadow-xs ring-2 ring-[#3d3f96]/20'
@@ -672,7 +831,7 @@ export default function ClinicBookingPage() {
                                                 {activeMode === 'homeVisitFee' && isSelectedDoc && (
                                                     <div
                                                         onClick={() => setIsAddressModalOpen(true)}
-                                                        className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 mt-2 ${selectedAddress
+                                                        className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 mt-1.5 ${selectedAddress
                                                             ? 'bg-emerald-50/90 border-emerald-200 text-emerald-800'
                                                             : 'bg-rose-50/90 border-rose-200 text-rose-700 animate-pulse'
                                                             }`}
@@ -708,17 +867,30 @@ export default function ClinicBookingPage() {
                                     Step 3
                                 </span>
                                 <h2 className="text-sm sm:text-base font-black uppercase tracking-wider text-slate-900">
-                                    {bookingType === 'EMERGENCY' ? 'Choose Emergency Ward & Bed' : 'Choose Inpatient Ward & Bed'}
+                                    {bookingType === 'EMERGENCY' ? 'Choose Emergency Casualty Bed (Optional)' : 'Choose Inpatient Ward & Bed'}
                                 </h2>
                             </div>
 
                             {selectedBed && (
-                                <span className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black px-3.5 py-1.5 rounded-2xl flex items-center gap-1.5 shadow-2xs">
-                                    <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-                                    <span>
-                                        Bed {selectedBed.bedNumber} ({selectedWard?.wardName}) • <strong>{selectedBed.totalDays} Days</strong> (₹{selectedBed.totalBedPrice})
+                                <div className="flex items-center gap-2">
+                                    <span className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black px-3.5 py-1.5 rounded-2xl flex items-center gap-1.5 shadow-2xs">
+                                        <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+                                        <span>
+                                            Bed {selectedBed.bedNumber} ({selectedWard?.wardName}) • <strong>{selectedBed.totalDays} Days</strong> (₹{selectedBed.totalBedPrice})
+                                        </span>
                                     </span>
-                                </span>
+
+                                    {/* Option to clear bed when booking Emergency service */}
+                                    {bookingType === 'EMERGENCY' && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedBed(null)}
+                                            className="text-[11px] font-bold text-slate-500 hover:text-rose-600 px-2.5 py-1 rounded-xl hover:bg-rose-50 border border-slate-200 transition-colors cursor-pointer"
+                                        >
+                                            Remove Bed
+                                        </button>
+                                    )}
+                                </div>
                             )}
                         </div>
 
@@ -810,11 +982,33 @@ export default function ClinicBookingPage() {
                 isOpen={isAddressModalOpen}
                 onClose={() => setIsAddressModalOpen(false)}
                 selectedAddress={selectedAddress}
-                onSelectAddress={(address) => {
+                homeVisitDetails={homeVisitDetails}
+                onSelectAddress={(address, visitDetails) => {
                     setSelectedAddress(address);
+                    if (visitDetails) {
+                        setHomeVisitDetails(visitDetails);
+                    }
                     setIsAddressModalOpen(false);
                 }}
             />
+
+            <ViewAllAmbulances
+                isOpen={isAmbulanceModalOpen}
+                onClose={() => setIsAmbulanceModalOpen(false)}
+                clinicId={clinicId}
+                selectedAmbulance={selectedAmbulance}
+                onSelectAmbulance={(ambulance) => setSelectedAmbulance(ambulance)}
+            />
+
+            {/* <HomeVisit
+                isOpen={isHomeVisitModalOpen}
+                onClose={() => setIsHomeVisitModalOpen(false)}
+                doctor={activeDoctor}
+                selectedAddress={selectedAddress}
+                onOpenAddressModal={() => setIsAddressModalOpen(true)}
+                homeVisitData={homeVisitDetails}
+                onSaveHomeVisit={(data) => setHomeVisitDetails(data)}
+            /> */}
 
             {/* --- PROFESSIONAL FLOATING SUMMARY DOCK --- */}
             <div className="fixed bottom-4 sm:bottom-6 left-0 right-0 z-40 px-4 sm:px-6 flex items-center justify-center pointer-events-none">
@@ -850,16 +1044,30 @@ export default function ClinicBookingPage() {
                                             </div>
 
                                             {selectedDoctorMode === 'homeVisitFee' && (
-                                                <div
-                                                    onClick={() => setIsAddressModalOpen(true)}
-                                                    className="flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-[#3d3f96] cursor-pointer mt-0.5 truncate"
-                                                >
-                                                    <MapPin size={12} className={selectedAddress ? "text-emerald-500 shrink-0" : "text-rose-500 shrink-0"} />
-                                                    <span className="truncate">
-                                                        {selectedAddress
-                                                            ? `${selectedAddress.houseNo || ''} ${selectedAddress.city} (${selectedAddress.pincode})`
-                                                            : 'Address required (Click to select)'}
-                                                    </span>
+                                                <div className="flex items-center gap-3 mt-0.5">
+                                                    <div
+                                                        onClick={() => setIsHomeVisitModalOpen(true)}
+                                                        className="flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-[#3d3f96] cursor-pointer truncate"
+                                                    >
+                                                        <Calendar size={11} className={homeVisitDetails ? "text-emerald-500 shrink-0" : "text-amber-500 shrink-0"} />
+                                                        <span className="truncate">
+                                                            {homeVisitDetails
+                                                                ? `${homeVisitDetails.visitDate} (${homeVisitDetails.preferredTime})`
+                                                                : 'Schedule details required (Click)'}
+                                                        </span>
+                                                    </div>
+
+                                                    <div
+                                                        onClick={() => setIsAddressModalOpen(true)}
+                                                        className="flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-[#3d3f96] cursor-pointer truncate"
+                                                    >
+                                                        <MapPin size={11} className={selectedAddress ? "text-emerald-500 shrink-0" : "text-rose-500 shrink-0"} />
+                                                        <span className="truncate">
+                                                            {selectedAddress
+                                                                ? `${selectedAddress.houseNo || ''} ${selectedAddress.city}`
+                                                                : 'Address required'}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
@@ -869,7 +1077,11 @@ export default function ClinicBookingPage() {
                                 ) : (
                                     <div className="flex items-center gap-2 truncate">
                                         <h4 className="text-xs sm:text-sm font-black text-slate-900 truncate">
-                                            {activeDoctor ? activeDoctor.name : "Doctor Pending"} • {selectedBed ? `Bed ${selectedBed.bedNumber} (${selectedBed.totalDays}d)` : "Bed Required"}
+                                            {activeDoctor ? activeDoctor.name : "Doctor Pending"}
+                                            {selectedBed ? ` • Bed ${selectedBed.bedNumber} (${selectedBed.totalDays}d)` : (bookingType === 'IPD' ? " • Bed Required" : "")}
+                                            {bookingType === 'EMERGENCY' && selectedAmbulance && (
+                                                <span className="text-rose-600 font-bold ml-1.5">• Ambulance Added</span>
+                                            )}
                                         </h4>
                                     </div>
                                 )}
@@ -895,8 +1107,8 @@ export default function ClinicBookingPage() {
                                 }`}
                         >
                             <span>
-                                {selectedDoctorMode === 'homeVisitFee' && !selectedAddress
-                                    ? 'Choose Address'
+                                {selectedDoctorMode === 'homeVisitFee' && (!homeVisitDetails || !selectedAddress)
+                                    ? 'Fill Details to Proceed'
                                     : 'Review & Confirm'}
                             </span>
                             <ChevronRight size={15} />

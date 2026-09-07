@@ -109,7 +109,7 @@ export default function ClinicShowcase() {
     return (
         <section className="py-12 antialiased select-none">
             <div className="max-w-[1400px] mx-auto px-6">
-                
+
                 {/* Header Section */}
                 <div className="flex justify-between items-end mb-8">
                     <div>
@@ -121,11 +121,11 @@ export default function ClinicShowcase() {
                         </p>
                     </div>
 
-                    <button 
+                    <button
                         onClick={() => router.push('/clinic/allclinics')}
                         className="text-red-500 hover:text-red-600 font-bold text-xs flex items-center gap-1 hover:underline uppercase tracking-wider cursor-pointer"
                     >
-                        View All Locations <ChevronRight size={14} />
+                        View All Clinics <ChevronRight size={14} />
                     </button>
                 </div>
 
