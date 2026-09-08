@@ -145,31 +145,22 @@ const ClinicAPI = {
         return response.data;
     },
 
-    // --- 1.2 List My Coupons (Clinic's Own + Admin Global Coupons) ---
     getClinicCouponsList: async () => {
-        // Fetches clinic's own coupons along with active admin global campaigns
         const response = await authApi.get('/provider/coupons/list');
         return response.data;
     },
 
-    // --- 1.3 Toggle Coupon Status (Active / Inactive) ---
     toggleClinicCouponStatus: async (id) => {
-        // id: Coupon unique ObjectID (_id)
         const response = await authApi.patch(`/provider/coupons/toggle/${id}`);
         return response.data;
     },
 
-    // --- 1.4 Update Clinic Coupon ---
     updateClinicCoupon: async (id, couponData) => {
-        // id: Coupon unique ObjectID (_id) to update
-        // couponData: Partial object containing the fields needing update (e.g. discountPercentage, maxDiscount)
         const response = await authApi.put(`/provider/coupons/update/${id}`, couponData);
         return response.data;
     },
 
-    // --- 1.5 Delete Clinic Coupon ---
     deleteClinicCoupon: async (id) => {
-        // id: Coupon unique ObjectID (_id) to permanently delete from the database
         const response = await authApi.delete(`/provider/coupons/delete/${id}`);
         return response.data;
     },
@@ -299,7 +290,25 @@ const ClinicAPI = {
     deleteClinicWard: async (wardId) => {
         const response = await authApi.delete(`/api/clinic/wards/delete/${wardId}`);
         return response.data;
-    }
+    },
+
+    // ===================================================
+    // --- CLINIC PORTAL - BOOKINGS & ADMISSIONS APIS ----
+    // ===================================================
+
+    // --- 1. Fetch All Clinic Bookings (Filtered, Searched & Paginated) ---
+    getAllClinicBookings: async (params) => {
+        // params (optional): { bookingType: 'OPD'|'IPD'|'Emergency', status: 'Confirmed'|'Pending'|'Completed'|'Cancelled', search, page, limit }
+        const response = await authApi.get('/api/clinic/booking/all-bookings', { params });
+        return response.data;
+    },
+
+    // --- 2. Get Single Clinic Booking Full Details & Clinical Dossier ---
+    getClinicBookingDetails: async (bookingId) => {
+        // bookingId: Custom Booking ID (e.g. "CLN-ORD-418317") or main MongoDB Object ID (_id)
+        const response = await authApi.get(`/api/clinic/booking/booking/${bookingId}`);
+        return response.data;
+    },
 
 }
 
