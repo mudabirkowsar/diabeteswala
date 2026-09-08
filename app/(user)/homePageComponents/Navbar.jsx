@@ -127,7 +127,7 @@ const Navbar = () => {
 
   const accountLinks = [
     { name: 'My Profile', icon: <UserCircle size={20} />, href: '/otherscreens/profile' },
-    { name: 'My Appointments', icon: <ClipboardList size={20} />, href: '/appointments' },
+    { name: 'My Appointments', icon: <ClipboardList size={20} />, href: '/otherscreens/myappointments' },
     { name: 'My Orders', icon: <ShoppingBag size={20} />, href: '/otherscreens/orders' },
     { name: 'Tiffin Services', icon: <ShoppingBag size={20} />, href: '/otherscreens/tiffinorders' },
     { name: 'Lab Reports', icon: <FileText size={20} />, href: '/reports' },

@@ -429,7 +429,6 @@ const UserAPI = {
         const response = await publicApi.post('/api/user/clinics/nearest', locationPayload, { params });
         return response.data;
     },
-    
 
     getUserClinicProfileDetails: async (id, params) => {
         const response = await publicApi.get(`/api/user/clinics/${id}`, { params });
@@ -441,7 +440,7 @@ const UserAPI = {
         const response = await publicApi.get(`/api/user/clinics/${clinicId}/doctors-and-beds`);
         return response.data;
     },
-    
+
     getClinicSearchSuggestions: async (searchPayload) => {
         // searchPayload: { query: "Mu", limit: 10 }
         const response = await publicApi.post('/api/user/clinics/search-suggestions', searchPayload);
@@ -460,5 +459,41 @@ const UserAPI = {
         const response = await publicApi.get(`/api/user/clinics/ambulances/${clinicId}`, { params });
         return response.data;
     },
+
+    // --- 1. Calculate / Preview Clinic Booking Bill ---
+    previewClinicBookingBill: async (calculationPayload) => {
+        // calculationPayload: { clinicId, bookingType: 'OPD'|'IPD'|'EMERGENCY', doctor: { doctorId, mode, fee }, ward, ambulance, couponCode }
+        const response = await authApi.post('/api/clinic/checkout/calculate', calculationPayload);
+        return response.data;
+    },
+
+    // --- 2. Place / Confirm Clinic Booking (Order Placement) ---
+    placeClinicBooking: async (bookingPayload) => {
+        // bookingPayload: { clinicId, bookingType, patient, doctor, consultationType, appointmentDate, appointmentTime, address, ward, ambulance, symptoms, medicalDocument, couponCode, paymentMethod }
+        const response = await authApi.post('/api/clinic/checkout/book', bookingPayload, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    // --- 3. Verify Razorpay Payment (Booking Finalization) ---
+    verifyClinicBookingPayment: async (paymentPayload) => {
+        // paymentPayload: { appointmentId, razorpayOrderId, razorpayPaymentId, razorpaySignature }
+        const response = await authApi.post('/api/clinic/checkout/verify-payment', paymentPayload);
+        return response.data;
+    },
+
+    getClinicalBookingsList: async () => {
+        const response = await authApi.get('/api/clinic/checkout/my-bookings');
+        return response.data;
+    },
+
+    getSingleClinicalBookingDetails: async (bookingId) => {
+        const response = await authApi.get(`/api/clinic/checkout/booking/${bookingId}`);
+        return response.data;
+    },
+
 }
 export default UserAPI;
