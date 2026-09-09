@@ -89,9 +89,9 @@ export default function ClinicReviewPage() {
     const [calculatingBill, setCalculatingBill] = useState(false);
     const [processingPayment, setProcessingPayment] = useState(false);
 
-    // Symptoms / Medical Notes & Document Upload State
+    // Symptoms & Raw Document/Prescription File State
     const [patientSymptoms, setPatientSymptoms] = useState("");
-    const [attachedFile, setAttachedFile] = useState(null);
+    const [attachedFile, setAttachedFile] = useState(null); // Stores raw File binary
 
     // Coupon Modal & Selection State
     const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
@@ -118,34 +118,29 @@ export default function ClinicReviewPage() {
 
         setCalculatingBill(true);
         try {
-            // Build payload exactly as calculateClinicBillHelper expects
             const calculationPayload = {
                 clinicId: currentBooking.clinicId,
                 bookingType: currentBooking.bookingType || 'OPD',
                 doctor: currentBooking.doctor ? {
                     doctorId: currentBooking.doctor.doctorId || currentBooking.doctor._id,
-                    mode: formatConsultationType(currentBooking.doctor.mode),
+                    mode: currentBooking.doctor.mode || formatConsultationType(currentBooking.doctor.mode),
                     fee: Number(currentBooking.doctor.fee || 0)
                 } : undefined,
-                // Ward & Bed Object (Mandatory for IPD / Emergency with Bed)
                 ward: (currentBooking.ward && currentBooking.ward.bedId) ? {
                     wardId: currentBooking.ward.wardId || null,
+                    bedId: currentBooking.ward.bedId,
                     wardName: currentBooking.ward.wardName,
                     wardType: currentBooking.ward.wardType,
-                    bedId: currentBooking.ward.bedId,
                     bedNumber: currentBooking.ward.bedNumber,
                     pricePerDay: Number(currentBooking.ward.pricePerDay || 0),
                     startDate: currentBooking.ward.startDate,
                     endDate: currentBooking.ward.endDate,
                     totalDays: Number(currentBooking.ward.totalDays || 1)
                 } : null,
-                // Ambulance & Paramedic Staff Object
                 ambulance: (currentBooking.bookingType === 'EMERGENCY' && currentBooking.ambulance && currentBooking.ambulance.ambulanceId) ? {
                     ambulanceId: currentBooking.ambulance.ambulanceId,
                     vehicleNumber: currentBooking.ambulance.vehicleNumber,
                     vehicleType: currentBooking.ambulance.vehicleType,
-                    driverName: currentBooking.ambulance.driverName,
-                    phone: currentBooking.ambulance.phone || "",
                     rideType: currentBooking.ambulance.rideType?.toUpperCase().includes('ROUND') ? 'ROUND-TRIP' : 'ONE-WAY RIDE',
                     ridePrice: Number(currentBooking.ambulance.ridePrice || 0),
                     supportStaff: {
@@ -169,7 +164,6 @@ export default function ClinicReviewPage() {
                 const codAllowed = Boolean(response.orderRestrictions?.isCodAvailable);
                 setIsCodAvailable(codAllowed);
 
-                // If COD is disabled by clinic policy, auto-switch to Online
                 if (!codAllowed && paymentMethod === 'COD') {
                     setPaymentMethod('Online');
                 }
@@ -213,7 +207,7 @@ export default function ClinicReviewPage() {
         }
     };
 
-    // Handle document/prescription file upload
+    // Handle Prescription/Medical Document selection (captures real binary File)
     const handleFileUpload = (e) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -221,7 +215,7 @@ export default function ClinicReviewPage() {
                 name: file.name,
                 size: file.size,
                 type: file.type,
-                fileObject: file
+                rawFile: file // Binary File instance for FormData
             });
         }
     };
@@ -236,7 +230,7 @@ export default function ClinicReviewPage() {
     const finalPayable = liveBill?.totalPrice ?? Math.max(0, displayedSubtotal - displayedDiscount);
 
     // =========================================================================
-    // 2. PLACE BOOKING & EXECUTE DUAL PAYMENT (POST /api/clinic/checkout/book)
+    // 2. PLACE BOOKING VIA MULTIPART/FORM-DATA (POST /api/clinic/checkout/book)
     // =========================================================================
     const handleConfirmPayment = async () => {
         if (!booking) return;
@@ -253,31 +247,39 @@ export default function ClinicReviewPage() {
 
             const appointmentTime = (booking.doctor?.mode === 'homeVisitFee' && booking.homeVisitDetails?.preferredTime)
                 ? booking.homeVisitDetails.preferredTime
-                : "10:30 AM";
+                : "11:00 AM";
 
-            // Prepare Place Booking Payload matching your bookClinicOrder controller
-            const bookingPayload = {
-                clinicId: booking.clinicId,
-                bookingType: booking.bookingType || 'OPD',
-                paymentMethod: paymentMethod, // 'Online' | 'COD'
-                patient: {
-                    memberName: booking.patient?.memberName || "Patient",
-                    relation: booking.patient?.relation || "Self",
-                    age: Number(booking.patient?.age) || (booking.patient?.dob ? calculateAge(booking.patient.dob) : 30),
-                    gender: booking.patient?.gender || "Male",
-                    phone: booking.patient?.phone || booking.address?.phone || "",
-                    isSelf: Boolean(booking.patient?.isSelf)
-                },
-                doctor: booking.doctor ? {
+            // Prepare multipart/form-data for the backend API
+            const formData = new FormData();
+            formData.append("clinicId", booking.clinicId);
+            formData.append("bookingType", booking.bookingType || "OPD");
+            formData.append("paymentMethod", paymentMethod);
+            formData.append("consultationType", formatConsultationType(booking.doctor?.mode));
+            formData.append("appointmentDate", appointmentDate);
+            formData.append("appointmentTime", appointmentTime);
+
+            // Patient details JSON
+            formData.append("patient", JSON.stringify({
+                memberName: booking.patient?.memberName || "Patient",
+                relation: booking.patient?.relation || "SELF",
+                age: Number(booking.patient?.age) || (booking.patient?.dob ? calculateAge(booking.patient.dob) : 30),
+                gender: booking.patient?.gender || "Male",
+                phone: booking.patient?.phone || booking.address?.phone || "",
+                isSelf: Boolean(booking.patient?.isSelf)
+            }));
+
+            // Doctor details JSON
+            if (booking.doctor) {
+                formData.append("doctor", JSON.stringify({
                     doctorId: booking.doctor.doctorId || booking.doctor._id,
-                    mode: formatConsultationType(booking.doctor.mode),
+                    mode: booking.doctor.mode || formatConsultationType(booking.doctor.mode),
                     fee: Number(booking.doctor.fee || 0)
-                } : undefined,
-                consultationType: formatConsultationType(booking.doctor?.mode),
-                appointmentDate: appointmentDate,
-                appointmentTime: appointmentTime,
-                // Home Visit Delivery Address
-                address: booking.address ? {
+                }));
+            }
+
+            // Home Visit Delivery Address JSON
+            if (booking.address) {
+                formData.append("address", JSON.stringify({
                     name: booking.address.name || booking.patient?.memberName || "Patient",
                     phone: booking.address.phone || booking.patient?.phone || "",
                     houseNo: booking.address.houseNo || "",
@@ -287,27 +289,30 @@ export default function ClinicReviewPage() {
                     state: booking.address.state || "",
                     pincode: booking.address.pincode || "",
                     addressType: booking.address.addressType || "Home"
-                } : undefined,
-                homeVisitDetails: booking.homeVisitDetails || undefined,
-                // Ward & Inpatient Bed (IPD & Emergency)
-                ward: (booking.ward && booking.ward.bedId) ? {
+                }));
+            }
+
+            // Inpatient / Emergency Ward & Bed JSON
+            if (booking.ward && booking.ward.bedId) {
+                formData.append("ward", JSON.stringify({
                     wardId: booking.ward.wardId || null,
-                    wardName: booking.ward.wardName,
-                    wardType: booking.ward.wardType,
                     bedId: booking.ward.bedId,
-                    bedNumber: booking.ward.bedNumber,
-                    pricePerDay: Number(booking.ward.pricePerDay || 0),
+                    wardName: booking.ward.wardName || "Observation Ward",
+                    wardType: booking.ward.wardType || "Observation",
+                    bedNumber: booking.ward.bedNumber || "Bed",
                     startDate: booking.ward.startDate,
                     endDate: booking.ward.endDate,
-                    totalDays: Number(booking.ward.totalDays || 1)
-                } : null,
-                // Emergency Ambulance & Support Staff Addons
-                ambulance: (booking.bookingType === 'EMERGENCY' && booking.ambulance && booking.ambulance.ambulanceId) ? {
+                    totalDays: Number(booking.ward.totalDays || 1),
+                    pricePerDay: Number(booking.ward.pricePerDay || 0)
+                }));
+            }
+
+            // Emergency Ambulance JSON
+            if (booking.bookingType === 'EMERGENCY' && booking.ambulance && booking.ambulance.ambulanceId) {
+                formData.append("ambulance", JSON.stringify({
                     ambulanceId: booking.ambulance.ambulanceId,
                     vehicleNumber: booking.ambulance.vehicleNumber,
                     vehicleType: booking.ambulance.vehicleType,
-                    driverName: booking.ambulance.driverName,
-                    phone: booking.ambulance.phone || "",
                     rideType: booking.ambulance.rideType?.toUpperCase().includes('ROUND') ? 'ROUND-TRIP' : 'ONE-WAY RIDE',
                     ridePrice: Number(booking.ambulance.ridePrice || 0),
                     supportStaff: {
@@ -320,17 +325,26 @@ export default function ClinicReviewPage() {
                             price: Number(booking.ambulance.supportStaff?.doctor?.price || 0)
                         }
                     }
-                } : null,
-                symptoms: patientSymptoms.trim() || undefined,
-                medicalDocument: attachedFile ? {
-                    fileName: attachedFile.name,
-                    url: attachedFile.name
-                } : undefined,
-                couponCode: appliedCoupon?.couponName || appliedCoupon?.couponCode || undefined
-            };
+                }));
+            }
+
+            // Symptoms text
+            if (patientSymptoms.trim()) {
+                formData.append("symptoms", patientSymptoms.trim());
+            }
+
+            // Coupon code
+            if (appliedCoupon?.couponName || appliedCoupon?.couponCode) {
+                formData.append("couponCode", (appliedCoupon.couponName || appliedCoupon.couponCode).toUpperCase());
+            }
+
+            // --- ATTACH REAL BINARY PRESCRIPTION / MEDICAL REPORT FILE ---
+            if (attachedFile?.rawFile) {
+                formData.append("medicalDocument", attachedFile.rawFile, attachedFile.name);
+            }
 
             // Call API 2: Place / Confirm Clinic Booking
-            const orderResponse = await UserAPI.placeClinicBooking(bookingPayload);
+            const orderResponse = await UserAPI.placeClinicBooking(formData);
 
             if (!orderResponse || !orderResponse.success) {
                 showNotification?.(orderResponse?.message || "Failed to place clinic appointment.", "error");
@@ -340,7 +354,7 @@ export default function ClinicReviewPage() {
 
             // --- CASE A: CASH ON DELIVERY (COD) FLOW ---
             if (paymentMethod === 'COD' || orderResponse.isOnlinePayment === false) {
-                showNotification?.(orderResponse.message || "Clinic appointment confirmed via Cash on Delivery!", "success");
+                showNotification?.(orderResponse.message || "Clinic appointment confirmed successfully via Cash on Delivery!", "success");
                 sessionStorage.removeItem("activeClinicBooking");
                 router.push('/otherscreens/myappointments');
                 return;
@@ -490,12 +504,13 @@ export default function ClinicReviewPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-black uppercase px-3.5 py-1.5 rounded-2xl border flex items-center gap-1.5 shadow-2xs ${bookingType === 'EMERGENCY'
-                            ? 'bg-rose-50 text-rose-700 border-rose-200'
-                            : bookingType === 'IPD'
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : 'bg-indigo-50 text-[#3d3f96] border-indigo-100'
-                            }`}>
+                        <span className={`text-[10px] font-black uppercase px-3.5 py-1.5 rounded-2xl border flex items-center gap-1.5 shadow-2xs ${
+                            bookingType === 'EMERGENCY'
+                                ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                : bookingType === 'IPD'
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    : 'bg-indigo-50 text-[#3d3f96] border-indigo-100'
+                        }`}>
                             <span className="w-1.5 h-1.5 rounded-full bg-current" />
                             <span>{bookingType} Package</span>
                         </span>
@@ -561,8 +576,9 @@ export default function ClinicReviewPage() {
 
                                 <div>
                                     <span className="text-[10px] font-bold text-slate-400 uppercase block">Health Insurance</span>
-                                    <span className={`font-bold flex items-center gap-1 mt-0.5 ${patient?.hasInsurance ? "text-emerald-700" : "text-slate-500"
-                                        }`}>
+                                    <span className={`font-bold flex items-center gap-1 mt-0.5 ${
+                                        patient?.hasInsurance ? "text-emerald-700" : "text-slate-500"
+                                    }`}>
                                         <ShieldCheck size={13} className={patient?.hasInsurance ? "text-emerald-600" : "text-slate-400"} />
                                         {patient?.hasInsurance ? `Linked (${patient.insuranceNo || 'Active'})` : "Self-Pay / Not Linked"}
                                     </span>
@@ -1020,10 +1036,11 @@ export default function ClinicReviewPage() {
                                 {/* Option 1: Online Razorpay */}
                                 <div
                                     onClick={() => setPaymentMethod('Online')}
-                                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${paymentMethod === 'Online'
-                                        ? 'border-[#3d3f96] bg-indigo-50/50 ring-2 ring-[#3d3f96]/15 shadow-xs'
-                                        : 'border-slate-200/80 bg-white hover:border-slate-300'
-                                        }`}
+                                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                                        paymentMethod === 'Online'
+                                            ? 'border-[#3d3f96] bg-indigo-50/50 ring-2 ring-[#3d3f96]/15 shadow-xs'
+                                            : 'border-slate-200/80 bg-white hover:border-slate-300'
+                                    }`}
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className="pt-0.5 shrink-0">
@@ -1054,10 +1071,11 @@ export default function ClinicReviewPage() {
                                 {isCodAvailable ? (
                                     <div
                                         onClick={() => setPaymentMethod('COD')}
-                                        className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${paymentMethod === 'COD'
-                                            ? 'border-emerald-600 bg-emerald-50/50 ring-2 ring-emerald-600/15 shadow-xs'
-                                            : 'border-slate-200/80 bg-white hover:border-slate-300'
-                                            }`}
+                                        className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                                            paymentMethod === 'COD'
+                                                ? 'border-emerald-600 bg-emerald-50/50 ring-2 ring-emerald-600/15 shadow-xs'
+                                                : 'border-slate-200/80 bg-white hover:border-slate-300'
+                                        }`}
                                     >
                                         <div className="flex items-center gap-3">
                                             <div className="pt-0.5 shrink-0">
@@ -1192,10 +1210,11 @@ export default function ClinicReviewPage() {
                                 type="button"
                                 disabled={processingPayment || calculatingBill}
                                 onClick={handleConfirmPayment}
-                                className={`w-full py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 hover:scale-[1.01] active:scale-98 shadow-xl ${paymentMethod === 'COD'
-                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-950/20'
-                                    : 'bg-[#3d3f96] hover:bg-[#2d2f75] text-white shadow-indigo-950/20'
-                                    }`}
+                                className={`w-full py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 hover:scale-[1.01] active:scale-98 shadow-xl ${
+                                    paymentMethod === 'COD'
+                                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-950/20'
+                                        : 'bg-[#3d3f96] hover:bg-[#2d2f75] text-white shadow-indigo-950/20'
+                                }`}
                             >
                                 {processingPayment ? (
                                     <Loader2 size={18} className="animate-spin text-white" />

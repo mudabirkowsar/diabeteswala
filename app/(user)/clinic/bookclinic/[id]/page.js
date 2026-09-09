@@ -1000,16 +1000,6 @@ export default function ClinicBookingPage() {
                 onSelectAmbulance={(ambulance) => setSelectedAmbulance(ambulance)}
             />
 
-            {/* <HomeVisit
-                isOpen={isHomeVisitModalOpen}
-                onClose={() => setIsHomeVisitModalOpen(false)}
-                doctor={activeDoctor}
-                selectedAddress={selectedAddress}
-                onOpenAddressModal={() => setIsAddressModalOpen(true)}
-                homeVisitData={homeVisitDetails}
-                onSaveHomeVisit={(data) => setHomeVisitDetails(data)}
-            /> */}
-
             {/* --- PROFESSIONAL FLOATING SUMMARY DOCK --- */}
             <div className="fixed bottom-4 sm:bottom-6 left-0 right-0 z-40 px-4 sm:px-6 flex items-center justify-center pointer-events-none">
                 <div className="pointer-events-auto w-full max-w-4xl bg-white/95 backdrop-blur-xl rounded-3xl sm:rounded-[2.25rem] border border-slate-200/90 shadow-2xl shadow-slate-900/20 p-4 sm:px-7 sm:py-4.5 flex flex-col sm:flex-row items-center justify-between gap-4">

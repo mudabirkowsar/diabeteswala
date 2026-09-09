@@ -19,7 +19,7 @@ export default function AppointmentsDashboardPage() {
     },
     {
       id: 'clinic',
-      name: 'Clinical Bookings',
+      name: 'Clinic Bookings',
       icon: <Building2 size={15} />,
       component: <ClinicalAppointments />
     }
@@ -28,7 +28,7 @@ export default function AppointmentsDashboardPage() {
   return (
     <main className="min-h-screen bg-[#f8fbff] py-8 sm:py-12 antialiased select-none text-slate-800 text-left">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        
+
         {/* Header Block */}
         <div className="space-y-2 border-b border-slate-100 pb-5">
           <div className="flex items-center gap-3">
@@ -52,11 +52,10 @@ export default function AppointmentsDashboardPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer border flex items-center gap-2 ${
-                  isSelected
+                className={`px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer border flex items-center gap-2 ${isSelected
                     ? 'bg-red-50/60 text-red-600 border-red-200/60 font-black shadow-sm'
                     : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100 hover:border-slate-200'
-                }`}
+                  }`}
               >
                 {tab.icon}
                 <span>{tab.name}</span>

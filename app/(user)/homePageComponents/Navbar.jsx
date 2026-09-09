@@ -13,8 +13,8 @@ import { useNotification } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
 
 const Navbar = () => {
-  // Use isLoggedIn and logout directly from context for instant UI updates
-  const { user, isLoggedIn, logout } = useAuth();
+    // Use isLoggedIn and logout directly from context for instant UI updates
+    const { user, isLoggedIn, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isAccountSidebarOpen, setIsAccountSidebarOpen] = useState(false);
   const [isMobileShopOpen, setIsMobileShopOpen] = useState(false);

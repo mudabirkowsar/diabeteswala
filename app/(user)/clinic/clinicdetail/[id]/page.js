@@ -28,6 +28,8 @@ import {
 } from 'lucide-react';
 
 import UserAPI from '../../../../services/UserAPI';
+import { useAuth } from '../../../../context/AuthContext';
+import { useNotification } from '../../../../context/NotificationContext';
 
 // --- MEDIA HELPERS ---
 const BASE_SERVER_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.3:5002";
@@ -45,6 +47,8 @@ const DOC_PLACEHOLDER = "https://images.unsplash.com/photo-1622253692010-333f2da
 export default function ClinicDetailPage() {
     const params = useParams();
     const router = useRouter();
+    const { isLoggedIn } = useAuth();
+    const { showNotification } = useNotification();
     const clinicId = params?.id;
 
     // --- Dynamic API States ---
@@ -128,6 +132,18 @@ export default function ClinicDetailPage() {
             setCopiedLink(true);
             setTimeout(() => setCopiedLink(false), 2000);
         }
+    };
+
+    const handleBookConsultation = () => {
+        if (!isLoggedIn) {
+            if (showNotification) {
+                showNotification("Please log in to book an appointment.", "error");
+            }
+            const redirectUrl = `/clinic/bookclinic/${clinicDetails._id}`;
+            router.push(`/authFiles/login?redirect=${encodeURIComponent(redirectUrl)}`);
+            return;
+        }
+        router.push(`/clinic/bookclinic/${clinicDetails._id}`);
     };
 
     const filteredDoctors = useMemo(() => {
@@ -744,7 +760,7 @@ export default function ClinicDetailPage() {
             <div className="fixed bottom-4 sm:bottom-6 left-0 right-0 z-50 px-4 flex items-center justify-center pointer-events-none">
                 <div className="pointer-events-auto w-full max-w-lg bg-white/95 backdrop-blur-md rounded-3xl sm:rounded-[2rem] border border-slate-200/80 shadow-2xl shadow-slate-900/15 p-2.5 sm:p-3">
                     <button
-                        onClick={() => router.push(`/clinic/bookclinic/${clinicDetails._id}`)}
+                        onClick={handleBookConsultation}
                         className="w-full py-3.5 px-8 rounded-2xl sm:rounded-[1.5rem] bg-slate-900 hover:bg-red-600 text-white font-black text-xs uppercase tracking-wider transition-all duration-300 shadow-lg hover:shadow-red-500/25 flex items-center justify-center gap-2.5 cursor-pointer group hover:scale-[1.01]"
                     >
                         <Calendar size={16} className="text-red-400 group-hover:text-white transition-colors shrink-0" />

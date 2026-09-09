@@ -449,14 +449,14 @@ const UserAPI = {
 
     getUserClinicCoupons: async (clinicId) => {
         // clinicId: Selected Clinic's unique ObjectID (_id) (e.g. "6a7d99429438532bd566a714")
-        const response = await publicApi.get(`/api/user/clinics/coupons/${clinicId}`);
+        const response = await authApi.get(`/api/user/clinics/coupons/${clinicId}`);
         return response.data;
     },
 
     getUserClinicAmbulances: async (clinicId, params) => {
         // clinicId: Selected Clinic's unique ObjectID (_id) (e.g. "6a7d99429438532bd566a714")
         // params (optional): { lat: 30.6770, lng: 76.7171 } to calculate exact live distance offsets
-        const response = await publicApi.get(`/api/user/clinics/ambulances/${clinicId}`, { params });
+        const response = await authApi.get(`/api/user/clinics/ambulances/${clinicId}`, { params });
         return response.data;
     },
 
