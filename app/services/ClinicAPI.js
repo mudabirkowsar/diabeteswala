@@ -296,17 +296,33 @@ const ClinicAPI = {
     // --- CLINIC PORTAL - BOOKINGS & ADMISSIONS APIS ----
     // ===================================================
 
-    // --- 1. Fetch All Clinic Bookings (Filtered, Searched & Paginated) ---
     getAllClinicBookings: async (params) => {
-        // params (optional): { bookingType: 'OPD'|'IPD'|'Emergency', status: 'Confirmed'|'Pending'|'Completed'|'Cancelled', search, page, limit }
         const response = await authApi.get('/api/clinic/booking/all-bookings', { params });
         return response.data;
     },
 
-    // --- 2. Get Single Clinic Booking Full Details & Clinical Dossier ---
     getClinicBookingDetails: async (bookingId) => {
-        // bookingId: Custom Booking ID (e.g. "CLN-ORD-418317") or main MongoDB Object ID (_id)
         const response = await authApi.get(`/api/clinic/booking/booking/${bookingId}`);
+        return response.data;
+    },
+
+    // ===================================================
+    // --- CLINIC RECEPTION DESK BOOKING APIS -----------
+    // ===================================================
+
+    // --- 1. Create Appointment / IPD Bed Admission (By Clinic Desk) ---
+    createClinicDeskBooking: async (bookingData) => {
+        // bookingData: { userId, bookingType, consultationType, doctorId, wardId, bedId, stayDuration, startDate, endDate, appointmentDate, appointmentTime, symptoms, paymentMethod: 'COD', totalAmount, patient, address }
+        const response = await authApi.post('/api/clinic/booking/create', bookingData);
+        return response.data;
+    },
+    getClinicDoctorsAndBeds: async (clinicId) => {
+        const response = await publicApi.get(`/api/user/clinics/${clinicId}/doctors-and-beds`);
+        return response.data;
+    },
+
+    getClinicAllData: async () => {
+        const response = await authApi.get(`api/clinic/booking/resources`);
         return response.data;
     },
 

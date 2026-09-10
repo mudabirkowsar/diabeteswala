@@ -34,6 +34,7 @@ export default function ClinicSidebar({ sidebarOpen }) {
         { name: "Revenue", route: "/vendors/clinic/dashboard/revenue", icon: FaRupeeSign },
         { name: "Manage Bank Details", route: "/vendors/clinic/dashboard/managebank", icon: FaUniversity },
         { name: "Clinic Doctors", route: "/vendors/clinic/dashboard/clinicdoctor", icon: FaUserMd },
+        { name: "Create Appointment", route: "/vendors/clinic/dashboard/createappointment", icon: FaUserMd },
         { name: "Manage Wards", route: "/vendors/clinic/dashboard/managewards", icon: FaUserMd },
         { name: "Manage Coupons", route: "/vendors/clinic/dashboard/managecoupons", icon: FaUserMd },
         { name: "Manage Ambulances", route: "/vendors/clinic/dashboard/manageambulances", icon: FaAmbulance },

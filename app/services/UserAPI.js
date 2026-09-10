@@ -40,6 +40,19 @@ const UserAPI = {
         return response.data;
     },
 
+    // ===================================================
+    // --- USER PASSWORD STATUS & SETUP APIS ------------
+    // ===================================================
+    checkUserPasswordStatus: async (payload) => {
+        const response = await publicApi.post('/api/auth/user/check-password-status', payload);
+        return response.data;
+    },
+
+    setUserInitialPassword: async (payload) => {
+        const response = await publicApi.post('/api/auth/user/set-password', payload);
+        return response.data;
+    },
+
     getUserProfile: async () => {
         const response = await authApi.get('/api/auth/user/profile');
         return response.data;
@@ -436,40 +449,31 @@ const UserAPI = {
     },
 
     getClinicDoctorsAndBeds: async (clinicId) => {
-        // clinicId: Clinic unique ObjectID (_id) (e.g. "6a7d99429438532bd566a714")
         const response = await publicApi.get(`/api/user/clinics/${clinicId}/doctors-and-beds`);
         return response.data;
     },
 
     getClinicSearchSuggestions: async (searchPayload) => {
-        // searchPayload: { query: "Mu", limit: 10 }
         const response = await publicApi.post('/api/user/clinics/search-suggestions', searchPayload);
         return response.data;
     },
 
     getUserClinicCoupons: async (clinicId) => {
-        // clinicId: Selected Clinic's unique ObjectID (_id) (e.g. "6a7d99429438532bd566a714")
         const response = await authApi.get(`/api/user/clinics/coupons/${clinicId}`);
         return response.data;
     },
 
     getUserClinicAmbulances: async (clinicId, params) => {
-        // clinicId: Selected Clinic's unique ObjectID (_id) (e.g. "6a7d99429438532bd566a714")
-        // params (optional): { lat: 30.6770, lng: 76.7171 } to calculate exact live distance offsets
         const response = await authApi.get(`/api/user/clinics/ambulances/${clinicId}`, { params });
         return response.data;
     },
 
-    // --- 1. Calculate / Preview Clinic Booking Bill ---
     previewClinicBookingBill: async (calculationPayload) => {
-        // calculationPayload: { clinicId, bookingType: 'OPD'|'IPD'|'EMERGENCY', doctor: { doctorId, mode, fee }, ward, ambulance, couponCode }
         const response = await authApi.post('/api/clinic/checkout/calculate', calculationPayload);
         return response.data;
     },
 
-    // --- 2. Place / Confirm Clinic Booking (Order Placement) ---
     placeClinicBooking: async (bookingPayload) => {
-        // bookingPayload: { clinicId, bookingType, patient, doctor, consultationType, appointmentDate, appointmentTime, address, ward, ambulance, symptoms, medicalDocument, couponCode, paymentMethod }
         const response = await authApi.post('/api/clinic/checkout/book', bookingPayload, {
             headers: {
                 'Content-Type': 'multipart/form-data',
@@ -478,9 +482,7 @@ const UserAPI = {
         return response.data;
     },
 
-    // --- 3. Verify Razorpay Payment (Booking Finalization) ---
     verifyClinicBookingPayment: async (paymentPayload) => {
-        // paymentPayload: { appointmentId, razorpayOrderId, razorpayPaymentId, razorpaySignature }
         const response = await authApi.post('/api/clinic/checkout/verify-payment', paymentPayload);
         return response.data;
     },
