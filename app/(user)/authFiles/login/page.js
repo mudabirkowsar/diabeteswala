@@ -9,11 +9,12 @@ import {
 
 // Import the sub-components (Create these files in the same folder)
 import UserLogin from './components/UserLogin';
-// import DoctorLogin from './components/DoctorLogin';
 import ClinicLogin from './components/ClinicLogin';
 import LabsLogin from './components/LabsLogin';
 import PharmacyLogin from './components/PharmacyLogin';
 import ExpertLogin from './components/ExpertLogin';
+import DoctorLogin from './components/DoctorLogin';
+
 
 const LoginPage = () => {
   const [role, setRole] = useState('Home');
@@ -31,7 +32,7 @@ const LoginPage = () => {
   const renderLoginForm = () => {
     switch (role) {
       case 'Home': return <UserLogin />;
-      // case 'Doctor': return <DoctorLogin />;
+      case 'Doctor': return <DoctorLogin />;
       case 'Clinic': return <ClinicLogin />;
       case 'Labs': return <LabsLogin />;
       case 'Pharmacy': return <PharmacyLogin />;
@@ -83,7 +84,7 @@ const LoginPage = () => {
 
         {/* --- RIGHT SIDE: DYNAMIC CONTENT --- */}
         <div className="p-6 sm:p-10 md:p-16 flex flex-col justify-center">
-          
+
           <div className="mb-6">
             {/* Ambient Status Chip */}
             <div className="inline-flex items-center gap-1.5 bg-indigo-50/60 border border-indigo-100/50 px-3 py-1 rounded-full mb-3">
@@ -93,7 +94,7 @@ const LoginPage = () => {
               </span>
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Ecosystem Auth</span>
             </div>
-            
+
             <h2 className="text-3xl font-black text-slate-900 mb-1 tracking-tight">Login</h2>
             <p className="text-slate-400 font-semibold text-sm">Select your department to sign in</p>
           </div>

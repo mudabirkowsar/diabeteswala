@@ -245,6 +245,17 @@ const UserAPI = {
         const response = await authApi.get(`/api/food/custom-tiffin/my-custom-plan/${bookingId}`);
         return response.data;
     },
+    // ===================================================
+    // --- USER TIFFIN MEAL MANAGEMENT APIS -------------
+    // ===================================================
+
+    // --- 1. Skip / Pause Tiffin Meals (Subscription Validity Extension) ---
+    skipTiffinMeals: async (bookingId, skipPayload) => {
+        // bookingId: MongoDB Object ID (_id) or custom bookingId (e.g. "SUB-FD-102934", "CTM-FD-733409")
+        // skipPayload: { startDate: "YYYY-MM-DD", endDate: "YYYY-MM-DD", slots: ["breakfast", "lunch", "dinner"], reason: "Optional reason string" }
+        const response = await authApi.patch(`/api/food/tiffin/skip-meals/${bookingId}`, skipPayload);
+        return response.data;
+    },
 
     //Pharmacy APIS 
     // ===================================================

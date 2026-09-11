@@ -22,7 +22,10 @@ import {
     ChevronRight,
     Tag,
     Building2,
-    Store
+    Store,
+    XCircle,
+    Truck,
+    Zap
 } from 'lucide-react';
 
 // Import API & Context
@@ -119,22 +122,48 @@ export default function TiffinSubscriptionDetailPage() {
         }
     };
 
+    // Dynamic Status Badge Helper
+    const renderStatusBadge = (statusStr = "") => {
+        const lower = (statusStr || "").toLowerCase();
+        if (lower === "cancelled" || lower === "rejected") {
+            return (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                    {statusStr || "Cancelled"}
+                </span>
+            );
+        }
+        if (lower === "completed" || lower === "delivered") {
+            return (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    {statusStr}
+                </span>
+            );
+        }
+        return (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                {statusStr || "Active"}
+            </span>
+        );
+    };
+
     // Render Diet Badge
     const renderDietBadge = (type = "") => {
-        const isVeg = type === "Veg";
-        const isNonVeg = type === "Non Veg";
-        const isEgg = type === "Egg";
+        const lower = (type || "").toLowerCase();
+        const isVeg = lower === "veg";
+        const isNonVeg = lower === "non veg" || lower === "nonveg";
+        const isEgg = lower === "egg";
 
         return (
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${
-                isVeg ? 'text-emerald-700 bg-emerald-50 border-emerald-200' :
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${isVeg ? 'text-emerald-700 bg-emerald-50 border-emerald-200' :
                 isNonVeg ? 'text-rose-700 bg-rose-50 border-rose-200' :
-                isEgg ? 'text-amber-700 bg-amber-50 border-amber-200' :
-                'text-slate-600 bg-slate-100 border-slate-200'
-            }`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${
-                    isVeg ? 'bg-emerald-500' : isNonVeg ? 'bg-rose-500' : isEgg ? 'bg-amber-500' : 'bg-slate-400'
-                }`} />
+                    isEgg ? 'text-amber-700 bg-amber-50 border-amber-200' :
+                        'text-slate-600 bg-slate-100 border-slate-200'
+                }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${isVeg ? 'bg-emerald-500' : isNonVeg ? 'bg-rose-500' : isEgg ? 'bg-amber-500' : 'bg-slate-400'
+                    }`} />
                 {type}
             </span>
         );
@@ -171,8 +200,11 @@ export default function TiffinSubscriptionDetailPage() {
 
     const {
         bookingId,
+        bookingType,
         status,
         deliveryOTP,
+        collectionType,
+        cancelReason,
         subscriptionDetails = {},
         address = {},
         foodId: vendor = {},
@@ -196,7 +228,7 @@ export default function TiffinSubscriptionDetailPage() {
 
     return (
         <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-10 max-w-[1200px] mx-auto space-y-7 antialiased select-none text-left">
-            
+
             {/* Top Navigation & Status Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                 <button
@@ -212,12 +244,9 @@ export default function TiffinSubscriptionDetailPage() {
                         {bookingId}
                     </span>
 
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        {status || "Active"}
-                    </span>
+                    {renderStatusBadge(status)}
 
-                    {deliveryOTP && (
+                    {deliveryOTP && status?.toLowerCase() !== "cancelled" && (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-indigo-50 text-[#3d3f96] border border-indigo-100 shadow-xs">
                             <KeyRound size={13} />
                             <span>OTP: <strong className="font-mono tracking-wider">{deliveryOTP}</strong></span>
@@ -225,6 +254,23 @@ export default function TiffinSubscriptionDetailPage() {
                     )}
                 </div>
             </div>
+
+            {/* Cancellation Reason Notification Banner */}
+            {cancelReason && (
+                <div className="bg-rose-50/90 border border-rose-200 rounded-[2rem] p-5 flex flex-col sm:flex-row items-start sm:items-center gap-3.5 shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                        <XCircle size={22} />
+                    </div>
+                    <div className="space-y-0.5 min-w-0 flex-1">
+                        <span className="text-[10px] font-black uppercase text-rose-800 tracking-wider flex items-center gap-1.5">
+                            Cancellation Reason
+                        </span>
+                        <p className="text-xs font-bold text-rose-950 leading-relaxed">
+                            {cancelReason}
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* Split Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -237,7 +283,7 @@ export default function TiffinSubscriptionDetailPage() {
                         <div className="flex flex-wrap items-center justify-between gap-2">
                             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-indigo-50 border border-indigo-100 text-[#3d3f96]">
                                 <Utensils size={12} />
-                                {subscriptionDetails.billingCycle || "Weekly"} Tiffin Plan
+                                {subscriptionDetails.billingCycle || "Weekly"} {bookingType || "Tiffin Plan"}
                             </span>
                             <span className="text-[11px] font-bold text-slate-400">
                                 Booked on {formatDate(createdAt)}
@@ -246,10 +292,10 @@ export default function TiffinSubscriptionDetailPage() {
 
                         <div>
                             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                                {subscriptionDetails.planName}
+                                {subscriptionDetails.planName || "Standard Tiffin Plan"}
                             </h1>
                             <p className="text-xs text-slate-500 font-medium mt-1">
-                                Complete {subscriptionDetails.durationDays || 7}-Day Custom Dietary Meal Package
+                                Complete {subscriptionDetails.durationDays || 7}-Day Scheduled Dietary Meal Package
                             </p>
                         </div>
 
@@ -272,6 +318,15 @@ export default function TiffinSubscriptionDetailPage() {
                                 {subscriptionDetails.durationDays || 7} Days Total
                             </span>
                         </div>
+
+                        {/* Mode of fulfillment badge */}
+                        {collectionType && (
+                            <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
+                                    <Truck size={10} /> {collectionType}
+                                </span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Universal Delivery Times Card */}
@@ -328,11 +383,10 @@ export default function TiffinSubscriptionDetailPage() {
                                             key={w}
                                             type="button"
                                             onClick={() => setSelectedWeek(w)}
-                                            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                                                selectedWeek === w
-                                                    ? 'bg-[#3d3f96] text-white shadow-xs'
-                                                    : 'bg-slate-50 text-slate-600 border border-slate-100 hover:bg-slate-100'
-                                            }`}
+                                            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${selectedWeek === w
+                                                ? 'bg-[#3d3f96] text-white shadow-xs'
+                                                : 'bg-slate-50 text-slate-600 border border-slate-100 hover:bg-slate-100'
+                                                }`}
                                         >
                                             Week {w}
                                         </button>
@@ -349,11 +403,10 @@ export default function TiffinSubscriptionDetailPage() {
                                     <button
                                         key={d.key}
                                         onClick={() => setSelectedDay(d.key)}
-                                        className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer border ${
-                                            isSelected
-                                                ? 'bg-red-50 text-red-600 border-red-200 font-black shadow-sm'
-                                                : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
-                                        }`}
+                                        className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer border ${isSelected
+                                            ? 'bg-red-50 text-red-600 border-red-200 font-black shadow-sm'
+                                            : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
+                                            }`}
                                     >
                                         {d.label}
                                     </button>
@@ -377,6 +430,7 @@ export default function TiffinSubscriptionDetailPage() {
                                     const dietType = slotItem.dietType || mealObj.dietType;
                                     const ingredients = mealObj.ingredients || [];
                                     const tags = mealObj.tags || [];
+                                    const effect = mealObj.foodEffectCategory;
 
                                     return (
                                         <div
@@ -393,7 +447,7 @@ export default function TiffinSubscriptionDetailPage() {
                                                         <Clock size={11} /> {slotItem.deliveryTime || "Scheduled"}
                                                     </span>
                                                 </div>
-                                                {renderDietBadge(dietType)}
+                                                {dietType && renderDietBadge(dietType)}
                                             </div>
 
                                             {/* Dish Row */}
@@ -401,16 +455,23 @@ export default function TiffinSubscriptionDetailPage() {
                                                 <div className="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0">
                                                     <img
                                                         src={getMediaUrl(dishImage) || PLACEHOLDER_DISH}
-                                                        alt={dishName}
+                                                        alt={dishName || "Dish"}
                                                         className="w-full h-full object-cover"
                                                         onError={(e) => { e.target.src = PLACEHOLDER_DISH; }}
                                                     />
                                                 </div>
 
                                                 <div className="flex-1 min-w-0 space-y-0.5">
-                                                    <strong className="text-xs font-black text-slate-800 truncate block">
-                                                        {dishName}
-                                                    </strong>
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <strong className="text-xs font-black text-slate-800 truncate block">
+                                                            {dishName || "Meal Item"}
+                                                        </strong>
+                                                        {slotItem.mealPrice && (
+                                                            <span className="font-mono font-black text-xs text-slate-900 shrink-0">
+                                                                ₹{slotItem.mealPrice}
+                                                            </span>
+                                                        )}
+                                                    </div>
 
                                                     <div className="flex items-center gap-3 pt-0.5">
                                                         {calories && (
@@ -418,9 +479,9 @@ export default function TiffinSubscriptionDetailPage() {
                                                                 <Flame size={11} className="text-amber-500" /> {calories} Kcal
                                                             </span>
                                                         )}
-                                                        {mealObj.foodEffectCategory && (
+                                                        {effect && (
                                                             <span className="text-[9px] font-black text-red-600 uppercase">
-                                                                {mealObj.foodEffectCategory}
+                                                                {effect}
                                                             </span>
                                                         )}
                                                     </div>
@@ -449,8 +510,8 @@ export default function TiffinSubscriptionDetailPage() {
                         </div>
                     </div>
 
-                    {/* Prepared By Kitchen Card */}
-                    {vendor.name && (
+                    {/* Prepared By Kitchen Card (If populated) */}
+                    {vendor && typeof vendor === 'object' && vendor.name && (
                         <div className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3.5 min-w-0">
                                 <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 overflow-hidden shrink-0">
@@ -547,6 +608,13 @@ export default function TiffinSubscriptionDetailPage() {
                                 </div>
                             )}
 
+                            {paymentDetails.razorpayOrderId && (
+                                <div className="flex justify-between items-center text-[11px] text-slate-600">
+                                    <span>Order ID:</span>
+                                    <span className="font-mono font-bold text-slate-800">{paymentDetails.razorpayOrderId}</span>
+                                </div>
+                            )}
+
                             {paymentDetails.paidAt && (
                                 <div className="flex justify-between items-center text-[11px] text-slate-600">
                                     <span>Paid On:</span>
@@ -567,16 +635,46 @@ export default function TiffinSubscriptionDetailPage() {
                                 <span>Meal Base Total</span>
                                 <span className="font-mono font-bold text-slate-800">₹{billSummary.itemTotal || 0}</span>
                             </div>
-                            <div className="flex justify-between items-center text-slate-600 font-medium">
-                                <span>Packaging Fee</span>
-                                <span className="font-mono font-bold text-slate-800">₹{billSummary.packagingCharge || 0}</span>
-                            </div>
+
+                            {billSummary.packagingCharge > 0 && (
+                                <div className="flex justify-between items-center text-slate-600 font-medium">
+                                    <span>Packaging Fee</span>
+                                    <span className="font-mono font-bold text-slate-800">₹{billSummary.packagingCharge}</span>
+                                </div>
+                            )}
+
+                            {billSummary.peakOrderCharge > 0 && (
+                                <div className="flex justify-between items-center text-slate-600 font-medium">
+                                    <span>Peak Order Charge</span>
+                                    <span className="font-mono font-bold text-slate-800">₹{billSummary.peakOrderCharge}</span>
+                                </div>
+                            )}
+
+                            {billSummary.rapidCharge > 0 && (
+                                <div className="flex justify-between items-center text-slate-600 font-medium">
+                                    <span>Rapid Delivery Charge</span>
+                                    <span className="font-mono font-bold text-slate-800">₹{billSummary.rapidCharge}</span>
+                                </div>
+                            )}
+
+                            {billSummary.fastDeliveryCharge > 0 && (
+                                <div className="flex justify-between items-center text-slate-600 font-medium">
+                                    <span>Priority Delivery Fee</span>
+                                    <span className="font-mono font-bold text-slate-800">₹{billSummary.fastDeliveryCharge}</span>
+                                </div>
+                            )}
+
                             <div className="flex justify-between items-center text-slate-600 font-medium">
                                 <span>Delivery Fee</span>
                                 <span className="font-mono font-bold text-slate-800">
-                                    {billSummary.deliveryCharge === 0 ? <span className="text-emerald-600 font-bold uppercase text-[10px]">Free</span> : `₹${billSummary.deliveryCharge || 0}`}
+                                    {billSummary.deliveryCharge === 0 ? (
+                                        <span className="text-emerald-600 font-bold uppercase text-[10px]">Free</span>
+                                    ) : (
+                                        `₹${billSummary.deliveryCharge || 0}`
+                                    )}
                                 </span>
                             </div>
+
                             <div className="flex justify-between items-center text-slate-600 font-medium">
                                 <span>GST / Taxes ({billSummary.taxPercentage || 5}%)</span>
                                 <span className="font-mono font-bold text-slate-800">₹{billSummary.taxAmount || 0}</span>

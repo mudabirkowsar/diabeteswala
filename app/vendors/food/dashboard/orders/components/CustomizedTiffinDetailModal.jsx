@@ -1,25 +1,19 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { 
-    X, 
-    ChefHat, 
-    Loader2, 
-    User, 
-    Phone, 
-    Mail, 
-    MapPin, 
-    Clock, 
-    Calendar, 
-    Utensils, 
-    CheckCircle2, 
-    AlertCircle, 
-    Check, 
-    CreditCard, 
-    Flame, 
-    Receipt, 
-    ShieldCheck,
-    Truck
+import {
+    X,
+    ChefHat,
+    Loader2,
+    Phone,
+    MapPin,
+    Calendar,
+    Utensils,
+    AlertCircle,
+    Check,
+    Flame,
+    Ban,
+    AlertTriangle
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -45,9 +39,13 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
     const [loading, setLoading] = useState(false);
     const [processing, setProcessing] = useState(false);
 
-    // Rejection state
+    // Rejection state (Phase 1: New / Pending)
     const [showRejectBox, setShowRejectBox] = useState(false);
     const [rejectReason, setRejectReason] = useState('');
+
+    // Cancellation state (Phase 2: Active)
+    const [showCancelBox, setShowCancelBox] = useState(false);
+    const [cancelReason, setCancelReason] = useState('');
 
     const fetchDetail = async () => {
         setLoading(true);
@@ -71,6 +69,8 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
             fetchDetail();
             setShowRejectBox(false);
             setRejectReason('');
+            setShowCancelBox(false);
+            setCancelReason('');
         } else {
             setDetail(null);
         }
@@ -78,21 +78,33 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
 
     if (!isOpen) return null;
 
-    // --- State Machine Actions: Accept / Reject ---
+    // --- State Machine Actions: Accept / Reject / Cancel ---
     const handleProcessRequest = async (action, reason = null) => {
         setProcessing(true);
         try {
-            const payload = {
-                action,
-                ...(reason && { rejectReason: reason })
-            };
+            const payload = { action };
+
+            if (action === 'Reject' && reason) {
+                payload.rejectReason = reason.trim();
+            } else if (action === 'Cancel' && reason) {
+                payload.cancelReason = reason.trim();
+            }
+
             const response = await FoodAPI.processVendorCustomRequest(detail._id || requestId, payload);
+
             if (response && response.success) {
-                toast.success(response.message || `Custom request marked as ${action}ed!`);
+                const actionText = action === 'Accept' ? 'accepted' : action === 'Reject' ? 'rejected' : 'cancelled';
+                toast.success(response.message || `Custom request marked as ${actionText}!`);
+
                 setShowRejectBox(false);
                 setRejectReason('');
+                setShowCancelBox(false);
+                setCancelReason('');
+
                 await fetchDetail();
                 if (onActionComplete) onActionComplete();
+            } else {
+                toast.error(response?.message || `Failed to ${action} custom request.`);
             }
         } catch (err) {
             console.error(`Error processing custom request (${action}):`, err);
@@ -109,10 +121,12 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
         const isNonVeg = type === 'Non Veg' || type === 'non veg';
 
         return (
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border bg-white ${
-                isVeg ? 'text-emerald-600 border-emerald-100' : isEgg ? 'text-amber-600 border-amber-100' : isNonVeg ? 'text-rose-600 border-rose-100' : 'text-slate-500 border-slate-100'
-            }`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${isVeg ? 'bg-emerald-500' : isEgg ? 'bg-amber-500' : isNonVeg ? 'bg-rose-500' : 'bg-slate-400'}`} />
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border bg-white ${isVeg ? 'text-emerald-600 border-emerald-100' :
+                    isEgg ? 'text-amber-600 border-amber-100' :
+                        isNonVeg ? 'text-rose-600 border-rose-100' : 'text-slate-500 border-slate-100'
+                }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${isVeg ? 'bg-emerald-500' : isEgg ? 'bg-amber-500' : isNonVeg ? 'bg-rose-500' : 'bg-slate-400'
+                    }`} />
                 {type}
             </span>
         );
@@ -129,9 +143,9 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
 
     return (
         <div className="fixed inset-0 bg-slate-900/65 backdrop-blur-md flex items-center justify-center z-50 p-3 sm:p-6 select-none antialiased">
-            {/* Expanded Wide Modal Container (max-w-5xl) */}
+            {/* Expanded Wide Modal Container */}
             <div className="bg-white rounded-[2.5rem] border border-slate-100 max-w-5xl w-full p-6 sm:p-10 shadow-2xl relative max-h-[92vh] overflow-y-auto [&::-webkit-scrollbar]:hidden text-left space-y-8">
-                
+
                 {/* Close Button */}
                 <button
                     onClick={onClose}
@@ -151,7 +165,7 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
                     </div>
                 ) : (
                     <div className="space-y-8">
-                        
+
                         {/* --- TOP HEADER WITH IDENTIFICATION --- */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5 pr-10">
                             <div className="space-y-1">
@@ -167,24 +181,23 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
                             </div>
 
                             <div className="flex items-center gap-3">
-                                <span className={`text-xs font-black uppercase px-3.5 py-1.5 rounded-xl border ${
-                                    detail.status === 'Active' 
+                                <span className={`text-xs font-black uppercase px-3.5 py-1.5 rounded-xl border ${detail.status === 'Active'
                                         ? 'text-emerald-600 bg-emerald-50 border-emerald-100'
                                         : detail.status === 'Cancelled'
-                                        ? 'text-rose-600 bg-rose-50 border-rose-100'
-                                        : 'text-amber-600 bg-amber-50 border-amber-100'
-                                }`}>
+                                            ? 'text-rose-600 bg-rose-50 border-rose-100'
+                                            : 'text-amber-600 bg-amber-50 border-amber-100'
+                                    }`}>
                                     {detail.status || 'New'}
                                 </span>
                             </div>
                         </div>
 
                         {/* --- DELIVERY OTP BANNER --- */}
-                        {detail.deliveryOTP && (
+                        {detail.deliveryOTP && detail.status !== 'Cancelled' && (
                             <div className="bg-red-50/60 border border-red-200/60 text-red-600 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
                                 <div className="space-y-0.5">
                                     <span className="text-[10px] font-black uppercase tracking-wider block">Universal Delivery Security OTP</span>
-                                    <p className="text-xs text-red-600/90 font-semibold">Customer will provide this code to the delivery rider at the door [cite: custom_context].</p>
+                                    <p className="text-xs text-red-600/90 font-semibold">Customer will provide this code to the delivery rider at the door.</p>
                                 </div>
                                 <strong className="text-2xl font-black font-mono tracking-widest bg-white/90 px-4 py-1.5 rounded-xl border border-red-200/80 shrink-0">
                                     {detail.deliveryOTP}
@@ -194,21 +207,21 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
 
                         {/* --- 2-COLUMN PRIMARY OVERVIEW GRID --- */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                            
+
                             {/* COLUMN 1: CUSTOMER & DELIVERY ADDRESS */}
                             <div className="space-y-6">
-                                
+
                                 {/* Customer Profile */}
                                 <div className="bg-slate-50/50 border border-slate-150 p-5 rounded-3xl space-y-3">
                                     <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block border-b border-slate-200/50 pb-2">
                                         Customer Monograph
                                     </span>
-                                    
+
                                     <div className="flex items-center gap-3.5 pt-1">
                                         <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 overflow-hidden shrink-0">
-                                            <img 
-                                                src={getMediaUrl(user.profilePic) || USER_PLACEHOLDER} 
-                                                alt={user.name || "Customer"} 
+                                            <img
+                                                src={getMediaUrl(user.profilePic) || USER_PLACEHOLDER}
+                                                alt={user.name || "Customer"}
                                                 className="w-full h-full object-cover"
                                                 onError={(e) => { e.target.src = USER_PLACEHOLDER; }}
                                             />
@@ -263,7 +276,7 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
 
                             {/* COLUMN 2: CUSTOM SPECS & BILLING LEDGER */}
                             <div className="space-y-6">
-                                
+
                                 {/* Personalized Parameters & Universal Slots */}
                                 <div className="bg-slate-50/50 border border-slate-150 p-5 rounded-3xl space-y-3.5">
                                     <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block border-b border-slate-200/50 pb-2">
@@ -376,7 +389,7 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
                                             <Utensils size={18} className="text-[#3d3f96]" /> Weekly Dish Allocation Breakdown
                                         </h3>
                                         <p className="text-xs text-slate-400 font-semibold mt-0.5">
-                                            Day-by-day customized meal selections across Monday through Sunday [cite: custom_context].
+                                            Day-by-day customized meal selections across Monday through Sunday.
                                         </p>
                                     </div>
                                     <span className="text-[10px] font-black uppercase text-slate-400 bg-slate-100 px-3 py-1 rounded-lg">
@@ -406,9 +419,9 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
                                                         </div>
                                                         <div className="flex gap-2.5 items-center">
                                                             <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden shrink-0">
-                                                                <img 
-                                                                    src={getMediaUrl(item.breakfast.mealId?.imageUrl) || PLACEHOLDER_IMAGE} 
-                                                                    alt={item.breakfast.mealName} 
+                                                                <img
+                                                                    src={getMediaUrl(item.breakfast.mealId?.imageUrl) || PLACEHOLDER_IMAGE}
+                                                                    alt={item.breakfast.mealName}
                                                                     className="w-full h-full object-cover"
                                                                     onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
                                                                 />
@@ -442,9 +455,9 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
                                                         </div>
                                                         <div className="flex gap-2.5 items-center">
                                                             <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden shrink-0">
-                                                                <img 
-                                                                    src={getMediaUrl(item.lunch.mealId?.imageUrl) || PLACEHOLDER_IMAGE} 
-                                                                    alt={item.lunch.mealName} 
+                                                                <img
+                                                                    src={getMediaUrl(item.lunch.mealId?.imageUrl) || PLACEHOLDER_IMAGE}
+                                                                    alt={item.lunch.mealName}
                                                                     className="w-full h-full object-cover"
                                                                     onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
                                                                 />
@@ -478,9 +491,9 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
                                                         </div>
                                                         <div className="flex gap-2.5 items-center">
                                                             <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden shrink-0">
-                                                                <img 
-                                                                    src={getMediaUrl(item.dinner.mealId?.imageUrl) || PLACEHOLDER_IMAGE} 
-                                                                    alt={item.dinner.mealName} 
+                                                                <img
+                                                                    src={getMediaUrl(item.dinner.mealId?.imageUrl) || PLACEHOLDER_IMAGE}
+                                                                    alt={item.dinner.mealName}
                                                                     className="w-full h-full object-cover"
                                                                     onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
                                                                 />
@@ -509,16 +522,29 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
                             </div>
                         )}
 
-                        {/* Cancellation Reason if Rejected */}
+                        {/* --- REASON BANNERS IF REJECTED / CANCELLED --- */}
                         {detail.cancelReason && (
                             <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs space-y-1">
-                                <span className="text-[10px] font-black uppercase text-rose-700 block">Rejection Reason</span>
-                                <p className="text-rose-800 font-medium">{detail.cancelReason}</p>
+                                <span className="text-[10px] font-black uppercase text-rose-700 flex items-center gap-1">
+                                    <AlertTriangle size={12} /> Cancellation Reason
+                                </span>
+                                <p className="text-rose-800 font-semibold">{detail.cancelReason}</p>
                             </div>
                         )}
 
-                        {/* --- STATE MACHINE ACTIONS (ACCEPT / REJECT) --- */}
-                        {detail.status === 'New' && (
+                        {detail.rejectReason && (
+                            <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs space-y-1">
+                                <span className="text-[10px] font-black uppercase text-rose-700 flex items-center gap-1">
+                                    <AlertTriangle size={12} /> Rejection Reason
+                                </span>
+                                <p className="text-rose-800 font-semibold">{detail.rejectReason}</p>
+                            </div>
+                        )}
+
+                        {/* ========================================================= */}
+                        {/* --- PHASE 1: NEW REQUEST ACTIONS (ACCEPT / REJECT) --- */}
+                        {/* ========================================================= */}
+                        {(detail.status === 'New' || detail.status === 'Pending') && (
                             <div className="pt-3 border-t border-slate-100 space-y-3">
                                 {showRejectBox ? (
                                     <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl space-y-3">
@@ -530,7 +556,7 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
                                                 <X size={14} />
                                             </button>
                                         </div>
-                                        <textarea 
+                                        <textarea
                                             rows={2}
                                             required
                                             value={rejectReason}
@@ -575,6 +601,70 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
                                         >
                                             {processing ? <Loader2 size={14} className="animate-spin" /> : <Check size={15} />}
                                             <span>Accept Request</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* ========================================================= */}
+                        {/* --- PHASE 2: ACTIVE SUBSCRIPTION CANCEL ACTION ---         */}
+                        {/* ========================================================= */}
+                        {detail.status === 'Active' && (
+                            <div className="pt-3 border-t border-slate-100 space-y-3">
+                                {showCancelBox ? (
+                                    <div className="bg-rose-50 border border-rose-200 p-4 rounded-2xl space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-black uppercase text-rose-700 flex items-center gap-1">
+                                                <Ban size={14} /> Specify Active Subscription Cancellation Reason *
+                                            </span>
+                                            <button onClick={() => setShowCancelBox(false)} className="text-slate-400 hover:text-slate-600">
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+                                        <p className="text-[11px] text-slate-500 font-medium">
+                                            Please provide a clear reason for halting this ongoing active custom tiffin subscription.
+                                        </p>
+                                        <textarea
+                                            rows={2}
+                                            required
+                                            value={cancelReason}
+                                            onChange={(e) => setCancelReason(e.target.value)}
+                                            placeholder="e.g. Kitchen temporarily halted operations due to maintenance..."
+                                            className="w-full p-2.5 bg-white border border-rose-200 rounded-xl text-xs font-semibold text-slate-800 outline-none resize-none focus:border-rose-400"
+                                        />
+                                        <div className="flex justify-end gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCancelBox(false)}
+                                                className="px-3.5 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-lg cursor-pointer"
+                                            >
+                                                Dismiss
+                                            </button>
+                                            <button
+                                                type="button"
+                                                disabled={!cancelReason.trim() || processing}
+                                                onClick={() => handleProcessRequest('Cancel', cancelReason)}
+                                                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer flex items-center gap-1"
+                                            >
+                                                {processing ? <Loader2 size={12} className="animate-spin" /> : <Ban size={12} />}
+                                                <span>Confirm Cancellation</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80">
+                                        <div className="text-xs font-medium text-slate-600">
+                                            <span className="font-bold text-emerald-600">Active Package:</span> Meals are currently scheduled for daily delivery.
+                                        </div>
+                                        <button
+                                            type="button"
+                                            disabled={processing}
+                                            onClick={() => setShowCancelBox(true)}
+                                            className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center gap-1.5 border border-rose-200 disabled:opacity-50"
+                                        >
+                                            <Ban size={13} />
+                                            <span>Cancel Subscription</span>
                                         </button>
                                     </div>
                                 )}

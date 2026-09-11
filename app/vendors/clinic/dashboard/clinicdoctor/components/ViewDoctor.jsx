@@ -10,9 +10,7 @@ import {
   FaCheckCircle, 
   FaCertificate, 
   FaAward, 
-  FaMapMarkerAlt, 
   FaPhone, 
-  FaEnvelope, 
   FaIdCard, 
   FaCloudUploadAlt, 
   FaPlus, 
@@ -24,7 +22,7 @@ import {
   FaClinicMedical,
   FaVideo,
   FaHome,
-  FaLock
+  FaInfoCircle
 } from 'react-icons/fa';
 
 import ClinicAPI from '../../../../../services/ClinicAPI';
@@ -47,6 +45,7 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'fees' | 'qualifications' | 'documents' | 'address'
   const [errorMessage, setErrorMessage] = useState(null);
+  const [successInfo, setSuccessInfo] = useState(null);
 
   // --- FORM STATE ---
   const [formData, setFormData] = useState({
@@ -56,7 +55,7 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
     altPhone: doctor?.alternatePhone || doctor?.altPhone || '',
     gender: doctor?.gender || 'Male',
     specialist: doctor?.speciality || doctor?.specialist || '',
-    experience: doctor?.experienceYears || doctor?.experience || 0,
+    experience: doctor?.experienceYears ?? doctor?.experience ?? 0,
     licenseNumber: doctor?.licenseNumber || '',
     councilNumber: doctor?.councilNumber || doctor?.licenseNumber || '',
     councilName: doctor?.councilName || '',
@@ -64,21 +63,21 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
     dutyStatus: doctor?.dutyStatus || 'On Duty',
     password: '',
 
-    // 3-Way Fees
+    // 3-Way Consultation Fees & Channels
     clinicFee: doctor?.fees?.clinic ?? 800,
     onlineFee: doctor?.fees?.online ?? 500,
     homeFee: doctor?.fees?.home ?? 1200,
-    isClinicAvailable: doctor?.consultationStatus?.clinic ?? true,
-    isOnlineAvailable: doctor?.consultationStatus?.online ?? true,
-    isHomeAvailable: doctor?.consultationStatus?.home ?? false,
+    isClinicAvailable: doctor?.consultationStatus?.clinic ?? doctor?.isClinicAvailable ?? true,
+    isOnlineAvailable: doctor?.consultationStatus?.online ?? doctor?.isOnlineAvailable ?? true,
+    isHomeAvailable: doctor?.consultationStatus?.home ?? doctor?.isHomeAvailable ?? false,
 
-    // Address
+    // Address & Coordinates
     address: doctor?.address || '',
     city: doctor?.city || '',
     state: doctor?.state || '',
     pincode: doctor?.pincode || '',
-    latitude: doctor?.location?.lat || '',
-    longitude: doctor?.location?.lng || '',
+    latitude: doctor?.location?.lat || doctor?.latitude || '',
+    longitude: doctor?.location?.lng || doctor?.longitude || '',
   });
 
   // Dynamic Qualifications
@@ -162,40 +161,49 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
     }
   };
 
-  // --- SAVE CHANGES ---
+  // --- SAVE CHANGES USING updateClinicDoctor API ---
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
     setErrorMessage(null);
+    setSuccessInfo(null);
 
     try {
       const payload = new FormData();
 
-      payload.append('name', formData.name.trim());
-      payload.append('phone', formData.phone.trim());
-      payload.append('email', formData.email.trim());
-      payload.append('altPhone', formData.altPhone.trim());
-      payload.append('gender', formData.gender);
-      payload.append('specialist', formData.specialist);
-      payload.append('experience', Number(formData.experience));
-      payload.append('licenseNumber', formData.licenseNumber.trim());
-      payload.append('councilName', formData.councilName.trim());
-      payload.append('councilNumber', formData.councilNumber.trim());
+      // Basic Information
+      if (formData.name) payload.append('name', formData.name.trim());
+      if (formData.email) payload.append('email', formData.email.trim());
+      if (formData.phone) payload.append('phone', formData.phone.trim());
+      if (formData.altPhone) payload.append('altPhone', formData.altPhone.trim());
+      if (formData.gender) payload.append('gender', formData.gender);
+      if (formData.specialist) payload.append('specialist', formData.specialist);
+      if (formData.experience !== '') payload.append('experience', Number(formData.experience));
+      if (formData.password) payload.append('password', formData.password);
 
-      // 3-Way Fees
+      // 3-Way Consultation Fees & Channels
       payload.append('clinicFee', Number(formData.clinicFee));
       payload.append('onlineFee', Number(formData.onlineFee));
       payload.append('homeFee', Number(formData.homeFee));
+      payload.append('isClinicAvailable', Boolean(formData.isClinicAvailable));
+      payload.append('isOnlineAvailable', Boolean(formData.isOnlineAvailable));
+      payload.append('isHomeAvailable', Boolean(formData.isHomeAvailable));
 
-      // Address
-      payload.append('address', formData.address.trim());
-      payload.append('city', formData.city.trim());
-      payload.append('state', formData.state.trim());
-      payload.append('pincode', formData.pincode.trim());
+      // Medical Council & Registration
+      if (formData.licenseNumber) payload.append('licenseNumber', formData.licenseNumber.trim());
+      if (formData.councilName) payload.append('councilName', formData.councilName.trim());
+      if (formData.councilNumber) payload.append('councilNumber', formData.councilNumber.trim());
+      if (formData.stateName) payload.append('stateName', formData.stateName.trim());
 
-      if (formData.password) payload.append('password', formData.password);
+      // Address & Location
+      if (formData.address) payload.append('address', formData.address.trim());
+      if (formData.city) payload.append('city', formData.city.trim());
+      if (formData.state) payload.append('state', formData.state.trim());
+      if (formData.pincode) payload.append('pincode', formData.pincode.trim());
+      if (formData.latitude) payload.append('latitude', Number(formData.latitude));
+      if (formData.longitude) payload.append('longitude', Number(formData.longitude));
 
-      // JSON Qualifications
+      // Qualifications (JSON stringified)
       const sanitizedQualifications = qualifications
         .filter(q => q.degree.trim() !== '')
         .map(q => ({
@@ -208,29 +216,43 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
         }));
       payload.append('qualifications', JSON.stringify(sanitizedQualifications));
 
-      // Replace Documents
+      // Binary Document Replacements
       if (newFiles.profileImage) payload.append('profileImage', newFiles.profileImage);
       if (newFiles.licenseCert) payload.append('licenseCert', newFiles.licenseCert);
       if (newFiles.idProof) payload.append('idProof', newFiles.idProof);
       if (newFiles.signature) payload.append('signature', newFiles.signature);
 
+      // Degree Certificate Files
       qualifications.forEach(q => {
-        if (q.certFile) payload.append('degreeCertificates', q.certFile);
+        if (q.certFile) {
+          payload.append('degreeCertificates', q.certFile);
+        }
       });
 
+      // API Call
       const response = await ClinicAPI.updateClinicDoctor(doctor._id, payload);
 
       if (response?.success) {
+        // Toggle duty status if changed
         if (formData.dutyStatus !== doctor.dutyStatus) {
           await ClinicAPI.toggleDoctorDutyStatus(doctor._id, { dutyStatus: formData.dutyStatus });
         }
-        onDoctorUpdated(response.data);
+
+        const updatedData = response.data?.proposedUpdates || response.data || {
+          ...doctor,
+          ...formData,
+          fees: { clinic: formData.clinicFee, online: formData.onlineFee, home: formData.homeFee },
+          consultationStatus: { clinic: formData.isClinicAvailable, online: formData.isOnlineAvailable, home: formData.isHomeAvailable }
+        };
+
+        onDoctorUpdated(updatedData, response.message);
         setIsEditing(false);
+        setSuccessInfo(response.message || "Profile update request has been submitted to Admin for approval.");
       } else {
-        setErrorMessage(response?.message || "Failed to update profile.");
+        setErrorMessage(response?.message || "Failed to update doctor profile.");
       }
     } catch (err) {
-      console.error("Error updating doctor:", err);
+      console.error("Error updating doctor profile:", err);
       setErrorMessage(err.response?.data?.message || err.message || "Failed to save profile changes.");
     } finally {
       setSaving(false);
@@ -275,14 +297,18 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setIsEditing(!isEditing)}
+              onClick={() => {
+                setIsEditing(!isEditing);
+                setSuccessInfo(null);
+                setErrorMessage(null);
+              }}
               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
                 isEditing 
                   ? 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100' 
                   : 'bg-indigo-50 text-[#3D3F96] border border-indigo-100 hover:bg-indigo-100'
               }`}
             >
-              {isEditing ? <><FaEye size={12} /> View Profile</> : <><FaPencilAlt size={12} /> Edit Details</>}
+              {isEditing ? <><FaEye size={12} /> View Mode</> : <><FaPencilAlt size={12} /> Edit Details</>}
             </button>
 
             <button 
@@ -319,6 +345,15 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
           ))}
         </div>
 
+        {/* --- SUCCESS / PENDING APPROVAL BANNER --- */}
+        {successInfo && (
+          <div className="mx-6 mt-3 p-3.5 rounded-2xl bg-indigo-50 border border-indigo-100 text-[#3D3F96] text-xs font-semibold flex items-center gap-2.5">
+            <FaInfoCircle className="shrink-0 text-sm" />
+            <span className="flex-1">{successInfo}</span>
+            <button onClick={() => setSuccessInfo(null)} className="text-indigo-400 hover:text-indigo-700"><FaTimes /></button>
+          </div>
+        )}
+
         {/* --- ERROR BANNER --- */}
         {errorMessage && (
           <div className="mx-6 mt-3 p-3.5 rounded-2xl bg-rose-50 border border-rose-100 text-rose-700 text-xs font-semibold flex items-center justify-between">
@@ -344,7 +379,7 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
                 <div>
                   <label className="text-[11px] font-bold text-slate-500 block mb-1">Full Name</label>
                   {isEditing ? (
-                    <input type="text" name="name" value={formData.name} onChange={handleInputChange} required className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white" />
+                    <input type="text" name="name" value={formData.name} onChange={handleInputChange} required className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white outline-none focus:border-[#3D3F96]" />
                   ) : (
                     <p className="text-xs font-bold text-slate-800 py-1.5">{formData.name}</p>
                   )}
@@ -353,7 +388,7 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
                 <div>
                   <label className="text-[11px] font-bold text-slate-500 block mb-1">Primary Phone</label>
                   {isEditing ? (
-                    <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} required className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white" />
+                    <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} required className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white outline-none focus:border-[#3D3F96]" />
                   ) : (
                     <p className="text-xs font-bold text-slate-800 py-1.5 flex items-center gap-1.5"><FaPhone className="text-slate-400" /> {formData.phone}</p>
                   )}
@@ -362,7 +397,7 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
                 <div>
                   <label className="text-[11px] font-bold text-slate-500 block mb-1">Email Address</label>
                   {isEditing ? (
-                    <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white" />
+                    <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white outline-none focus:border-[#3D3F96]" />
                   ) : (
                     <p className="text-xs font-bold text-slate-800 py-1.5">{formData.email || 'N/A'}</p>
                   )}
@@ -371,7 +406,7 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
                 <div>
                   <label className="text-[11px] font-bold text-slate-500 block mb-1">Specialization</label>
                   {isEditing ? (
-                    <input type="text" name="specialist" value={formData.specialist} onChange={handleInputChange} required className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white" />
+                    <input type="text" name="specialist" value={formData.specialist} onChange={handleInputChange} required className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white outline-none focus:border-[#3D3F96]" />
                   ) : (
                     <p className="text-xs font-bold text-slate-800 py-1.5">{formData.specialist || 'General Medicine'}</p>
                   )}
@@ -380,7 +415,7 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
                 <div>
                   <label className="text-[11px] font-bold text-slate-500 block mb-1">Experience (Years)</label>
                   {isEditing ? (
-                    <input type="number" name="experience" value={formData.experience} onChange={handleInputChange} min="0" className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white" />
+                    <input type="number" name="experience" value={formData.experience} onChange={handleInputChange} min="0" className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white outline-none focus:border-[#3D3F96]" />
                   ) : (
                     <p className="text-xs font-bold text-slate-800 py-1.5 flex items-center gap-1.5"><FaAward className="text-amber-500" /> {formData.experience} Years</p>
                   )}
@@ -389,7 +424,7 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
                 <div>
                   <label className="text-[11px] font-bold text-slate-500 block mb-1">Duty Status</label>
                   {isEditing ? (
-                    <select name="dutyStatus" value={formData.dutyStatus} onChange={handleInputChange} className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white">
+                    <select name="dutyStatus" value={formData.dutyStatus} onChange={handleInputChange} className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white outline-none focus:border-[#3D3F96]">
                       <option value="On Duty">On Duty</option>
                       <option value="Off Duty">Off Duty</option>
                       <option value="On Leave">On Leave</option>
@@ -409,7 +444,7 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
                 <div>
                   <label className="text-[11px] font-bold text-slate-500 block mb-1">License Number</label>
                   {isEditing ? (
-                    <input type="text" name="licenseNumber" value={formData.licenseNumber} onChange={handleInputChange} className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white" />
+                    <input type="text" name="licenseNumber" value={formData.licenseNumber} onChange={handleInputChange} className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white outline-none focus:border-[#3D3F96]" />
                   ) : (
                     <p className="text-xs font-bold text-slate-800 py-1.5">{formData.licenseNumber || 'N/A'}</p>
                   )}
@@ -418,7 +453,7 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
                 <div>
                   <label className="text-[11px] font-bold text-slate-500 block mb-1">State Council Name</label>
                   {isEditing ? (
-                    <input type="text" name="councilName" value={formData.councilName} onChange={handleInputChange} className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white" />
+                    <input type="text" name="councilName" value={formData.councilName} onChange={handleInputChange} className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white outline-none focus:border-[#3D3F96]" />
                   ) : (
                     <p className="text-xs font-bold text-slate-800 py-1.5">{formData.councilName || 'Not Specified'}</p>
                   )}
@@ -427,7 +462,7 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
                 <div>
                   <label className="text-[11px] font-bold text-slate-500 block mb-1">Council Registration No.</label>
                   {isEditing ? (
-                    <input type="text" name="councilNumber" value={formData.councilNumber} onChange={handleInputChange} className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white" />
+                    <input type="text" name="councilNumber" value={formData.councilNumber} onChange={handleInputChange} className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white outline-none focus:border-[#3D3F96]" />
                   ) : (
                     <p className="text-xs font-bold text-slate-800 py-1.5">{formData.councilNumber || 'N/A'}</p>
                   )}
@@ -445,7 +480,7 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 
-                {/* Clinic OPD */}
+                {/* Physical Clinic OPD */}
                 <div className="p-4 rounded-2xl bg-indigo-50/40 border border-indigo-100 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-[#3D3F96] flex items-center gap-1.5">
@@ -466,13 +501,16 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
                     )}
                   </div>
                   {isEditing ? (
-                    <input 
-                      type="number" 
-                      name="clinicFee"
-                      value={formData.clinicFee}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 text-xs font-bold rounded-xl border bg-white"
-                    />
+                    <div className="relative">
+                      <FaRupeeSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
+                      <input 
+                        type="number" 
+                        name="clinicFee"
+                        value={formData.clinicFee}
+                        onChange={handleInputChange}
+                        className="w-full pl-7 pr-3 py-2 text-xs font-bold rounded-xl border bg-white outline-none focus:border-[#3D3F96]"
+                      />
+                    </div>
                   ) : (
                     <p className="text-xl font-black text-slate-800">₹{formData.clinicFee}</p>
                   )}
@@ -499,13 +537,16 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
                     )}
                   </div>
                   {isEditing ? (
-                    <input 
-                      type="number" 
-                      name="onlineFee"
-                      value={formData.onlineFee}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 text-xs font-bold rounded-xl border bg-white"
-                    />
+                    <div className="relative">
+                      <FaRupeeSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
+                      <input 
+                        type="number" 
+                        name="onlineFee"
+                        value={formData.onlineFee}
+                        onChange={handleInputChange}
+                        className="w-full pl-7 pr-3 py-2 text-xs font-bold rounded-xl border bg-white outline-none focus:border-[#3D3F96]"
+                      />
+                    </div>
                   ) : (
                     <p className="text-xl font-black text-slate-800">₹{formData.onlineFee}</p>
                   )}
@@ -532,13 +573,16 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
                     )}
                   </div>
                   {isEditing ? (
-                    <input 
-                      type="number" 
-                      name="homeFee"
-                      value={formData.homeFee}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 text-xs font-bold rounded-xl border bg-white"
-                    />
+                    <div className="relative">
+                      <FaRupeeSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
+                      <input 
+                        type="number" 
+                        name="homeFee"
+                        value={formData.homeFee}
+                        onChange={handleInputChange}
+                        className="w-full pl-7 pr-3 py-2 text-xs font-bold rounded-xl border bg-white outline-none focus:border-[#3D3F96]"
+                      />
+                    </div>
                   ) : (
                     <p className="text-xl font-black text-slate-800">₹{formData.homeFee}</p>
                   )}
@@ -781,7 +825,7 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
                 <div className="sm:col-span-3">
                   <label className="text-[11px] font-bold text-slate-500 block mb-1">Street Address</label>
                   {isEditing ? (
-                    <input type="text" name="address" value={formData.address} onChange={handleInputChange} className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white" />
+                    <input type="text" name="address" value={formData.address} onChange={handleInputChange} className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white outline-none focus:border-[#3D3F96]" />
                   ) : (
                     <p className="text-xs font-bold text-slate-800">{formData.address || 'Not Provided'}</p>
                   )}
@@ -790,7 +834,7 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
                 <div>
                   <label className="text-[11px] font-bold text-slate-500 block mb-1">City</label>
                   {isEditing ? (
-                    <input type="text" name="city" value={formData.city} onChange={handleInputChange} className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white" />
+                    <input type="text" name="city" value={formData.city} onChange={handleInputChange} className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white outline-none focus:border-[#3D3F96]" />
                   ) : (
                     <p className="text-xs font-bold text-slate-800">{formData.city || 'N/A'}</p>
                   )}
@@ -799,7 +843,7 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
                 <div>
                   <label className="text-[11px] font-bold text-slate-500 block mb-1">State</label>
                   {isEditing ? (
-                    <input type="text" name="state" value={formData.state} onChange={handleInputChange} className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white" />
+                    <input type="text" name="state" value={formData.state} onChange={handleInputChange} className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white outline-none focus:border-[#3D3F96]" />
                   ) : (
                     <p className="text-xs font-bold text-slate-800">{formData.state || 'N/A'}</p>
                   )}
@@ -808,7 +852,7 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
                 <div>
                   <label className="text-[11px] font-bold text-slate-500 block mb-1">Pincode</label>
                   {isEditing ? (
-                    <input type="text" name="pincode" value={formData.pincode} onChange={handleInputChange} className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white" />
+                    <input type="text" name="pincode" value={formData.pincode} onChange={handleInputChange} className="w-full px-3.5 py-2 text-xs font-bold rounded-xl border bg-white outline-none focus:border-[#3D3F96]" />
                   ) : (
                     <p className="text-xs font-bold text-slate-800">{formData.pincode || 'N/A'}</p>
                   )}
@@ -830,9 +874,13 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
               <>
                 <button
                   type="button"
-                  onClick={() => setIsEditing(false)}
+                  onClick={() => {
+                    setIsEditing(false);
+                    setErrorMessage(null);
+                    setSuccessInfo(null);
+                  }}
                   disabled={saving}
-                  className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50"
+                  className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all"
                 >
                   Cancel
                 </button>
@@ -842,7 +890,7 @@ export default function ViewDoctor({ doctor, onClose, onDoctorUpdated }) {
                   disabled={saving}
                   className="flex items-center gap-2 px-7 py-2.5 rounded-xl bg-[#3D3F96] hover:bg-[#2C2E75] text-white text-xs font-bold shadow-lg shadow-indigo-950/10 transition-all disabled:opacity-60"
                 >
-                  {saving ? <><FaSpinner className="animate-spin" /> Saving...</> : <><FaSave /> Save Changes</>}
+                  {saving ? <><FaSpinner className="animate-spin" /> Saving Changes...</> : <><FaSave /> Save Changes</>}
                 </button>
               </>
             ) : (

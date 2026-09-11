@@ -207,6 +207,12 @@ const FoodAPI = {
         const response = await authApi.patch(`/provider/food/tiffin/custom-requests/${id}/action`, actionPayload);
         return response.data;
     },
+     cancelSubscriptionTiffin: async (id, actionPayload) => {
+        // id: Document Object ID (_id) or custom bookingId
+        // actionPayload: { action: 'Accept' | 'Reject', rejectReason: "Mandatory description if rejecting" }
+        const response = await authApi.patch(`provider/food/tiffin/subscriptions/${id}/action`, actionPayload);
+        return response.data;
+    },
 
 };
 

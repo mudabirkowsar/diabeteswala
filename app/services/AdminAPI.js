@@ -587,6 +587,40 @@ const AdminAPI = {
         return response.data;
     },
 
+
+    // ===================================================
+    // --- SUPER ADMIN DOCTOR MANAGEMENT APIS -----------
+    // ===================================================
+
+    // --- 1. Get All Doctors List (With Filters, Search & Pagination) ---
+    getAdminDoctorsList: async (params) => {
+        // params (optional): { status: 'Pending'|'Approved'|'Rejected'|'Incomplete', isActive: 'true'|'false', search, page, limit }
+        const response = await authApi.get('/admin/doctor/list', { params });
+        return response.data;
+    },
+
+    // --- 2. Approve or Reject Doctor Profile Status ---
+    approveRejectDoctorProfile: async (id, payload) => {
+        // id: Doctor unique ObjectID (_id) (e.g. "6aa2893147fc25b5af2a02b7")
+        // payload: { status: "Approved" | "Rejected" | "Pending", rejectionReason: "Mandatory if status is Rejected" }
+        const response = await authApi.patch(`/admin/doctor/approve/${id}`, payload);
+        return response.data;
+    },
+
+    // --- 3. Toggle Doctor Active / Inactive Status ---
+    toggleDoctorActiveStatus: async (id) => {
+        // id: Doctor unique ObjectID (_id) to toggle active/inactive state
+        const response = await authApi.patch(`/admin/doctor/toggle-active/${id}`);
+        return response.data;
+    },
+
+    // --- 4. Get Approved Doctors Directory (Limit: 25 per page) ---
+    getApprovedDoctorsList: async (params) => {
+        // params (optional): { page: 1 }
+        const response = await authApi.get('/admin/doctor/approved-list', { params });
+        return response.data;
+    },
+
 }
 
 export default AdminAPI;

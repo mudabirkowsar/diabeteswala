@@ -29,7 +29,13 @@ import {
     Check,
     Truck,
     BadgePercent,
-    ShieldAlert
+    ShieldAlert,
+    XCircle,
+    Zap,
+    Info,
+    PauseCircle,
+    CalendarDays,
+    X
 } from 'lucide-react';
 
 // Import API & Context
@@ -59,6 +65,12 @@ const DAYS_OF_WEEK = [
     { key: 'sunday', label: 'Sunday' }
 ];
 
+const AVAILABLE_SLOTS = [
+    { key: 'breakfast', label: 'Breakfast', icon: Coffee },
+    { key: 'lunch', label: 'Lunch', icon: Sun },
+    { key: 'dinner', label: 'Dinner', icon: Moon }
+];
+
 export default function CustomTiffinDetailPage() {
     const { id } = useParams();
     const router = useRouter();
@@ -67,6 +79,14 @@ export default function CustomTiffinDetailPage() {
     const [planDetails, setPlanDetails] = useState(null);
     const [loading, setLoading] = useState(true);
     const [selectedDay, setSelectedDay] = useState('monday');
+
+    // --- Skip / Pause Modal States ---
+    const [showSkipModal, setShowSkipModal] = useState(false);
+    const [skipLoading, setSkipLoading] = useState(false);
+    const [skipStartDate, setSkipStartDate] = useState('');
+    const [skipEndDate, setSkipEndDate] = useState('');
+    const [selectedSlots, setSelectedSlots] = useState(['breakfast', 'lunch', 'dinner']);
+    const [skipReason, setSkipReason] = useState('');
 
     // Fetch Custom Tiffin Details
     const fetchCustomPlanDetails = async () => {
@@ -121,6 +141,98 @@ export default function CustomTiffinDetailPage() {
         } catch (e) {
             return dateString;
         }
+    };
+
+    // Toggle Slot Selection
+    const toggleSlot = (slotKey) => {
+        if (selectedSlots.includes(slotKey)) {
+            if (selectedSlots.length === 1) {
+                if (showNotification) showNotification("At least one slot must be selected to skip.", "error");
+                return;
+            }
+            setSelectedSlots(selectedSlots.filter((s) => s !== slotKey));
+        } else {
+            setSelectedSlots([...selectedSlots, slotKey]);
+        }
+    };
+
+    // Handle Skip Meals Submission
+    const handleSkipMeals = async (e) => {
+        e.preventDefault();
+
+        if (!skipStartDate || !skipEndDate) {
+            if (showNotification) showNotification("Please select both start and end dates.", "error");
+            return;
+        }
+
+        if (new Date(skipEndDate) < new Date(skipStartDate)) {
+            if (showNotification) showNotification("End date cannot be before start date.", "error");
+            return;
+        }
+
+        setSkipLoading(true);
+        try {
+            const payload = {
+                startDate: skipStartDate,
+                endDate: skipEndDate,
+                slots: selectedSlots,
+                reason: skipReason.trim() || "Traveling / Out of town."
+            };
+
+            const targetBookingId = planDetails?.bookingId || id;
+            const response = await UserAPI.skipTiffinMeals(targetBookingId, payload);
+
+            if (response && response.success) {
+                if (showNotification) {
+                    showNotification(response.message || "Meals skipped successfully for selected dates.", "success");
+                }
+                setShowSkipModal(false);
+                setSkipStartDate('');
+                setSkipEndDate('');
+                setSkipReason('');
+                setSelectedSlots(['breakfast', 'lunch', 'dinner']);
+
+                // Refresh details
+                fetchCustomPlanDetails();
+            } else {
+                if (showNotification) {
+                    showNotification(response?.message || "Failed to skip meals.", "error");
+                }
+            }
+        } catch (error) {
+            console.error("Error skipping meals:", error);
+            const errMsg = error?.response?.data?.message || "Failed to skip meals. Please try again.";
+            if (showNotification) showNotification(errMsg, "error");
+        } finally {
+            setSkipLoading(false);
+        }
+    };
+
+    // Render Status Badge Dynamic Helper
+    const renderStatusBadge = (statusStr = "") => {
+        const lower = (statusStr || "").toLowerCase();
+        if (lower === "cancelled" || lower === "rejected") {
+            return (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                    {statusStr || "Cancelled"}
+                </span>
+            );
+        }
+        if (lower === "delivered" || lower === "completed") {
+            return (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    {statusStr}
+                </span>
+            );
+        }
+        return (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                {statusStr || "Active"}
+            </span>
+        );
     };
 
     // Render Dietary Badge
@@ -189,6 +301,9 @@ export default function CustomTiffinDetailPage() {
         collectionType,
         paymentMethod,
         paymentStatus,
+        cancelReason,
+        skipDetails,
+        skippedDaysCount,
         paymentDetails = {},
         customTiffinDetails = {},
         foodId: kitchen = {},
@@ -209,6 +324,8 @@ export default function CustomTiffinDetailPage() {
         universalDeliveryTimes = {},
         weeklyCustomSchedule = []
     } = customTiffinDetails;
+
+    const isPlanActive = (status || "").toLowerCase() === "active" || (status || "").toLowerCase() === "confirmed";
 
     // Find schedule for currently active day tab
     const currentDaySchedule = weeklyCustomSchedule.find(
@@ -246,6 +363,9 @@ export default function CustomTiffinDetailPage() {
         }
     ];
 
+    // Get today in YYYY-MM-DD format for datepicker min value
+    const todayStr = new Date().toISOString().split('T')[0];
+
     return (
         <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-10 max-w-[1200px] mx-auto space-y-7 antialiased select-none text-left">
 
@@ -258,25 +378,74 @@ export default function CustomTiffinDetailPage() {
                     <ArrowLeft size={16} /> Back to Custom Plans
                 </button>
 
-                {/* Badges Line */}
+                {/* Badges & Actions */}
                 <div className="flex flex-wrap items-center gap-2.5">
                     <span className="font-mono text-xs font-black text-slate-800 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
                         {bookingId}
                     </span>
 
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        {status || "Active"}
-                    </span>
+                    {renderStatusBadge(status)}
 
-                    {deliveryOTP && (
+                    {deliveryOTP && status?.toLowerCase() !== "cancelled" && (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-indigo-50 text-[#3d3f96] border border-indigo-100 shadow-xs">
                             <KeyRound size={13} />
                             <span>OTP: <strong className="font-mono tracking-wider">{deliveryOTP}</strong></span>
                         </span>
                     )}
+
+                    {/* Skip Meals Trigger Button */}
+                    {isPlanActive && (
+                        <button
+                            onClick={() => setShowSkipModal(true)}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider bg-slate-800 hover:bg-slate-900 text-white shadow-xs transition-colors cursor-pointer"
+                        >
+                            <PauseCircle size={14} />
+                            <span>Skip Meals</span>
+                        </button>
+                    )}
                 </div>
             </div>
+
+            {/* Cancellation Reason Notification Banner */}
+            {cancelReason && (
+                <div className="bg-rose-50/90 border border-rose-200 rounded-[2rem] p-5 flex flex-col sm:flex-row items-start sm:items-center gap-3.5 shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                        <XCircle size={22} />
+                    </div>
+                    <div className="space-y-0.5 min-w-0 flex-1">
+                        <span className="text-[10px] font-black uppercase text-rose-800 tracking-wider flex items-center gap-1.5">
+                            Cancellation Reason
+                        </span>
+                        <p className="text-xs font-bold text-rose-950 leading-relaxed">
+                            {cancelReason}
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Skipped Days Alert Banner (With strict No Refund / No Extension disclaimer) */}
+            {skipDetails && (
+                <div className="bg-amber-50/80 border border-amber-200 rounded-[2rem] p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                    <div className="flex items-start gap-3.5">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0">
+                            <CalendarDays size={20} />
+                        </div>
+                        <div className="space-y-1">
+                            <span className="text-[10px] font-black uppercase text-amber-900 tracking-wider flex items-center gap-1.5">
+                                Meals Skipped For Selected Dates
+                            </span>
+                            <p className="text-xs font-bold text-slate-800 leading-relaxed">
+                                Skipped from <strong className="text-amber-900">{formatDate(skipDetails.startDate)}</strong> to <strong className="text-amber-900">{formatDate(skipDetails.endDate)}</strong>
+                                {skippedDaysCount ? ` (${skippedDaysCount} Days)` : ''}.
+                                {skipDetails.reason && ` Reason: "${skipDetails.reason}"`}
+                            </p>
+                            <span className="text-[11px] font-bold text-amber-800 block">
+                                ⚠️ Note: Skipped meals are non-refundable and will not extend the subscription validity.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Split Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -521,30 +690,34 @@ export default function CustomTiffinDetailPage() {
                     </div>
 
                     {/* Clinical Notes & Health Indicators */}
-                    {(clinicalNotes || clinicalFlags.elevatedCarbRisk !== undefined) && (
+                    {(clinicalNotes || clinicalFlags?.elevatedCarbRisk !== undefined) && (
                         <div className="bg-amber-50/70 border border-amber-200 rounded-[2rem] p-5 sm:p-6 space-y-3">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2 text-amber-900 font-black text-xs uppercase tracking-wider">
                                     <FileText size={14} />
                                     <span>Personalized Clinical Instructions</span>
                                 </div>
-                                {clinicalFlags.elevatedCarbRisk && (
+                                {clinicalFlags?.elevatedCarbRisk && (
                                     <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase text-rose-700 bg-rose-100 px-2 py-0.5 rounded-md">
                                         <AlertTriangle size={10} /> Elevated Carb Alert
                                     </span>
                                 )}
                             </div>
 
-                            {clinicalNotes && (
+                            {clinicalNotes ? (
                                 <p className="text-xs text-amber-950 font-medium leading-relaxed bg-white/80 p-3.5 rounded-xl border border-amber-100">
                                     "{clinicalNotes}"
+                                </p>
+                            ) : (
+                                <p className="text-xs text-amber-800 font-medium italic">
+                                    No specific clinical restrictions provided for this order.
                                 </p>
                             )}
                         </div>
                     )}
 
                     {/* Prepared By Kitchen Card */}
-                    {kitchen.name && (
+                    {kitchen?.name && (
                         <div className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3.5 min-w-0">
                                 <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 overflow-hidden shrink-0">
@@ -653,6 +826,15 @@ export default function CustomTiffinDetailPage() {
                                 </div>
                             )}
 
+                            {paymentDetails.razorpayOrderId && (
+                                <div className="flex justify-between items-center text-[11px] text-slate-600">
+                                    <span>Order ID:</span>
+                                    <span className="font-mono font-bold text-slate-800">
+                                        {paymentDetails.razorpayOrderId}
+                                    </span>
+                                </div>
+                            )}
+
                             {paymentDetails.paidAt && (
                                 <div className="flex justify-between items-center text-[11px] text-slate-600">
                                     <span>Paid On:</span>
@@ -690,6 +872,24 @@ export default function CustomTiffinDetailPage() {
                                     <span>Peak Order Charge</span>
                                     <span className="font-mono font-bold text-slate-800">
                                         ₹{billSummary.peakOrderCharge}
+                                    </span>
+                                </div>
+                            )}
+
+                            {billSummary.rapidCharge > 0 && (
+                                <div className="flex justify-between items-center text-slate-600 font-medium">
+                                    <span>Rapid Delivery Charge</span>
+                                    <span className="font-mono font-bold text-slate-800">
+                                        ₹{billSummary.rapidCharge}
+                                    </span>
+                                </div>
+                            )}
+
+                            {billSummary.fastDeliveryCharge > 0 && (
+                                <div className="flex justify-between items-center text-slate-600 font-medium">
+                                    <span>Priority Delivery Fee</span>
+                                    <span className="font-mono font-bold text-slate-800">
+                                        ₹{billSummary.fastDeliveryCharge}
                                     </span>
                                 </div>
                             )}
@@ -744,6 +944,151 @@ export default function CustomTiffinDetailPage() {
                 </div>
 
             </div>
+
+            {/* --- SKIP MEALS MODAL --- */}
+            {showSkipModal && (
+                <div className="fixed inset-0 z-50 bg-slate-900/65 backdrop-blur-md flex items-center justify-center p-4 antialiased">
+                    <div className="bg-white rounded-3xl border border-slate-100 max-w-lg w-full p-6 sm:p-7 space-y-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
+                            <div className="flex items-center gap-2.5 text-slate-900">
+                                <PauseCircle size={20} className="text-[#3d3f96]" />
+                                <h3 className="text-base font-black uppercase tracking-tight text-slate-900">
+                                    Skip Upcoming Meals
+                                </h3>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => !skipLoading && setShowSkipModal(false)}
+                                className="p-1 rounded-full text-slate-400 hover:bg-slate-100 cursor-pointer transition"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* Modal Body / Form */}
+                        <form onSubmit={handleSkipMeals} className="space-y-4 text-xs font-semibold text-slate-700">
+                            <p className="text-slate-500 font-medium leading-relaxed">
+                                Select the date range and meal slots you wish to skip. Deliveries for these meals will not be scheduled.
+                            </p>
+
+                            {/* Policy Warning Box */}
+                            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 flex items-start gap-2.5 text-amber-900">
+                                <Info size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                                <div className="space-y-0.5">
+                                    <span className="text-[10px] font-black uppercase tracking-wide block text-amber-800">
+                                        Important Policy Notice
+                                    </span>
+                                    <p className="text-[11px] font-bold text-amber-900 leading-normal">
+                                        No refund, credit, or subscription validity extension will be provided for skipped meals.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Date Pickers */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                                        Start Date <span className="text-rose-500">*</span>
+                                    </label>
+                                    <input
+                                        type="date"
+                                        required
+                                        min={todayStr}
+                                        value={skipStartDate}
+                                        onChange={(e) => setSkipStartDate(e.target.value)}
+                                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-[#3d3f96] focus:bg-white transition"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                                        End Date <span className="text-rose-500">*</span>
+                                    </label>
+                                    <input
+                                        type="date"
+                                        required
+                                        min={skipStartDate || todayStr}
+                                        value={skipEndDate}
+                                        onChange={(e) => setSkipEndDate(e.target.value)}
+                                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-[#3d3f96] focus:bg-white transition"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Slot Selectors */}
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">
+                                    Meal Slots to Skip <span className="text-rose-500">*</span>
+                                </label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {AVAILABLE_SLOTS.map((slot) => {
+                                        const isSelected = selectedSlots.includes(slot.key);
+                                        const SlotIcon = slot.icon;
+                                        return (
+                                            <button
+                                                key={slot.key}
+                                                type="button"
+                                                onClick={() => toggleSlot(slot.key)}
+                                                className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 text-[11px] font-black uppercase transition-all cursor-pointer ${
+                                                    isSelected
+                                                        ? 'bg-indigo-50 border-[#3d3f96] text-[#3d3f96] shadow-xs'
+                                                        : 'bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100'
+                                                }`}
+                                            >
+                                                <SlotIcon size={14} />
+                                                <span>{slot.label}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Reason for skip */}
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                                    Reason (Optional)
+                                </label>
+                                <textarea
+                                    rows={2}
+                                    placeholder="e.g. Traveling out of town."
+                                    value={skipReason}
+                                    onChange={(e) => setSkipReason(e.target.value)}
+                                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-[#3d3f96] focus:bg-white transition resize-none"
+                                />
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                                <button
+                                    type="button"
+                                    disabled={skipLoading}
+                                    onClick={() => setShowSkipModal(false)}
+                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={skipLoading || !skipStartDate || !skipEndDate || selectedSlots.length === 0}
+                                    className="px-5 py-2 bg-[#3d3f96] hover:bg-[#2e3077] disabled:opacity-50 text-white rounded-xl text-xs font-black uppercase tracking-wider transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                                >
+                                    {skipLoading ? (
+                                        <>
+                                            <Loader2 size={13} className="animate-spin" />
+                                            <span>Processing...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Check size={14} />
+                                            <span>Confirm Skip Meals</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
         </div>
     );

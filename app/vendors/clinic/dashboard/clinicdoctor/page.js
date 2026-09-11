@@ -119,10 +119,10 @@ export default function ClinicDoctors() {
     showToast(`Dr. ${newDoc.name} onboarded successfully!`);
   };
 
-  const handleDoctorUpdated = (updatedDoc) => {
-    setDoctors(prev => prev.map(d => d._id === updatedDoc._id ? { ...d, ...updatedDoc } : d));
-    setSelectedDoctor(updatedDoc);
-    showToast("Profile details updated successfully!");
+  const handleDoctorUpdated = (updatedDoc, message) => {
+    setDoctors(prev => prev.map(d => d._id === (updatedDoc._id || selectedDoctor?._id) ? { ...d, ...updatedDoc } : d));
+    setSelectedDoctor(prev => ({ ...prev, ...updatedDoc }));
+    showToast(message || "Profile update request submitted to Admin!");
   };
 
   const handleRowClick = (doctor) => {

@@ -209,7 +209,7 @@ const UserLogin = () => {
                         type="text"
                         value={identifier}
                         onChange={(e) => setIdentifier(e.target.value)}
-                        placeholder="e.g. 9876543210 or name@mail.com"
+                        placeholder="e.g. 9876543210"
                         className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-[#3d3f96] focus:ring-4 focus:ring-blue-50 transition-all"
                     />
 
@@ -227,7 +227,7 @@ const UserLogin = () => {
             {status === 'NOT_REGISTERED' && !checkingStatus && (
                 <div className="p-3 bg-rose-50 border border-rose-100 rounded-2xl flex items-center justify-between text-rose-700 text-xs font-semibold animate-in fade-in duration-200">
                     <span>User is not registered. Please register first.</span>
-                    <Link href="/register" className="text-[#3d3f96] font-bold underline ml-2">
+                    <Link href="/authFiles/signup" className="text-[#3d3f96] font-bold underline ml-2">
                         Sign Up
                     </Link>
                 </div>

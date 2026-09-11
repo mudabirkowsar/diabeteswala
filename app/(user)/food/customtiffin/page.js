@@ -447,7 +447,7 @@ export default function CustomTiffinBuilderPage() {
                 subscribing={subscribing}
                 onConfirmOrder={handleConfirmOrder}
                 confirmedOrder={confirmedOrder}
-                onViewOrderDetails={() => router.push('/otherscreens/foodbookingconfirmation')}
+                onViewOrderDetails={() => router.push('/otherscreens/tiffinorders')}
                 dailySchedule={dailySchedule}
                 getDayOfWeekName={getDayOfWeekName}
                 loaderData={loaderData}
@@ -503,8 +503,8 @@ export default function CustomTiffinBuilderPage() {
                                             setCustomDaysInput(String(days));
                                         }}
                                         className={`flex-1 py-2 rounded-xl text-xs font-black transition-all cursor-pointer border ${packageDays === days
-                                                ? 'bg-[#3d3f96] text-white border-[#3d3f96] shadow-sm'
-                                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                            ? 'bg-[#3d3f96] text-white border-[#3d3f96] shadow-sm'
+                                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                                             }`}
                                     >
                                         {days}D
@@ -567,8 +567,8 @@ export default function CustomTiffinBuilderPage() {
                                         type="button"
                                         onClick={() => setDietaryType(d.key)}
                                         className={`py-2 rounded-xl text-xs font-black transition-all cursor-pointer border ${dietaryType === d.key
-                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 font-black'
-                                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-300 font-black'
+                                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                                             }`}
                                     >
                                         {d.label}
@@ -591,8 +591,8 @@ export default function CustomTiffinBuilderPage() {
                                         type="button"
                                         onClick={() => setSpiceLevel(s.key)}
                                         className={`py-2 rounded-xl text-xs font-black transition-all cursor-pointer border ${spiceLevel === s.key
-                                                ? 'bg-amber-50 text-amber-800 border-amber-300 font-black'
-                                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                            ? 'bg-amber-50 text-amber-800 border-amber-300 font-black'
+                                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                                             }`}
                                     >
                                         {s.label}

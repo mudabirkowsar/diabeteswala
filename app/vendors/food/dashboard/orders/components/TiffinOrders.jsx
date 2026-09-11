@@ -57,7 +57,7 @@ export default function TiffinOrders() {
 
     // --- Helper: Status Badge Render ---
     const renderStatusBadge = (status) => {
-        const uppercase = status?.toUpperCase();
+        const uppercase = (status || '').toUpperCase();
         if (uppercase === 'ACTIVE') {
             return (
                 <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 flex items-center gap-1 w-fit">
@@ -259,6 +259,7 @@ export default function TiffinOrders() {
                 subscriptionId={inspectSubId}
                 isOpen={!!inspectSubId}
                 onClose={() => setInspectSubId(null)}
+                onSubscriptionUpdated={fetchSubscriptions}
             />
 
         </div>
