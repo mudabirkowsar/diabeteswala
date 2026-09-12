@@ -13,8 +13,14 @@ import { useNotification } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
 
 const Navbar = () => {
-    // Use isLoggedIn and logout directly from context for instant UI updates
-    const { user, isLoggedIn, logout } = useAuth();
+  // Hardcoded coordinates for testing
+  const HARDCODED_COORDS = {
+    lat: 30.752370091355928,
+    lng: 76.64352537902484
+  };
+
+  // Use isLoggedIn and logout directly from context for instant UI updates
+  const { user, isLoggedIn, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isAccountSidebarOpen, setIsAccountSidebarOpen] = useState(false);
   const [isMobileShopOpen, setIsMobileShopOpen] = useState(false);
@@ -35,54 +41,42 @@ const Navbar = () => {
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
       );
       const data = await response.json();
-      const city = data.address.city || data.address.town || data.address.village || data.address.state || "Patiala";
+      const city = data.address.city || data.address.town || data.address.village || data.address.state || "Kharar";
       return city;
     } catch (error) {
       console.error("Geocoding error:", error);
-      return "Patiala";
+      return "Kharar";
     }
   };
 
-  // 2. Main Detection Logic
-  const handleDetectLocation = () => {
+  // 2. Main Detection Logic (Bypassed with Hardcoded Coordinates)
+  const handleDetectLocation = async () => {
     setIsDetecting(true);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          const coords = { lat: latitude, lng: longitude };
+    try {
+      // Using the hardcoded coordinates directly
+      const { lat, lng } = HARDCODED_COORDS;
+      const coords = { lat, lng };
 
-          const cityName = await fetchCityName(latitude, longitude);
+      const cityName = await fetchCityName(lat, lng);
 
-          setUserLocationName(cityName);
-          localStorage.setItem('userCoords', JSON.stringify(coords));
-          localStorage.setItem('userLocationName', cityName);
+      setUserLocationName(cityName);
+      localStorage.setItem('userCoords', JSON.stringify(coords));
+      localStorage.setItem('userLocationName', cityName);
 
-          setIsDetecting(false);
-          setIsLocationModalOpen(false);
-          showNotification(`Location set to ${cityName}`, "success");
-        },
-        (error) => {
-          setIsDetecting(false);
-          setUserLocationName("Patiala");
-          showNotification("Location access denied. Defaulting to Patiala.", "warning");
-        }
-      );
-    } else {
       setIsDetecting(false);
-      setUserLocationName("Patiala");
-      showNotification("Geolocation not supported", "error");
+      setIsLocationModalOpen(false);
+      showNotification(`Location set to ${cityName} (Test Mode)`, "success");
+    } catch (error) {
+      setIsDetecting(false);
+      setUserLocationName("Kharar");
+      showNotification("Failed to set test location", "error");
     }
   };
 
   // 3. Auto-run on first visit
   useEffect(() => {
-    const savedLoc = localStorage.getItem('userLocationName');
-    if (savedLoc) {
-      setUserLocationName(savedLoc);
-    } else {
-      handleDetectLocation();
-    }
+    // Automatically triggers detection with the hardcoded coordinates
+    handleDetectLocation();
   }, []);
 
   const handleManualLocationSubmit = (e) => {
