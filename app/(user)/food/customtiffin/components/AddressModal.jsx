@@ -8,10 +8,9 @@ import { useNotification } from '../../../../context/NotificationContext';
 const MAX_DELIVERY_DISTANCE_KM = 10;
 const DEFAULT_USER_COORDS = { lat: 30.7046, lng: 76.7179 }; // Default: Mohali coordinates
 
-// --- Haversine Distance Formula (KM) ---
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
     if (!lat1 || !lon1 || !lat2 || !lon2) return null;
-    const R = 6371; // Radius of the Earth in km
+    const R = 6371;
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
     const dLon = ((lon2 - lon1) * Math.PI) / 180;
     const a =
@@ -24,7 +23,6 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
     return R * c;
 };
 
-// --- Geocode address via OpenStreetMap Nominatim ---
 const geocodeAddress = async (addr) => {
     try {
         const queryParts = [addr.pincode, addr.city, addr.state, addr.country || "India"]
@@ -54,7 +52,6 @@ export default function AddressModal({ isOpen, onClose, onSelectAddress, selecte
     const [tempSelectedId, setTempSelectedId] = useState(selectedAddressId || null);
     const [userCoords, setUserCoords] = useState(DEFAULT_USER_COORDS);
 
-    // --- Read User Coordinates from LocalStorage ---
     useEffect(() => {
         if (typeof window !== "undefined") {
             const savedCoords = localStorage.getItem("userCoords");
@@ -89,13 +86,11 @@ export default function AddressModal({ isOpen, onClose, onSelectAddress, selecte
             if (response?.success && Array.isArray(response.data)) {
                 const rawAddresses = response.data || [];
 
-                // Resolve distance & 10 km limit for each address
                 const processed = await Promise.all(
                     rawAddresses.map(async (addr) => {
                         let lat = addr.lat ? Number(addr.lat) : null;
                         let lng = addr.lng ? Number(addr.lng) : null;
 
-                        // Geocode address when lat/lng are missing in database
                         if (!lat || !lng) {
                             const coords = await geocodeAddress(addr);
                             if (coords) {
@@ -124,7 +119,6 @@ export default function AddressModal({ isOpen, onClose, onSelectAddress, selecte
 
                 setAddresses(processed);
 
-                // Auto-select first eligible address within 10 km if none selected
                 if (!tempSelectedId) {
                     const validAddr = processed.find((a) => !a.isOutOfRange && a.isDefault) || processed.find((a) => !a.isOutOfRange);
                     if (validAddr) {
@@ -218,10 +212,10 @@ export default function AddressModal({ isOpen, onClose, onSelectAddress, selecte
                                     key={addr._id}
                                     onClick={() => handleSelectAddress(addr)}
                                     className={`p-4 rounded-2xl border transition-all flex items-start gap-3.5 ${isOutOfRange
-                                            ? 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed'
-                                            : isSelected
-                                                ? 'bg-indigo-50/40 border-[#3d3f96] ring-1 ring-[#3d3f96] cursor-pointer'
-                                                : 'bg-white border-slate-200 hover:border-slate-300 cursor-pointer'
+                                        ? 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed'
+                                        : isSelected
+                                            ? 'bg-indigo-50/40 border-[#3d3f96] ring-1 ring-[#3d3f96] cursor-pointer'
+                                            : 'bg-white border-slate-200 hover:border-slate-300 cursor-pointer'
                                         }`}
                                 >
                                     <div className="pt-0.5 shrink-0">
@@ -243,12 +237,11 @@ export default function AddressModal({ isOpen, onClose, onSelectAddress, selecte
                                             </div>
 
                                             <div className="flex items-center gap-1.5">
-                                                {/* Distance / Range Badge */}
                                                 {addr.distance !== null && (
                                                     <span
                                                         className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md border flex items-center gap-1 ${isOutOfRange
-                                                                ? 'bg-rose-50 text-rose-600 border-rose-200'
-                                                                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                            ? 'bg-rose-50 text-rose-600 border-rose-200'
+                                                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                                             }`}
                                                     >
                                                         {isOutOfRange && <AlertCircle size={9} />}

@@ -6,8 +6,6 @@ import {
     ReceiptText,
     MapPin,
     Calendar,
-    Percent,
-    TicketCheck,
     Loader2,
     Lock,
     MessageSquareText,
@@ -23,6 +21,7 @@ export default function CustomTiffinReviewModal({
     onClose,
     packageDays,
     startDate,
+    selectedMeals = {},
     dietaryType,
     spiceLevel,
     clinicalNotes,
@@ -52,6 +51,9 @@ export default function CustomTiffinReviewModal({
     const universalDeliveryTimes = calculatedData?.universalDeliveryTimes || {};
     const isCodAvailable = calculatedData?.orderRestrictions?.isCodAvailable ?? false;
 
+    // Filter only active meal slots
+    const activeSlotsList = ['breakfast', 'lunch', 'dinner'].filter((slot) => !!selectedMeals[slot]);
+
     const handleApply = () => {
         if (!couponInput.trim()) return;
         onApplyCoupon(couponInput.trim().toUpperCase());
@@ -80,7 +82,7 @@ export default function CustomTiffinReviewModal({
                                 Review Custom Tiffin Plan
                             </h3>
                             <p className="text-[11px] text-slate-400 font-medium">
-                                Final breakdown &amp; checkout for {packageDays}-Day Package
+                                Final breakdown &amp; checkout for {packageDays}-Day Package ({activeSlotsList.join(', ').toUpperCase()})
                             </p>
                         </div>
                     </div>
@@ -122,32 +124,34 @@ export default function CustomTiffinReviewModal({
                         )}
                     </div>
 
-                    {/* Universal Delivery Times */}
-                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3.5 space-y-1.5">
-                        <span className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
-                            <Clock size={12} className="text-[#3d3f96]" /> Daily Delivery Timings
-                        </span>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                            {universalDeliveryTimes.breakfastTime && (
-                                <div className="bg-white p-2 rounded-xl border border-slate-100">
-                                    <span className="text-[9px] text-slate-400 uppercase font-black block">Breakfast</span>
-                                    <span className="font-mono font-bold text-slate-800">{universalDeliveryTimes.breakfastTime}</span>
-                                </div>
-                            )}
-                            {universalDeliveryTimes.lunchTime && (
-                                <div className="bg-white p-2 rounded-xl border border-slate-100">
-                                    <span className="text-[9px] text-slate-400 uppercase font-black block">Lunch</span>
-                                    <span className="font-mono font-bold text-slate-800">{universalDeliveryTimes.lunchTime}</span>
-                                </div>
-                            )}
-                            {universalDeliveryTimes.dinnerTime && (
-                                <div className="bg-white p-2 rounded-xl border border-slate-100">
-                                    <span className="text-[9px] text-slate-400 uppercase font-black block">Dinner</span>
-                                    <span className="font-mono font-bold text-slate-800">{universalDeliveryTimes.dinnerTime}</span>
-                                </div>
-                            )}
+                    {/* Universal Delivery Times (Shows ONLY active selected meals) */}
+                    {activeSlotsList.length > 0 && (
+                        <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3.5 space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
+                                <Clock size={12} className="text-[#3d3f96]" /> Daily Delivery Timings
+                            </span>
+                            <div className={`grid grid-cols-1 ${activeSlotsList.length === 1 ? 'sm:grid-cols-1' : activeSlotsList.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-2 text-xs`}>
+                                {selectedMeals.breakfast && universalDeliveryTimes.breakfastTime && (
+                                    <div className="bg-white p-2 rounded-xl border border-slate-100">
+                                        <span className="text-[9px] text-slate-400 uppercase font-black block">Breakfast</span>
+                                        <span className="font-mono font-bold text-slate-800">{universalDeliveryTimes.breakfastTime}</span>
+                                    </div>
+                                )}
+                                {selectedMeals.lunch && universalDeliveryTimes.lunchTime && (
+                                    <div className="bg-white p-2 rounded-xl border border-slate-100">
+                                        <span className="text-[9px] text-slate-400 uppercase font-black block">Lunch</span>
+                                        <span className="font-mono font-bold text-slate-800">{universalDeliveryTimes.lunchTime}</span>
+                                    </div>
+                                )}
+                                {selectedMeals.dinner && universalDeliveryTimes.dinnerTime && (
+                                    <div className="bg-white p-2 rounded-xl border border-slate-100">
+                                        <span className="text-[9px] text-slate-400 uppercase font-black block">Dinner</span>
+                                        <span className="font-mono font-bold text-slate-800">{universalDeliveryTimes.dinnerTime}</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Day-by-Day Customized Dishes Breakdown */}
                     <div className="space-y-2.5">
@@ -175,9 +179,9 @@ export default function CustomTiffinReviewModal({
                             ))}
                         </div>
 
-                        {/* Dishes for selected day in review */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 bg-slate-50 border border-slate-100 p-3 rounded-2xl">
-                            {['breakfast', 'lunch', 'dinner'].map((slotKey) => {
+                        {/* Dishes for selected day in review (Filtered dynamically by activeSlotsList) */}
+                        <div className={`grid grid-cols-1 ${activeSlotsList.length === 1 ? 'sm:grid-cols-1' : activeSlotsList.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-2.5 bg-slate-50 border border-slate-100 p-3 rounded-2xl`}>
+                            {activeSlotsList.map((slotKey) => {
                                 const dishId = activeDaySchedule[slotKey];
                                 const dish = getDishObj(slotKey, dishId);
                                 if (!dish) return null;
@@ -273,45 +277,6 @@ export default function CustomTiffinReviewModal({
                         </div>
                     </div>
 
-                    {/* Promo Coupon */}
-                    {/* <div className="space-y-2 pt-2 border-t border-slate-100">
-                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-1.5">
-                            <Percent size={13} className="text-[#3d3f96]" /> Apply Coupon
-                        </label>
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="text"
-                                value={couponInput}
-                                onChange={(e) => setCouponInput(e.target.value)}
-                                placeholder="Enter promo code"
-                                disabled={!!appliedCoupon}
-                                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold uppercase text-slate-800 outline-none focus:bg-white focus:border-[#3d3f96]"
-                            />
-                            {appliedCoupon ? (
-                                <button
-                                    type="button"
-                                    onClick={() => { onRemoveCoupon(); setCouponInput(''); }}
-                                    className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
-                                >
-                                    Remove
-                                </button>
-                            ) : (
-                                <button
-                                    type="button"
-                                    onClick={handleApply}
-                                    className="bg-[#3d3f96] hover:bg-[#2F3175] text-white px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
-                                >
-                                    Apply
-                                </button>
-                            )}
-                        </div>
-                        {appliedCoupon && (
-                            <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-xs font-bold">
-                                <TicketCheck size={14} /> Coupon <strong>{appliedCoupon}</strong> active!
-                            </div>
-                        )}
-                    </div> */}
-
                     {/* Bill Breakdown Summary */}
                     <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4.5 space-y-2">
                         <div className="flex justify-between items-center border-b border-slate-200 pb-2">
@@ -325,7 +290,7 @@ export default function CustomTiffinReviewModal({
 
                         <div className="space-y-1.5 text-xs">
                             <div className="flex justify-between items-center text-slate-600 font-medium">
-                                <span>Meal Subtotal ({packageDays} Days)</span>
+                                <span>Meal Subtotal ({packageDays} Days • {activeSlotsList.length} Slot{activeSlotsList.length > 1 ? 's' : ''}/Day)</span>
                                 <span className="font-mono font-bold text-slate-800">₹{pricing.itemTotal || pricing.subtotal || 0}</span>
                             </div>
 

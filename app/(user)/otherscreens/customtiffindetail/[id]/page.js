@@ -85,7 +85,7 @@ export default function CustomTiffinDetailPage() {
     const [skipLoading, setSkipLoading] = useState(false);
     const [skipStartDate, setSkipStartDate] = useState('');
     const [skipEndDate, setSkipEndDate] = useState('');
-    const [selectedSlots, setSelectedSlots] = useState(['breakfast', 'lunch', 'dinner']);
+    const [selectedSlots, setSelectedSlots] = useState([]);
     const [skipReason, setSkipReason] = useState('');
 
     // Fetch Custom Tiffin Details
@@ -95,6 +95,11 @@ export default function CustomTiffinDetailPage() {
             const response = await UserAPI.getSingleCustomTiffinDetails(id);
             if (response && response.success && response.data) {
                 setPlanDetails(response.data);
+
+                // Initialize skip modal selected slots with the user's active slots
+                const activeSlots = response.data.customTiffinDetails?.selectedMeals || {};
+                const initialSkipSlots = Object.keys(activeSlots).filter((k) => !!activeSlots[k]);
+                setSelectedSlots(initialSkipSlots.length > 0 ? initialSkipSlots : ['breakfast', 'lunch', 'dinner']);
             } else {
                 if (showNotification) showNotification("Custom tiffin details not found.", "error");
             }
@@ -190,7 +195,6 @@ export default function CustomTiffinDetailPage() {
                 setSkipStartDate('');
                 setSkipEndDate('');
                 setSkipReason('');
-                setSelectedSlots(['breakfast', 'lunch', 'dinner']);
 
                 // Refresh details
                 fetchCustomPlanDetails();
@@ -244,20 +248,18 @@ export default function CustomTiffinDetailPage() {
 
         return (
             <span
-                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${
-                    isVeg
-                        ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                        : isNonVeg
+                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${isVeg
+                    ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                    : isNonVeg
                         ? 'text-rose-700 bg-rose-50 border-rose-200'
                         : isEgg
-                        ? 'text-amber-700 bg-amber-50 border-amber-200'
-                        : 'text-slate-600 bg-slate-100 border-slate-200'
-                }`}
+                            ? 'text-amber-700 bg-amber-50 border-amber-200'
+                            : 'text-slate-600 bg-slate-100 border-slate-200'
+                    }`}
             >
                 <span
-                    className={`w-1.5 h-1.5 rounded-full ${
-                        isVeg ? 'bg-emerald-500' : isNonVeg ? 'bg-rose-500' : isEgg ? 'bg-amber-500' : 'bg-slate-400'
-                    }`}
+                    className={`w-1.5 h-1.5 rounded-full ${isVeg ? 'bg-emerald-500' : isNonVeg ? 'bg-rose-500' : isEgg ? 'bg-amber-500' : 'bg-slate-400'
+                        }`}
                 />
                 {type}
             </span>
@@ -327,13 +329,19 @@ export default function CustomTiffinDetailPage() {
 
     const isPlanActive = (status || "").toLowerCase() === "active" || (status || "").toLowerCase() === "confirmed";
 
+    // Active Ordered Slots list
+    const activeOrderedSlotKeys = ['breakfast', 'lunch', 'dinner'].filter((slotKey) => !!selectedMeals[slotKey]);
+
+    // Available slots filtered for Skip Modal
+    const availableSlotsForSkip = AVAILABLE_SLOTS.filter((s) => !!selectedMeals[s.key]);
+
     // Find schedule for currently active day tab
     const currentDaySchedule = weeklyCustomSchedule.find(
         (s) => (s.dayOfWeek || "").toLowerCase() === selectedDay.toLowerCase()
     );
 
     // Slot Config Definition for current day
-    const slotsConfig = [
+    const allSlotsConfig = [
         {
             key: "breakfast",
             label: "Breakfast Slot",
@@ -341,7 +349,7 @@ export default function CustomTiffinDetailPage() {
             badgeClass: "bg-indigo-50 text-[#3d3f96] border-indigo-100",
             slotTime: universalDeliveryTimes.breakfastTime || "07:30 AM - 08:30 AM",
             data: currentDaySchedule?.breakfast,
-            isSelectedInPlan: selectedMeals.breakfast
+            isSelectedInPlan: !!selectedMeals.breakfast
         },
         {
             key: "lunch",
@@ -350,7 +358,7 @@ export default function CustomTiffinDetailPage() {
             badgeClass: "bg-amber-50 text-amber-700 border-amber-100",
             slotTime: universalDeliveryTimes.lunchTime || "12:00 PM - 01:00 PM",
             data: currentDaySchedule?.lunch,
-            isSelectedInPlan: selectedMeals.lunch
+            isSelectedInPlan: !!selectedMeals.lunch
         },
         {
             key: "dinner",
@@ -359,9 +367,16 @@ export default function CustomTiffinDetailPage() {
             badgeClass: "bg-purple-50 text-purple-700 border-purple-100",
             slotTime: universalDeliveryTimes.dinnerTime || "07:00 PM - 08:00 PM",
             data: currentDaySchedule?.dinner,
-            isSelectedInPlan: selectedMeals.dinner
+            isSelectedInPlan: !!selectedMeals.dinner
         }
     ];
+
+    // Filter to ONLY show slots that the customer actually selected
+    const activeDaySlots = allSlotsConfig.filter((slot) => {
+        if (!slot.isSelectedInPlan) return false;
+        const item = slot.data;
+        return Boolean(item && (item.mealName || item.mealId || (item.price && item.price > 0)));
+    });
 
     // Get today in YYYY-MM-DD format for datepicker min value
     const todayStr = new Date().toISOString().split('T')[0];
@@ -396,7 +411,11 @@ export default function CustomTiffinDetailPage() {
                     {/* Skip Meals Trigger Button */}
                     {isPlanActive && (
                         <button
-                            onClick={() => setShowSkipModal(true)}
+                            onClick={() => {
+                                const currentActive = Object.keys(selectedMeals).filter((k) => !!selectedMeals[k]);
+                                setSelectedSlots(currentActive.length > 0 ? currentActive : ['breakfast', 'lunch', 'dinner']);
+                                setShowSkipModal(true);
+                            }}
                             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider bg-slate-800 hover:bg-slate-900 text-white shadow-xs transition-colors cursor-pointer"
                         >
                             <PauseCircle size={14} />
@@ -423,7 +442,7 @@ export default function CustomTiffinDetailPage() {
                 </div>
             )}
 
-            {/* Skipped Days Alert Banner (With strict No Refund / No Extension disclaimer) */}
+            {/* Skipped Days Alert Banner */}
             {skipDetails && (
                 <div className="bg-amber-50/80 border border-amber-200 rounded-[2rem] p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
                     <div className="flex items-start gap-3.5">
@@ -507,42 +526,60 @@ export default function CustomTiffinDetailPage() {
                                     <Truck size={10} /> {collectionType}
                                 </span>
                             )}
+                            {/* Active Ordered Meal Pills */}
+                            {activeOrderedSlotKeys.map((slotKey) => (
+                                <span
+                                    key={slotKey}
+                                    className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-indigo-50 text-[#3d3f96] border border-indigo-100"
+                                >
+                                    {slotKey}
+                                </span>
+                            ))}
                         </div>
                     </div>
 
-                    {/* Universal Daily Delivery Windows */}
-                    <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm space-y-3.5">
-                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">
-                            Universal Daily Delivery Windows
-                        </span>
+                    {/* Universal Daily Delivery Windows (Only Ordered Slots) */}
+                    {activeOrderedSlotKeys.length > 0 && (
+                        <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm space-y-3.5">
+                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">
+                                Universal Daily Delivery Windows
+                            </span>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3.5 space-y-1">
-                                <span className="text-[10px] font-extrabold text-slate-500 uppercase flex items-center gap-1">
-                                    <Clock size={12} className="text-[#3d3f96]" /> Breakfast
-                                </span>
-                                <span className="font-mono font-black text-xs text-slate-800 block">
-                                    {universalDeliveryTimes.breakfastTime || "07:30 AM - 08:30 AM"}
-                                </span>
-                            </div>
-                            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3.5 space-y-1">
-                                <span className="text-[10px] font-extrabold text-slate-500 uppercase flex items-center gap-1">
-                                    <Clock size={12} className="text-amber-500" /> Lunch
-                                </span>
-                                <span className="font-mono font-black text-xs text-slate-800 block">
-                                    {universalDeliveryTimes.lunchTime || "12:00 PM - 01:00 PM"}
-                                </span>
-                            </div>
-                            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3.5 space-y-1">
-                                <span className="text-[10px] font-extrabold text-slate-500 uppercase flex items-center gap-1">
-                                    <Clock size={12} className="text-indigo-500" /> Dinner
-                                </span>
-                                <span className="font-mono font-black text-xs text-slate-800 block">
-                                    {universalDeliveryTimes.dinnerTime || "07:00 PM - 08:00 PM"}
-                                </span>
+                            <div className={`grid grid-cols-1 ${activeOrderedSlotKeys.length === 2 ? 'sm:grid-cols-2' : activeOrderedSlotKeys.length >= 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-1'
+                                } gap-3`}>
+                                {selectedMeals.breakfast && universalDeliveryTimes.breakfastTime && (
+                                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3.5 space-y-1">
+                                        <span className="text-[10px] font-extrabold text-slate-500 uppercase flex items-center gap-1">
+                                            <Clock size={12} className="text-[#3d3f96]" /> Breakfast
+                                        </span>
+                                        <span className="font-mono font-black text-xs text-slate-800 block">
+                                            {universalDeliveryTimes.breakfastTime}
+                                        </span>
+                                    </div>
+                                )}
+                                {selectedMeals.lunch && universalDeliveryTimes.lunchTime && (
+                                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3.5 space-y-1">
+                                        <span className="text-[10px] font-extrabold text-slate-500 uppercase flex items-center gap-1">
+                                            <Clock size={12} className="text-amber-500" /> Lunch
+                                        </span>
+                                        <span className="font-mono font-black text-xs text-slate-800 block">
+                                            {universalDeliveryTimes.lunchTime}
+                                        </span>
+                                    </div>
+                                )}
+                                {selectedMeals.dinner && universalDeliveryTimes.dinnerTime && (
+                                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3.5 space-y-1">
+                                        <span className="text-[10px] font-extrabold text-slate-500 uppercase flex items-center gap-1">
+                                            <Clock size={12} className="text-indigo-500" /> Dinner
+                                        </span>
+                                        <span className="font-mono font-black text-xs text-slate-800 block">
+                                            {universalDeliveryTimes.dinnerTime}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Interactive Weekly Meal Schedule */}
                     <div className="bg-white rounded-[2rem] p-6 sm:p-7 border border-slate-100 shadow-sm space-y-5">
@@ -563,11 +600,10 @@ export default function CustomTiffinDetailPage() {
                                     <button
                                         key={d.key}
                                         onClick={() => setSelectedDay(d.key)}
-                                        className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer border ${
-                                            isSelected
-                                                ? 'bg-red-50 text-red-600 border-red-200 font-black shadow-sm'
-                                                : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
-                                        }`}
+                                        className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer border ${isSelected
+                                            ? 'bg-red-50 text-red-600 border-red-200 font-black shadow-sm'
+                                            : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
+                                            }`}
                                     >
                                         {d.label}
                                     </button>
@@ -575,117 +611,104 @@ export default function CustomTiffinDetailPage() {
                             })}
                         </div>
 
-                        {/* Slots Breakdown for the Selected Day */}
+                        {/* Slots Breakdown for the Selected Day (Only Shows Ordered Active Slots) */}
                         <div className="space-y-3.5 pt-2">
-                            {slotsConfig.map((slot) => {
-                                const slotItem = slot.data;
-                                const mealObj = slotItem?.mealId || {};
-                                const dishName = slotItem?.mealName || mealObj.name;
-                                const dishImage = mealObj.imageUrl;
-                                const calories = slotItem?.calories || mealObj.calories;
-                                const dietType = mealObj.dietType || dietaryType;
-                                const ingredients = mealObj.ingredients || [];
-                                const tags = mealObj.tags || [];
-                                const effect = mealObj.foodEffectCategory;
+                            {activeDaySlots.length === 0 ? (
+                                <div className="p-6 text-center text-xs text-slate-400 bg-slate-50 rounded-2xl border border-slate-100 font-medium">
+                                    No custom dishes configured for {DAYS_OF_WEEK.find((d) => d.key === selectedDay)?.label}.
+                                </div>
+                            ) : (
+                                activeDaySlots.map((slot) => {
+                                    const slotItem = slot.data;
+                                    const mealObj = slotItem?.mealId || {};
+                                    const dishName = slotItem?.mealName || mealObj.name;
+                                    const dishImage = mealObj.imageUrl || slotItem?.imageUrl;
+                                    const calories = slotItem?.calories || mealObj.calories;
+                                    const dietType = mealObj.dietType || slotItem?.dietType || dietaryType;
+                                    const ingredients = mealObj.ingredients || [];
+                                    const tags = mealObj.tags || [];
+                                    const effect = mealObj.foodEffectCategory;
 
-                                if (!slotItem && !slot.isSelectedInPlan) {
                                     return (
                                         <div
                                             key={slot.key}
-                                            className="p-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/40 flex items-center justify-between opacity-60"
+                                            className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-indigo-100 hover:shadow-xs transition-all space-y-3"
                                         >
-                                            <div className="flex items-center gap-2">
-                                                {slot.icon}
-                                                <span className="text-xs font-bold text-slate-600 capitalize">
-                                                    {slot.label}
-                                                </span>
+                                            {/* Slot Top Bar */}
+                                            <div className="flex items-center justify-between border-b border-slate-100/80 pb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span
+                                                        className={`inline-flex items-center gap-1 text-[10px] font-black uppercase border px-2 py-0.5 rounded-md ${slot.badgeClass}`}
+                                                    >
+                                                        {slot.icon}
+                                                        {slot.label}
+                                                    </span>
+                                                    <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1 font-mono">
+                                                        <Clock size={11} /> {slotItem?.deliverySlot || slot.slotTime}
+                                                    </span>
+                                                </div>
+                                                {dietType && renderDietBadge(dietType)}
                                             </div>
-                                            <span className="text-[10px] font-black uppercase text-slate-400">
-                                                Not Configured
-                                            </span>
+
+                                            {/* Dish Details */}
+                                            <div className="flex items-center gap-3.5">
+                                                <div className="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0">
+                                                    <img
+                                                        src={getMediaUrl(dishImage) || PLACEHOLDER_DISH}
+                                                        alt={dishName || "Custom Meal"}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => {
+                                                            e.target.src = PLACEHOLDER_DISH;
+                                                        }}
+                                                    />
+                                                </div>
+
+                                                <div className="flex-1 min-w-0 space-y-0.5">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <strong className="text-xs font-black text-slate-800 truncate block">
+                                                            {dishName || "Custom Curated Dish"}
+                                                        </strong>
+                                                        {slotItem?.price && (
+                                                            <span className="font-mono font-black text-xs text-slate-900 shrink-0">
+                                                                ₹{slotItem.price}
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="flex items-center gap-3 pt-0.5">
+                                                        {calories && (
+                                                            <span className="text-[10px] font-bold text-slate-500 font-mono flex items-center gap-1">
+                                                                <Flame size={11} className="text-amber-500" /> {calories} Kcal
+                                                            </span>
+                                                        )}
+                                                        {effect && (
+                                                            <span className="text-[9px] font-black text-red-600 uppercase">
+                                                                {effect}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Tags & Ingredients Preview */}
+                                            {(tags.length > 0 || ingredients.length > 0) && (
+                                                <div className="flex flex-wrap gap-1 pt-1 border-t border-slate-100">
+                                                    {tags.map((t) => (
+                                                        <span key={t} className="text-[9px] font-bold px-2 py-0.5 bg-white border border-slate-200 text-slate-600 rounded-md">
+                                                            #{t}
+                                                        </span>
+                                                    ))}
+                                                    {ingredients.slice(0, 5).map((ing) => (
+                                                        <span key={ing} className="text-[9px] font-medium px-2 py-0.5 bg-white border border-slate-100 text-slate-500 rounded-md">
+                                                            {ing}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     );
-                                }
-
-                                return (
-                                    <div
-                                        key={slot.key}
-                                        className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-indigo-100 hover:shadow-xs transition-all space-y-3"
-                                    >
-                                        {/* Slot Top Bar */}
-                                        <div className="flex items-center justify-between border-b border-slate-100/80 pb-2">
-                                            <div className="flex items-center gap-2">
-                                                <span
-                                                    className={`inline-flex items-center gap-1 text-[10px] font-black uppercase border px-2 py-0.5 rounded-md ${slot.badgeClass}`}
-                                                >
-                                                    {slot.icon}
-                                                    {slot.label}
-                                                </span>
-                                                <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1 font-mono">
-                                                    <Clock size={11} /> {slotItem?.deliverySlot || slot.slotTime}
-                                                </span>
-                                            </div>
-                                            {dietType && renderDietBadge(dietType)}
-                                        </div>
-
-                                        {/* Dish Details */}
-                                        <div className="flex items-center gap-3.5">
-                                            <div className="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0">
-                                                <img
-                                                    src={getMediaUrl(dishImage) || PLACEHOLDER_DISH}
-                                                    alt={dishName || "Custom Meal"}
-                                                    className="w-full h-full object-cover"
-                                                    onError={(e) => {
-                                                        e.target.src = PLACEHOLDER_DISH;
-                                                    }}
-                                                />
-                                            </div>
-
-                                            <div className="flex-1 min-w-0 space-y-0.5">
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <strong className="text-xs font-black text-slate-800 truncate block">
-                                                        {dishName || "Custom Curated Dish"}
-                                                    </strong>
-                                                    {slotItem?.price && (
-                                                        <span className="font-mono font-black text-xs text-slate-900 shrink-0">
-                                                            ₹{slotItem.price}
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                <div className="flex items-center gap-3 pt-0.5">
-                                                    {calories && (
-                                                        <span className="text-[10px] font-bold text-slate-500 font-mono flex items-center gap-1">
-                                                            <Flame size={11} className="text-amber-500" /> {calories} Kcal
-                                                        </span>
-                                                    )}
-                                                    {effect && (
-                                                        <span className="text-[9px] font-black text-red-600 uppercase">
-                                                            {effect}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Tags & Ingredients Preview */}
-                                        {(tags.length > 0 || ingredients.length > 0) && (
-                                            <div className="flex flex-wrap gap-1 pt-1 border-t border-slate-100">
-                                                {tags.map((t) => (
-                                                    <span key={t} className="text-[9px] font-bold px-2 py-0.5 bg-white border border-slate-200 text-slate-600 rounded-md">
-                                                        #{t}
-                                                    </span>
-                                                ))}
-                                                {ingredients.slice(0, 5).map((ing) => (
-                                                    <span key={ing} className="text-[9px] font-medium px-2 py-0.5 bg-white border border-slate-100 text-slate-500 rounded-md">
-                                                        {ing}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
+                                })
+                            )}
                         </div>
                     </div>
 
@@ -854,7 +877,7 @@ export default function CustomTiffinDetailPage() {
 
                         <div className="space-y-2 text-xs">
                             <div className="flex justify-between items-center text-slate-600 font-medium">
-                                <span>Meal Subtotal</span>
+                                <span>Meal Subtotal ({activeOrderedSlotKeys.length} Slot{activeOrderedSlotKeys.length > 1 ? 's' : ''}/Day)</span>
                                 <span className="font-mono font-bold text-slate-800">₹{billSummary.itemTotal || 0}</span>
                             </div>
 
@@ -1015,13 +1038,14 @@ export default function CustomTiffinDetailPage() {
                                 </div>
                             </div>
 
-                            {/* Slot Selectors */}
+                            {/* Slot Selectors (Filtered strictly for active ordered slots) */}
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">
                                     Meal Slots to Skip <span className="text-rose-500">*</span>
                                 </label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {AVAILABLE_SLOTS.map((slot) => {
+                                <div className={`grid grid-cols-1 ${availableSlotsForSkip.length === 2 ? 'sm:grid-cols-2' : availableSlotsForSkip.length >= 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-1'
+                                    } gap-2`}>
+                                    {availableSlotsForSkip.map((slot) => {
                                         const isSelected = selectedSlots.includes(slot.key);
                                         const SlotIcon = slot.icon;
                                         return (
@@ -1029,11 +1053,10 @@ export default function CustomTiffinDetailPage() {
                                                 key={slot.key}
                                                 type="button"
                                                 onClick={() => toggleSlot(slot.key)}
-                                                className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 text-[11px] font-black uppercase transition-all cursor-pointer ${
-                                                    isSelected
-                                                        ? 'bg-indigo-50 border-[#3d3f96] text-[#3d3f96] shadow-xs'
-                                                        : 'bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100'
-                                                }`}
+                                                className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 text-[11px] font-black uppercase transition-all cursor-pointer ${isSelected
+                                                    ? 'bg-indigo-50 border-[#3d3f96] text-[#3d3f96] shadow-xs'
+                                                    : 'bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100'
+                                                    }`}
                                             >
                                                 <SlotIcon size={14} />
                                                 <span>{slot.label}</span>

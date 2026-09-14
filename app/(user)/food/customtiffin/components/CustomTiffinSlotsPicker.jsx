@@ -40,7 +40,7 @@ export default function CustomTiffinSlotsPicker({
     getDayOfWeekName,
     universalDeliveryTimes,
     onDeliveryTimeChange,
-    dietaryType // Filter based on Step 3
+    dietaryType
 }) {
     const slots = ['breakfast', 'lunch', 'dinner'];
     const activeSlotsList = slots.filter((s) => selectedMeals[s]);
@@ -84,7 +84,6 @@ export default function CustomTiffinSlotsPicker({
         });
     };
 
-    // Days array: [1, 2, 3, ... packageDays]
     const daysArray = Array.from({ length: packageDays }, (_, i) => i + 1);
     const currentDayOfWeek = getDayOfWeekName(selectedDayNumber);
 
@@ -158,7 +157,7 @@ export default function CustomTiffinSlotsPicker({
                     <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">
                         Universal Delivery Time Windows
                     </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className={`grid grid-cols-1 ${activeSlotsList.length === 1 ? 'sm:grid-cols-1' : activeSlotsList.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-3`}>
                         {activeSlotsList.map((slotKey) => {
                             const timeSlots = loaderData?.[slotKey]?.deliverySlots || ['08:00 AM - 09:00 AM', '01:00 PM - 02:00 PM', '08:00 PM - 09:00 PM'];
                             const paramKey = `${slotKey}Time`;
@@ -227,7 +226,7 @@ export default function CustomTiffinSlotsPicker({
                     </div>
                 </div>
 
-                {/* Day Buttons Carousel (Day 1..N) */}
+                {/* Day Buttons Carousel */}
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden">
                     {daysArray.map((dayNum) => {
                         const isSelected = selectedDayNumber === dayNum;
@@ -258,7 +257,7 @@ export default function CustomTiffinSlotsPicker({
                     })}
                 </div>
 
-                {/* Slot-wise Filtered Dish Cards (Scrollable: 6 items visible) */}
+                {/* Slot-wise Filtered Dish Cards */}
                 {activeSlotsList.length > 0 ? (
                     <div className="space-y-4">
                         {activeSlotsList.map((slotKey) => {
@@ -281,7 +280,6 @@ export default function CustomTiffinSlotsPicker({
                                         </span>
                                     </div>
 
-                                    {/* Scrollable Container (Shows 6 dishes, scrolls smoothly for more) */}
                                     <div className="p-3.5">
                                         {availableDishes.length === 0 ? (
                                             <div className="py-6 text-center text-xs text-slate-400 flex items-center justify-center gap-2">

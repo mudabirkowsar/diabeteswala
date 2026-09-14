@@ -141,6 +141,22 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
     const bill = detail?.billSummary || {};
     const payment = detail?.paymentDetails || {};
 
+    // Determine count of active slots for dynamic grid layout
+    const activeSlotsCount = ['breakfast', 'lunch', 'dinner'].filter((s) => !!selectedSlots[s]).length;
+
+    // Helper to check if a specific day slot is genuinely ordered and valid
+    const isSlotActive = (item, slotKey) => {
+        // If selectedMeals map is present, it must be true
+        if (selectedSlots && typeof selectedSlots[slotKey] !== 'undefined') {
+            if (!selectedSlots[slotKey]) return false;
+        }
+        if (!item || !item[slotKey]) return false;
+
+        const slot = item[slotKey];
+        // Ensure it has actual dish data and not a blank fallback with ₹0
+        return Boolean(slot.mealName || slot.mealId || (slot.price && slot.price > 0));
+    };
+
     return (
         <div className="fixed inset-0 bg-slate-900/65 backdrop-blur-md flex items-center justify-center z-50 p-3 sm:p-6 select-none antialiased">
             {/* Expanded Wide Modal Container */}
@@ -287,19 +303,19 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
                                     <div className="grid grid-cols-3 gap-2 font-bold text-center text-xs">
                                         <div className="bg-white p-2.5 rounded-2xl border border-slate-200/70">
                                             <span className="text-[9px] text-slate-400 block uppercase">Duration</span>
-                                            <strong className="text-slate-800">{customSpecs.packageDays} Days</strong>
+                                            <strong className="text-slate-800">{customSpecs.packageDays || 0} Days</strong>
                                         </div>
                                         <div className="bg-white p-2.5 rounded-2xl border border-slate-200/70">
                                             <span className="text-[9px] text-slate-400 block uppercase">Diet Style</span>
-                                            <strong className="text-slate-800 capitalize">{customSpecs.dietaryType}</strong>
+                                            <strong className="text-slate-800 capitalize">{customSpecs.dietaryType || "Veg"}</strong>
                                         </div>
                                         <div className="bg-white p-2.5 rounded-2xl border border-slate-200/70">
                                             <span className="text-[9px] text-slate-400 block uppercase">Spice Level</span>
-                                            <strong className="text-slate-800 capitalize">{customSpecs.spiceLevel}</strong>
+                                            <strong className="text-slate-800 capitalize">{customSpecs.spiceLevel || "Mild"}</strong>
                                         </div>
                                     </div>
 
-                                    {/* Selected Meal Slot Tags */}
+                                    {/* Selected Meal Slot Tags (Only Ordered Slots) */}
                                     <div className="flex items-center gap-1.5 flex-wrap pt-1">
                                         <span className="text-[9px] font-black uppercase text-slate-400 mr-1">Active Slots:</span>
                                         {selectedSlots.breakfast && <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-indigo-50 text-[#3d3f96] border border-indigo-100">Breakfast</span>}
@@ -315,22 +331,29 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
                                         </div>
                                     )}
 
-                                    {/* Universal Delivery Windows */}
+                                    {/* Universal Delivery Windows (Only Ordered Slots) */}
                                     <div className="pt-2 border-t border-slate-200/50 space-y-1.5">
                                         <span className="text-[9px] font-black uppercase text-slate-400 block">Universal Slot Windows</span>
-                                        <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                                            <div className="p-2 bg-white rounded-xl border border-slate-200/60">
-                                                <span className="text-[9px] font-black uppercase text-slate-400 block">Breakfast</span>
-                                                <span className="font-bold text-slate-800 text-[10px]">{deliveryTimes.breakfastTime || "N/A"}</span>
-                                            </div>
-                                            <div className="p-2 bg-white rounded-xl border border-slate-200/60">
-                                                <span className="text-[9px] font-black uppercase text-slate-400 block">Lunch</span>
-                                                <span className="font-bold text-slate-800 text-[10px]">{deliveryTimes.lunchTime || "N/A"}</span>
-                                            </div>
-                                            <div className="p-2 bg-white rounded-xl border border-slate-200/60">
-                                                <span className="text-[9px] font-black uppercase text-slate-400 block">Dinner</span>
-                                                <span className="font-bold text-slate-800 text-[10px]">{deliveryTimes.dinnerTime || "N/A"}</span>
-                                            </div>
+                                        <div className={`grid grid-cols-1 ${activeSlotsCount === 2 ? 'sm:grid-cols-2' : activeSlotsCount >= 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-1'
+                                            } gap-2 text-center text-xs`}>
+                                            {selectedSlots.breakfast && deliveryTimes.breakfastTime && (
+                                                <div className="p-2 bg-white rounded-xl border border-slate-200/60">
+                                                    <span className="text-[9px] font-black uppercase text-slate-400 block">Breakfast</span>
+                                                    <span className="font-bold text-slate-800 text-[10px]">{deliveryTimes.breakfastTime}</span>
+                                                </div>
+                                            )}
+                                            {selectedSlots.lunch && deliveryTimes.lunchTime && (
+                                                <div className="p-2 bg-white rounded-xl border border-slate-200/60">
+                                                    <span className="text-[9px] font-black uppercase text-slate-400 block">Lunch</span>
+                                                    <span className="font-bold text-slate-800 text-[10px]">{deliveryTimes.lunchTime}</span>
+                                                </div>
+                                            )}
+                                            {selectedSlots.dinner && deliveryTimes.dinnerTime && (
+                                                <div className="p-2 bg-white rounded-xl border border-slate-200/60">
+                                                    <span className="text-[9px] font-black uppercase text-slate-400 block">Dinner</span>
+                                                    <span className="font-bold text-slate-800 text-[10px]">{deliveryTimes.dinnerTime}</span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -389,7 +412,7 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
                                             <Utensils size={18} className="text-[#3d3f96]" /> Weekly Dish Allocation Breakdown
                                         </h3>
                                         <p className="text-xs text-slate-400 font-semibold mt-0.5">
-                                            Day-by-day customized meal selections across Monday through Sunday.
+                                            Day-by-day customized meal selections across active requested slots.
                                         </p>
                                     </div>
                                     <span className="text-[10px] font-black uppercase text-slate-400 bg-slate-100 px-3 py-1 rounded-lg">
@@ -398,126 +421,136 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
                                 </div>
 
                                 <div className="space-y-4">
-                                    {weeklySchedule.map((item, idx) => (
-                                        <div key={item._id || idx} className="border border-slate-150 rounded-3xl p-5 bg-slate-50/40 space-y-3">
-                                            <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-                                                <h4 className="text-xs font-black uppercase text-[#3d3f96] tracking-wider flex items-center gap-1.5">
-                                                    <Calendar size={13} /> {item.dayOfWeek} Schedule
-                                                </h4>
+                                    {weeklySchedule.map((item, idx) => {
+                                        const showBreakfast = isSlotActive(item, 'breakfast');
+                                        const showLunch = isSlotActive(item, 'lunch');
+                                        const showDinner = isSlotActive(item, 'dinner');
+                                        const dayActiveCount = [showBreakfast, showLunch, showDinner].filter(Boolean).length;
+
+                                        return (
+                                            <div key={item._id || idx} className="border border-slate-150 rounded-3xl p-5 bg-slate-50/40 space-y-3">
+                                                <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
+                                                    <h4 className="text-xs font-black uppercase text-[#3d3f96] tracking-wider flex items-center gap-1.5">
+                                                        <Calendar size={13} /> {item.dayOfWeek} Schedule
+                                                    </h4>
+                                                </div>
+
+                                                {/* Slots Grid (Only renders ordered & valid dishes) */}
+                                                <div className={`grid grid-cols-1 ${dayActiveCount === 2 ? 'sm:grid-cols-2' : dayActiveCount >= 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-1'
+                                                    } gap-3.5`}>
+
+                                                    {/* Breakfast Slot */}
+                                                    {showBreakfast && (
+                                                        <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 space-y-2 shadow-xs">
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="text-[9px] font-black uppercase text-[#3d3f96] bg-indigo-50 px-1.5 py-0.5 rounded">
+                                                                    Breakfast
+                                                                </span>
+                                                                {renderDietBadge(item.breakfast.mealId?.dietType || item.breakfast.dietType || "Veg")}
+                                                            </div>
+                                                            <div className="flex gap-2.5 items-center">
+                                                                <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden shrink-0">
+                                                                    <img
+                                                                        src={getMediaUrl(item.breakfast.mealId?.imageUrl || item.breakfast.imageUrl) || PLACEHOLDER_IMAGE}
+                                                                        alt={item.breakfast.mealName}
+                                                                        className="w-full h-full object-cover"
+                                                                        onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+                                                                    />
+                                                                </div>
+                                                                <div className="space-y-0.5 min-w-0">
+                                                                    <strong className="text-xs font-black text-slate-800 block truncate" title={item.breakfast.mealName}>
+                                                                        {item.breakfast.mealName}
+                                                                    </strong>
+                                                                    <span className="text-[10px] text-slate-400 block font-mono">
+                                                                        {item.breakfast.deliverySlot || deliveryTimes.breakfastTime || "Morning Slot"}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 pt-1 border-t border-slate-100">
+                                                                <span className="flex items-center gap-0.5 text-amber-600 font-mono">
+                                                                    <Flame size={10} className="text-amber-500" /> {item.breakfast.calories || 0} Kcal
+                                                                </span>
+                                                                <span className="font-mono text-slate-700 font-bold">₹{item.breakfast.price || 0}</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Lunch Slot */}
+                                                    {showLunch && (
+                                                        <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 space-y-2 shadow-xs">
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="text-[9px] font-black uppercase text-[#3d3f96] bg-indigo-50 px-1.5 py-0.5 rounded">
+                                                                    Lunch
+                                                                </span>
+                                                                {renderDietBadge(item.lunch.mealId?.dietType || item.lunch.dietType || "Veg")}
+                                                            </div>
+                                                            <div className="flex gap-2.5 items-center">
+                                                                <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden shrink-0">
+                                                                    <img
+                                                                        src={getMediaUrl(item.lunch.mealId?.imageUrl || item.lunch.imageUrl) || PLACEHOLDER_IMAGE}
+                                                                        alt={item.lunch.mealName}
+                                                                        className="w-full h-full object-cover"
+                                                                        onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+                                                                    />
+                                                                </div>
+                                                                <div className="space-y-0.5 min-w-0">
+                                                                    <strong className="text-xs font-black text-slate-800 block truncate" title={item.lunch.mealName}>
+                                                                        {item.lunch.mealName}
+                                                                    </strong>
+                                                                    <span className="text-[10px] text-slate-400 block font-mono">
+                                                                        {item.lunch.deliverySlot || deliveryTimes.lunchTime || "Afternoon Slot"}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 pt-1 border-t border-slate-100">
+                                                                <span className="flex items-center gap-0.5 text-amber-600 font-mono">
+                                                                    <Flame size={10} className="text-amber-500" /> {item.lunch.calories || 0} Kcal
+                                                                </span>
+                                                                <span className="font-mono text-slate-700 font-bold">₹{item.lunch.price || 0}</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Dinner Slot */}
+                                                    {showDinner && (
+                                                        <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 space-y-2 shadow-xs">
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="text-[9px] font-black uppercase text-[#3d3f96] bg-indigo-50 px-1.5 py-0.5 rounded">
+                                                                    Dinner
+                                                                </span>
+                                                                {renderDietBadge(item.dinner.mealId?.dietType || item.dinner.dietType || "Veg")}
+                                                            </div>
+                                                            <div className="flex gap-2.5 items-center">
+                                                                <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden shrink-0">
+                                                                    <img
+                                                                        src={getMediaUrl(item.dinner.mealId?.imageUrl || item.dinner.imageUrl) || PLACEHOLDER_IMAGE}
+                                                                        alt={item.dinner.mealName}
+                                                                        className="w-full h-full object-cover"
+                                                                        onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+                                                                    />
+                                                                </div>
+                                                                <div className="space-y-0.5 min-w-0">
+                                                                    <strong className="text-xs font-black text-slate-800 block truncate" title={item.dinner.mealName}>
+                                                                        {item.dinner.mealName}
+                                                                    </strong>
+                                                                    <span className="text-[10px] text-slate-400 block font-mono">
+                                                                        {item.dinner.deliverySlot || deliveryTimes.dinnerTime || "Evening Slot"}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 pt-1 border-t border-slate-100">
+                                                                <span className="flex items-center gap-0.5 text-amber-600 font-mono">
+                                                                    <Flame size={10} className="text-amber-500" /> {item.dinner.calories || 0} Kcal
+                                                                </span>
+                                                                <span className="font-mono text-slate-700 font-bold">₹{item.dinner.price || 0}</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                </div>
                                             </div>
-
-                                            {/* Slots Grid */}
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                                                {/* Breakfast Slot */}
-                                                {item.breakfast && (
-                                                    <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 space-y-2 shadow-xs">
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-[9px] font-black uppercase text-[#3d3f96] bg-indigo-50 px-1.5 py-0.5 rounded">
-                                                                Breakfast
-                                                            </span>
-                                                            {renderDietBadge(item.breakfast.mealId?.dietType || "Veg")}
-                                                        </div>
-                                                        <div className="flex gap-2.5 items-center">
-                                                            <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden shrink-0">
-                                                                <img
-                                                                    src={getMediaUrl(item.breakfast.mealId?.imageUrl) || PLACEHOLDER_IMAGE}
-                                                                    alt={item.breakfast.mealName}
-                                                                    className="w-full h-full object-cover"
-                                                                    onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
-                                                                />
-                                                            </div>
-                                                            <div className="space-y-0.5 min-w-0">
-                                                                <strong className="text-xs font-black text-slate-800 block truncate" title={item.breakfast.mealName}>
-                                                                    {item.breakfast.mealName}
-                                                                </strong>
-                                                                <span className="text-[10px] text-slate-400 block font-mono">
-                                                                    {item.breakfast.deliverySlot}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 pt-1 border-t border-slate-100">
-                                                            <span className="flex items-center gap-0.5 text-amber-600 font-mono">
-                                                                <Flame size={10} className="text-amber-500" /> {item.breakfast.calories} Kcal
-                                                            </span>
-                                                            <span className="font-mono text-slate-700">₹{item.breakfast.price}</span>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Lunch Slot */}
-                                                {item.lunch && (
-                                                    <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 space-y-2 shadow-xs">
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-[9px] font-black uppercase text-[#3d3f96] bg-indigo-50 px-1.5 py-0.5 rounded">
-                                                                Lunch
-                                                            </span>
-                                                            {renderDietBadge(item.lunch.mealId?.dietType || "Veg")}
-                                                        </div>
-                                                        <div className="flex gap-2.5 items-center">
-                                                            <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden shrink-0">
-                                                                <img
-                                                                    src={getMediaUrl(item.lunch.mealId?.imageUrl) || PLACEHOLDER_IMAGE}
-                                                                    alt={item.lunch.mealName}
-                                                                    className="w-full h-full object-cover"
-                                                                    onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
-                                                                />
-                                                            </div>
-                                                            <div className="space-y-0.5 min-w-0">
-                                                                <strong className="text-xs font-black text-slate-800 block truncate" title={item.lunch.mealName}>
-                                                                    {item.lunch.mealName}
-                                                                </strong>
-                                                                <span className="text-[10px] text-slate-400 block font-mono">
-                                                                    {item.lunch.deliverySlot}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 pt-1 border-t border-slate-100">
-                                                            <span className="flex items-center gap-0.5 text-amber-600 font-mono">
-                                                                <Flame size={10} className="text-amber-500" /> {item.lunch.calories} Kcal
-                                                            </span>
-                                                            <span className="font-mono text-slate-700">₹{item.lunch.price}</span>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Dinner Slot */}
-                                                {item.dinner && (
-                                                    <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 space-y-2 shadow-xs">
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-[9px] font-black uppercase text-[#3d3f96] bg-indigo-50 px-1.5 py-0.5 rounded">
-                                                                Dinner
-                                                            </span>
-                                                            {renderDietBadge(item.dinner.mealId?.dietType || "Veg")}
-                                                        </div>
-                                                        <div className="flex gap-2.5 items-center">
-                                                            <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden shrink-0">
-                                                                <img
-                                                                    src={getMediaUrl(item.dinner.mealId?.imageUrl) || PLACEHOLDER_IMAGE}
-                                                                    alt={item.dinner.mealName}
-                                                                    className="w-full h-full object-cover"
-                                                                    onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
-                                                                />
-                                                            </div>
-                                                            <div className="space-y-0.5 min-w-0">
-                                                                <strong className="text-xs font-black text-slate-800 block truncate" title={item.dinner.mealName}>
-                                                                    {item.dinner.mealName}
-                                                                </strong>
-                                                                <span className="text-[10px] text-slate-400 block font-mono">
-                                                                    {item.dinner.deliverySlot}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 pt-1 border-t border-slate-100">
-                                                            <span className="flex items-center gap-0.5 text-amber-600 font-mono">
-                                                                <Flame size={10} className="text-amber-500" /> {item.dinner.calories} Kcal
-                                                            </span>
-                                                            <span className="font-mono text-slate-700">₹{item.dinner.price}</span>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}
@@ -552,7 +585,7 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
                                             <span className="text-xs font-black uppercase text-rose-600 flex items-center gap-1">
                                                 <AlertCircle size={14} /> Specify Rejection Reason *
                                             </span>
-                                            <button onClick={() => setShowRejectBox(false)} className="text-slate-400 hover:text-slate-600">
+                                            <button onClick={() => setShowRejectBox(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                                                 <X size={14} />
                                             </button>
                                         </div>
@@ -568,7 +601,7 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
                                             <button
                                                 type="button"
                                                 onClick={() => setShowRejectBox(false)}
-                                                className="px-3.5 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-lg"
+                                                className="px-3.5 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-lg cursor-pointer"
                                             >
                                                 Cancel
                                             </button>
@@ -608,7 +641,7 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
                         )}
 
                         {/* ========================================================= */}
-                        {/* --- PHASE 2: ACTIVE SUBSCRIPTION CANCEL ACTION ---         */}
+                        {/* --- PHASE 2: ACTIVE SUBSCRIPTION CANCEL ACTION --- */}
                         {/* ========================================================= */}
                         {detail.status === 'Active' && (
                             <div className="pt-3 border-t border-slate-100 space-y-3">
@@ -618,7 +651,7 @@ export default function CustomizedTiffinDetailModal({ requestId, isOpen, onClose
                                             <span className="text-xs font-black uppercase text-rose-700 flex items-center gap-1">
                                                 <Ban size={14} /> Specify Active Subscription Cancellation Reason *
                                             </span>
-                                            <button onClick={() => setShowCancelBox(false)} className="text-slate-400 hover:text-slate-600">
+                                            <button onClick={() => setShowCancelBox(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                                                 <X size={14} />
                                             </button>
                                         </div>

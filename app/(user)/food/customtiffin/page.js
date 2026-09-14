@@ -106,7 +106,7 @@ export default function CustomTiffinBuilderPage() {
         }
     }, [startDate]);
 
-    // Format weeklyCustomSchedule for API compatibility
+    // Format weeklyCustomSchedule for API compatibility (Includes only active selected meals)
     const formatWeeklyCustomSchedule = useCallback(() => {
         return DAYS_OF_WEEK.map((dayName) => {
             const dayObj = { dayOfWeek: dayName };
@@ -130,7 +130,7 @@ export default function CustomTiffinBuilderPage() {
         });
     }, [packageDays, selectedMeals, dailySchedule, getDayOfWeekName]);
 
-    // Format universalDeliveryTimes object
+    // Format universalDeliveryTimes object for only active slots
     const formatUniversalDeliveryTimes = useCallback(() => {
         const times = {};
         if (selectedMeals.breakfast) times.breakfastTime = universalDeliveryTimes.breakfastTime || "08:30 AM - 09:30 AM";
@@ -201,7 +201,11 @@ export default function CustomTiffinBuilderPage() {
                 dietaryType,
                 spiceLevel,
                 clinicalNotes: clinicalNotes.trim(),
-                selectedMeals,
+                selectedMeals: {
+                    breakfast: !!selectedMeals.breakfast,
+                    lunch: !!selectedMeals.lunch,
+                    dinner: !!selectedMeals.dinner
+                },
                 universalDeliveryTimes: formatUniversalDeliveryTimes(),
                 weeklyCustomSchedule: formatWeeklyCustomSchedule(),
                 userLat: coords.lat,
@@ -334,7 +338,11 @@ export default function CustomTiffinBuilderPage() {
             dietaryType,
             spiceLevel,
             clinicalNotes: clinicalNotes.trim(),
-            selectedMeals,
+            selectedMeals: {
+                breakfast: !!selectedMeals.breakfast,
+                lunch: !!selectedMeals.lunch,
+                dinner: !!selectedMeals.dinner
+            },
             universalDeliveryTimes: formatUniversalDeliveryTimes(),
             weeklyCustomSchedule: formatWeeklyCustomSchedule(),
             userLat: coords.lat,
@@ -433,6 +441,7 @@ export default function CustomTiffinBuilderPage() {
                 onClose={() => setIsReviewModalOpen(false)}
                 packageDays={packageDays}
                 startDate={startDate}
+                selectedMeals={selectedMeals}
                 dietaryType={dietaryType}
                 spiceLevel={spiceLevel}
                 clinicalNotes={clinicalNotes}
@@ -557,7 +566,6 @@ export default function CustomTiffinBuilderPage() {
                             <label className="text-xs font-bold text-slate-700">Dietary Category</label>
                             <div className="grid grid-cols-3 gap-2">
                                 {[
-                                    // { key: 'all', label: 'All' },
                                     { key: 'veg', label: 'Vegetarian' },
                                     { key: 'egg', label: 'Eggetarian' },
                                     { key: 'non veg', label: 'Non Veg' }
@@ -603,7 +611,7 @@ export default function CustomTiffinBuilderPage() {
                     </div>
                 </div>
 
-                {/* 3. STEP 2 & STEP 4 • SLOTS PICKER, DELIVERY TIMES & FILTERED DISHES */}
+                {/* 3. STEP 3 & STEP 4 • SLOTS PICKER, DELIVERY TIMES & FILTERED DISHES */}
                 <div className="pt-6 border-t border-slate-100">
                     <CustomTiffinSlotsPicker
                         loaderData={loaderData}

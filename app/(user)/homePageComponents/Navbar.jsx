@@ -15,8 +15,8 @@ import { useAuth } from '../../context/AuthContext';
 const Navbar = () => {
   // Hardcoded coordinates for testing
   const HARDCODED_COORDS = {
-    lat: 30.752370091355928,
-    lng: 76.64352537902484
+    lat: 30.698396,
+    lng: 76.6857
   };
 
   // Use isLoggedIn and logout directly from context for instant UI updates
