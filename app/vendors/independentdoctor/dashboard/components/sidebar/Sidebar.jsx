@@ -34,11 +34,10 @@ export default function ClinicSidebar({ sidebarOpen }) {
         { name: "Revenue", route: "/vendors/independentdoctor/dashboard/revenue", icon: FaRupeeSign },
         { name: "Manage Bank Details", route: "/vendors/independentdoctor/dashboard/managebank", icon: FaUniversity },
         { name: "Manage Profile", route: "/vendors/independentdoctor/dashboard/profile", icon: FaUniversity },
-
-        // { name: "Add New Doctor", route: "/vendors/clinic/dashboard/addDoctors", icon: FaUserMd },
         { name: "Appointments", route: "/vendors/independentdoctor/dashboard/appointments", icon: FaCalendarCheck },
-        { name: "Achievements", route: "/vendors/independentdoctor/dashboard/achievements", icon: FaTrophy },
-        { name: "Services", route: "/vendors/independentdoctor/dashboard/services", icon: FaHandHoldingMedical },
+        { name: "Manage Slots", route: "/vendors/independentdoctor/dashboard/manageslots", icon: FaClock },
+        // { name: "Achievements", route: "/vendors/independentdoctor/dashboard/achievements", icon: FaTrophy },
+        // { name: "Services", route: "/vendors/independentdoctor/dashboard/services", icon: FaHandHoldingMedical },
         { name: "Documents", route: "/vendors/independentdoctor/dashboard/documents", icon: FaFileMedical },
     ];
 

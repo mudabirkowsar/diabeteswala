@@ -34,16 +34,12 @@ const IndependentDoctorAPI = {
     // --- INDEPENDENT DOCTOR AUTH & ONBOARDING APIS ----
     // ===================================================
 
-    // --- 1. Register Doctor (Step 1: Basic Info) ---
     registerIndependentDoctor: async (registrationData) => {
-        // registrationData: { name, phone, password, email, countryCode, city, state, country }
         const response = await publicApi.post('/api/auth/doctor/register', registrationData);
         return response.data;
     },
 
-    // --- 2. Upload Documents & KYC Verification (Step 2) ---
     uploadIndependentDoctorKYCDocuments: async (formData) => {
-        // formData: Must be an instance of FormData containing text keys and binary files (profileImage, signatureImage, licenseDoc, etc.)
         const response = await authApi.put('/api/auth/doctor/upload-docs', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
@@ -52,10 +48,63 @@ const IndependentDoctorAPI = {
         return response.data;
     },
 
-    // --- 3. Login Doctor (Multi-State Authentication) ---
     loginIndependentDoctor: async (credentials) => {
-        // credentials: { phone: "9876543210" (or email: "dr@example.com"), password: "..." }
         const response = await publicApi.post('/api/auth/doctor/login', credentials);
+        return response.data;
+    },
+
+    // ===================================================
+    // --- INDEPENDENT DOCTOR PROFILE & FEES APIS -------
+    // ===================================================
+
+    // --- 1. Update Doctor Profile & 3-Way Consultation Fees ---
+    updateDoctorProfileAndFees: async (formData) => {
+        // formData: Must be an instance of FormData to handle 3-way fees (onlineFee, clinicFee, homeFee), 
+        // availability switches, JSON-stringified arrays, and media uploads (profileImage, signatureImage)
+        const response = await authApi.put('/api/auth/doctor/update-profile', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    // --- 2. Get Doctor Profile (Self - Complete Profile & Fees) ---
+    getDoctorSelfProfile: async () => {
+        // Retrieves the logged-in doctor's live profile, consultation fees, active shifts, degrees, and documents
+        const response = await authApi.get('/api/auth/doctor/profile');
+        return response.data;
+    },
+
+    // ==========================================================
+    // --- DOCTOR SLOTS, SHIFTS & PREMIUM PRICING APIS ----------
+    // ==========================================================
+
+    // --- 1. Set / Update Doctor Availability & Premium Slots ---
+    setDoctorAvailability: async (availabilityData) => {
+        // availabilityData: { startTime: "09:00", endTime: "20:00", slotDuration: 30, morningSlots: true, afternoonSlots: true, eveningSlots: true, offDays: ["Sunday"], blockedDates: [], premiumSlots: [{ time: "18:00", extraFee: 200 }] }
+        const response = await authApi.post('/doctor/availability/set', availabilityData);
+        return response.data;
+    },
+
+    // --- 2. Get Doctor Slots (Live Generated Slots with Premium Badges) ---
+    getMyDoctorSlots: async () => {
+        // Retrieves live categorized time slots (Morning/Afternoon/Evening) and attached extraFee parameters
+        const response = await authApi.get('/doctor/availability/my-slots');
+        return response.data;
+    },
+
+    // --- 3. Block Specific Doctor Slot (Break / Emergency) ---
+    blockDoctorSlot: async (payload) => {
+        // payload: { time: "13:30" } in 24h string format
+        const response = await authApi.post('/doctor/availability/block', payload);
+        return response.data;
+    },
+
+    // --- 4. Unblock Previously Blocked Slot ---
+    unblockDoctorSlot: async (payload) => {
+        // payload: { time: "13:30" } in 24h string format
+        const response = await authApi.post('/doctor/availability/unblock', payload);
         return response.data;
     }
 }

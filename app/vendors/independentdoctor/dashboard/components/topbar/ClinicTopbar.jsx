@@ -14,15 +14,15 @@ const ClinicTopbar = ({ heading, toggleSidebar }) => {
 
     // Dynamic Clinic Vendor details based on your screenshot
     const clinicData = {
-        name: "Diabetic 11",
+        name: "Independent Doctor",
         email: "diabeticclinic@yopmail.com",
-        role: "Clinic Vendor",
+        role: "Independent Doctor",
         initial: "D"
     };
 
     const handleSignOut = () => {
         // Clear clinic token from localStorage
-        localStorage.removeItem('clinicToken');
+        localStorage.removeItem('independentDoctorToken');
         // Redirect to login page or any other action
         window.location.href = '/authFiles/login'; // Adjust the path as needed
     }

@@ -245,14 +245,8 @@ const UserAPI = {
         const response = await authApi.get(`/api/food/custom-tiffin/my-custom-plan/${bookingId}`);
         return response.data;
     },
-    // ===================================================
-    // --- USER TIFFIN MEAL MANAGEMENT APIS -------------
-    // ===================================================
 
-    // --- 1. Skip / Pause Tiffin Meals (Subscription Validity Extension) ---
     skipTiffinMeals: async (bookingId, skipPayload) => {
-        // bookingId: MongoDB Object ID (_id) or custom bookingId (e.g. "SUB-FD-102934", "CTM-FD-733409")
-        // skipPayload: { startDate: "YYYY-MM-DD", endDate: "YYYY-MM-DD", slots: ["breakfast", "lunch", "dinner"], reason: "Optional reason string" }
         const response = await authApi.patch(`/api/food/tiffin/skip-meals/${bookingId}`, skipPayload);
         return response.data;
     },
@@ -505,6 +499,38 @@ const UserAPI = {
 
     getSingleClinicalBookingDetails: async (bookingId) => {
         const response = await authApi.get(`/api/clinic/checkout/booking/${bookingId}`);
+        return response.data;
+    },
+
+
+    //Independent Doctor 
+    // ===================================================
+    // --- USER INDEPENDENT DOCTOR DISCOVERY APIS -------
+    // ===================================================
+
+    // --- 1. Search & Filter Independent Doctors (Listing) ---
+    getIndependentDoctors: async (searchPayload) => {
+        // searchPayload: { search, speciality, city, consultationType, userLat, userLng }
+        const response = await publicApi.post('/user/doctors/list', searchPayload);
+        return response.data;
+    },
+
+    // --- 2. Get Independent Doctor Profile Details ---
+    getIndependentDoctorDetails: async (id) => {
+        // id: Doctor unique ObjectID (_id)
+        const response = await publicApi.get(`/user/doctors/details/${id}`);
+        return response.data;
+    },
+
+    // ===================================================
+    // --- USER DOCTOR APPOINTMENT & SLOTS APIS ---------
+    // ===================================================
+
+    // --- 1. Get Doctor Available Slots by Date ---
+    getDoctorAvailableSlots: async (doctorId, params) => {
+        // doctorId: Doctor unique ObjectID (_id) (e.g. "6aa273f1a14515a448ac2dca")
+        // params: { date: "YYYY-MM-DD" } (e.g. { date: "2026-09-14" })
+        const response = await authApi.get(`/user/doctors/slots/${doctorId}`, { params });
         return response.data;
     },
 

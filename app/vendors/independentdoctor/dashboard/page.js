@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { 
-  FaUserMd, 
-  FaCalendarAlt, 
-  FaBullseye, 
-  FaTrophy, 
-  FaClock, 
-  FaRegHeart, 
-  FaUserInjured 
+import {
+  FaUserMd,
+  FaCalendarAlt,
+  FaBullseye,
+  FaTrophy,
+  FaClock,
+  FaRegHeart,
+  FaUserInjured
 } from "react-icons/fa";
 import Link from "next/link";
 
@@ -17,7 +17,7 @@ export default function ClinicDashboardNoDeps() {
   const [hoveredBar, setHoveredBar] = useState(null);
   const [hoveredLinePoint, setHoveredLinePoint] = useState(null);
   const [hoveredSlice, setHoveredSlice] = useState(null);
-  
+
   const statsData = [
     {
       title: "Total Doctors",
@@ -91,15 +91,15 @@ export default function ClinicDashboardNoDeps() {
 
   return (
     <div className="p-4 md:p-8 space-y-8 bg-slate-50/40 min-h-screen select-none">
-      
+
       {/* 1. Welcoming Hero Banner */}
       <div className="relative overflow-hidden bg-gradient-to-br from-[#3D3F96] via-[#4F52C0] to-[#6366F1] rounded-[2rem] p-8 md:p-10 text-white shadow-xl">
         <div className="relative z-10">
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/10">
             Live Vendor Suite
           </span>
-          <h1 className="text-3xl md:text-4xl font-black mt-4">Clinic Dashboard</h1>
-          <p className="text-base font-semibold text-indigo-100/90 mt-1">Welcome back, Diabetic 11</p>
+          <h1 className="text-3xl md:text-4xl font-black mt-4">Independent Doctor Dashboard</h1>
+          <p className="text-base font-semibold text-indigo-100/90 mt-1">Welcome back</p>
         </div>
       </div>
 
@@ -131,7 +131,7 @@ export default function ClinicDashboardNoDeps() {
 
       {/* 3. Visual Charts Grid (Interactive Custom SVG/CSS Charts) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
+
         {/* Line Graph with Hover Interactive Tooltip (Pure White Text) */}
         <div className="lg:col-span-7 bg-white rounded-[2rem] border border-gray-100 p-6 md:p-8 shadow-sm">
           <div className="flex items-center justify-between mb-6">
@@ -140,15 +140,15 @@ export default function ClinicDashboardNoDeps() {
               <p className="text-xs text-gray-400 mt-0.5">Analysing monthly consultations (Hover points for details).</p>
             </div>
           </div>
-          
+
           <div className="relative h-64 w-full pt-4">
             {/* Interactive Custom Floating Tooltip */}
             {hoveredLinePoint !== null && (
-              <div 
+              <div
                 className="absolute bg-slate-900 border border-slate-800 p-3 rounded-xl shadow-xl z-30 transition-all duration-200"
-                style={{ 
-                  left: `${customLinePoints[hoveredLinePoint].x - 60}px`, 
-                  top: `${customLinePoints[hoveredLinePoint].y - 65}px` 
+                style={{
+                  left: `${customLinePoints[hoveredLinePoint].x - 60}px`,
+                  top: `${customLinePoints[hoveredLinePoint].y - 65}px`
                 }}
               >
                 {/* 100% White Text */}
@@ -165,7 +165,7 @@ export default function ClinicDashboardNoDeps() {
               <line x1="0" y1="50" x2="500" y2="50" stroke="#F8FAFC" strokeWidth="1" />
               <line x1="0" y1="100" x2="500" y2="100" stroke="#F8FAFC" strokeWidth="1" />
               <line x1="0" y1="150" x2="500" y2="150" stroke="#F8FAFC" strokeWidth="1" />
-              
+
               <path d="M 20,160 Q 110,130 200,80 T 380,50 T 470,25 L 470,200 L 20,200 Z" fill="url(#gradNoDep)" opacity="0.15" />
               <path d="M 20,160 Q 110,130 200,80 T 380,50 T 470,25" fill="none" stroke="#3D3F96" strokeWidth="4" strokeLinecap="round" />
 
@@ -178,21 +178,21 @@ export default function ClinicDashboardNoDeps() {
 
               {/* Interactive SVG point hooks */}
               {customLinePoints.map((pt, idx) => (
-                <circle 
+                <circle
                   key={idx}
-                  cx={pt.x} 
-                  cy={pt.y} 
-                  r={hoveredLinePoint === idx ? "8" : "5"} 
-                  fill="#3D3F96" 
-                  stroke="#FFF" 
-                  strokeWidth="3" 
+                  cx={pt.x}
+                  cy={pt.y}
+                  r={hoveredLinePoint === idx ? "8" : "5"}
+                  fill="#3D3F96"
+                  stroke="#FFF"
+                  strokeWidth="3"
                   className="cursor-pointer transition-all duration-200"
                   onMouseEnter={() => setHoveredLinePoint(idx)}
                   onMouseLeave={() => setHoveredLinePoint(null)}
                 />
               ))}
             </svg>
-            
+
             <div className="flex justify-between text-[11px] font-bold text-gray-400 mt-2 px-4">
               {customLinePoints.map((pt, i) => <span key={i}>{pt.month}</span>)}
             </div>
@@ -221,15 +221,15 @@ export default function ClinicDashboardNoDeps() {
           {/* Interactive Legends with Pure White Text Tooltips on hover */}
           <div className="grid grid-cols-2 gap-3 relative">
             {customPieData.map((item, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 onMouseEnter={() => setHoveredSlice(index)}
                 onMouseLeave={() => setHoveredSlice(null)}
                 className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-100 cursor-help transition-all hover:bg-indigo-50/50"
               >
                 <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${pieColors[index]}`}></span>
                 <span className="text-[10px] font-black text-gray-600 truncate">{item.name} ({item.val})</span>
-                
+
                 {/* Float Card on Hover */}
                 {hoveredSlice === index && (
                   <div className="absolute left-0 right-0 -top-24 bg-slate-900 border border-slate-800 p-3 rounded-2xl shadow-xl z-30 animate-fadeIn">
@@ -254,8 +254,8 @@ export default function ClinicDashboardNoDeps() {
 
           <div className="relative flex items-end justify-between h-48 w-full gap-2 px-2 border-b border-gray-100 pb-1 pt-4">
             {weeklyLoad.map((item, idx) => (
-              <div 
-                key={idx} 
+              <div
+                key={idx}
                 className="flex-1 flex flex-col items-center relative group"
                 onMouseEnter={() => setHoveredBar(idx)}
                 onMouseLeave={() => setHoveredBar(null)}
@@ -269,11 +269,10 @@ export default function ClinicDashboardNoDeps() {
                 )}
 
                 <div className="w-full max-w-[28px] relative rounded-t-lg overflow-hidden flex flex-col justify-end h-36 bg-slate-50 cursor-pointer">
-                  <div 
-                    style={{ height: item.val }} 
-                    className={`w-full rounded-t-lg transition-all duration-500 origin-bottom ${
-                      item.highlight ? "bg-indigo-500" : "bg-[#3D3F96]"
-                    }`}
+                  <div
+                    style={{ height: item.val }}
+                    className={`w-full rounded-t-lg transition-all duration-500 origin-bottom ${item.highlight ? "bg-indigo-500" : "bg-[#3D3F96]"
+                      }`}
                   ></div>
                 </div>
                 <span className="text-[11px] font-bold text-gray-400 mt-3">{item.day}</span>
