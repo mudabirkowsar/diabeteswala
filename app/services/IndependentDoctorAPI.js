@@ -146,7 +146,25 @@ const IndependentDoctorAPI = {
         // id: Coupon unique ObjectID (_id) to permanently remove from database
         const response = await authApi.delete(`/doctor/coupon/delete/${id}`);
         return response.data;
-    }
+    },
+
+    // ===================================================
+    // --- DOCTOR APPOINTMENTS & BOOKINGS APIS -----------
+    // ===================================================
+
+    // --- 1. Get All Doctor Bookings (List View) ---
+    getDoctorPatientBookings: async (params) => {
+        // params (optional): { status: 'Confirmed'|'Pending'|'Completed', consultationType: 'Video Consult'|'Clinic Visit'|'Home Visit' }
+        const response = await authApi.get('/doctor/appointments/patient-bookings', { params });
+        return response.data;
+    },
+
+    // --- 2. Get Appointment Full Details by ID (Detail Modal / Page) ---
+    getDoctorAppointmentFullDetails: async (id) => {
+        // id: Unique MongoDB Object ID (_id) of the appointment (e.g. "6aa8f60426f6619cd77e0f8a")
+        const response = await authApi.get(`/doctor/appointments/full-details/${id}`);
+        return response.data;
+    },
 }
 
 export default IndependentDoctorAPI;

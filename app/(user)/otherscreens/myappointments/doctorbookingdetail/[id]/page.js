@@ -336,8 +336,9 @@ export default function DoctorBookingDetailPage({ params }) {
     const reschedulesRemaining = policy.reschedulesLeft ?? Math.max(0, maxLimit - (booking.rescheduleCount || 0));
     const cancellationsRemaining = policy.cancellationsLeft ?? Math.max(0, maxLimit - (booking.cancellationCount || 0));
 
-    const isRescheduleAllowed = !isPermanentCancelled && !isCompleted && reschedulesRemaining > 0;
+    // FLOW: Cancel is only available when Confirmed. Reschedule is only available AFTER appointment has been Cancelled-By-User in non-permanent mode.
     const isCancelAllowed = isConfirmed && cancellationsRemaining > 0;
+    const isRescheduleAllowed = isCancelledByUser && !isPermanentCancelled && !isCompleted && reschedulesRemaining > 0;
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] text-slate-900 pb-28 antialiased selection:bg-[#3d3f96] selection:text-white">
@@ -514,9 +515,10 @@ export default function DoctorBookingDetailPage({ params }) {
                         </div>
                     </div>
 
-                    {/* Action Buttons: Cancel & Reschedule */}
+                    {/* Action Buttons: Cancel Only when Active, Reschedule Only after Cancel */}
                     {(isCancelAllowed || isRescheduleAllowed) && (
                         <div className="mt-5 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-end gap-3">
+                            {/* 1. Only Cancel Button while Appointment is Confirmed */}
                             {isCancelAllowed && (
                                 <button
                                     onClick={() => setShowCancelModal(true)}
@@ -527,6 +529,7 @@ export default function DoctorBookingDetailPage({ params }) {
                                 </button>
                             )}
 
+                            {/* 2. Reschedule Button only available AFTER user cancels */}
                             {isRescheduleAllowed && (
                                 <button
                                     onClick={() => setShowRescheduleModal(true)}
@@ -776,7 +779,7 @@ export default function DoctorBookingDetailPage({ params }) {
                                                         href={fullUrl}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#3d3f96] hover:text-slate-900 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-xs"
+                                                        className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#3d3f96] hover:text-slate-900 bg-white border border-slate-200 px-3.5 py-1.5 rounded-xl shadow-xs"
                                                     >
                                                         <Download size={13} />
                                                         <span>View / Download</span>
@@ -935,7 +938,7 @@ export default function DoctorBookingDetailPage({ params }) {
                         </div>
 
                         {/* Mode Selection Cards */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="gap-3">
 
                             {/* Option A: Reschedule-Ready */}
                             <div
@@ -947,9 +950,9 @@ export default function DoctorBookingDetailPage({ params }) {
                             >
                                 <div className="flex items-center justify-between mb-1.5">
                                     <span className="text-xs font-black text-slate-900">Reschedule Later</span>
-                                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${!isPermanentCancel ? 'border-[#3d3f96] bg-[#3d3f96]' : 'border-slate-300'}`}>
+                                    {/* <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${!isPermanentCancel ? 'border-[#3d3f96] bg-[#3d3f96]' : 'border-slate-300'}`}>
                                         {!isPermanentCancel && <Check size={10} className="text-white" strokeWidth={3} />}
-                                    </div>
+                                    </div> */}
                                 </div>
                                 <p className="text-[11px] text-slate-500 leading-snug">
                                     Keeps your payment safe. You can pick a new date anytime without re-paying.
@@ -957,7 +960,7 @@ export default function DoctorBookingDetailPage({ params }) {
                             </div>
 
                             {/* Option B: Permanent Refund */}
-                            <div
+                            {/* <div
                                 onClick={() => setIsPermanentCancel(true)}
                                 className={`p-4 rounded-2xl border cursor-pointer transition-all ${isPermanentCancel
                                     ? 'border-rose-500 bg-rose-50/40 ring-2 ring-rose-500/20'
@@ -973,7 +976,7 @@ export default function DoctorBookingDetailPage({ params }) {
                                 <p className="text-[11px] text-slate-500 leading-snug">
                                     Cancels completely and calculates refund (₹{booking.totalAmount}) to original payment method.
                                 </p>
-                            </div>
+                            </div> */}
 
                         </div>
 

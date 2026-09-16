@@ -525,7 +525,7 @@ const UserAPI = {
     // ===================================================
     // --- USER DOCTOR APPOINTMENT & SLOTS APIS ---------
     // ===================================================
-    
+
     // --- 1. Get Doctor Available Slots by Date ---
     getDoctorAvailableSlots: async (doctorId, params) => {
         // doctorId: Doctor unique ObjectID (_id) (e.g. "6aa273f1a14515a448ac2dca")

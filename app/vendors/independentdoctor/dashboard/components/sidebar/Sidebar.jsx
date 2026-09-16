@@ -32,9 +32,9 @@ export default function ClinicSidebar({ sidebarOpen }) {
     const menuItems = [
         { name: "Dashboard", route: "/vendors/independentdoctor/dashboard", icon: FaTachometerAlt },
         { name: "Revenue", route: "/vendors/independentdoctor/dashboard/revenue", icon: FaRupeeSign },
+        { name: "Appointments", route: "/vendors/independentdoctor/dashboard/appointments", icon: FaCalendarCheck },
         { name: "Manage Bank Details", route: "/vendors/independentdoctor/dashboard/managebank", icon: FaUniversity },
         { name: "Manage Profile", route: "/vendors/independentdoctor/dashboard/profile", icon: FaUniversity },
-        { name: "Appointments", route: "/vendors/independentdoctor/dashboard/appointments", icon: FaCalendarCheck },
         { name: "Manage Slots", route: "/vendors/independentdoctor/dashboard/manageslots", icon: FaClock },
         { name: "Manage Coupons", route: "/vendors/independentdoctor/dashboard/managecoupon", icon: FaClock },
         // { name: "Achievements", route: "/vendors/independentdoctor/dashboard/achievements", icon: FaTrophy },
