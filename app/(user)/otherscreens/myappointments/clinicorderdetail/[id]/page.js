@@ -2,42 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import {
-    ArrowLeft,
-    Building2,
-    Stethoscope,
-    User,
-    Calendar,
-    Clock,
-    MapPin,
-    Video,
-    Home,
-    Bed,
-    ShieldCheck,
-    AlertCircle,
-    CheckCircle2,
-    CreditCard,
-    Receipt,
-    Phone,
-    Loader2,
-    Percent,
-    Ticket,
-    FileText,
-    Ambulance,
-    HeartPulse,
-    Activity,
-    ShieldAlert,
-    Download,
-    Printer,
-    Check,
-    Eye,
-    ExternalLink,
-    Image as ImageIcon,
-    FileCheck,
-    FileCode,
-    Sparkles,
-    Hash
-} from 'lucide-react';
+import { ArrowLeft, Building2, Stethoscope, User, Calendar, Clock, MapPin, Video, Home, Bed, AlertCircle, CheckCircle2, Receipt, Phone, Loader2, Percent, FileText, Ambulance, ExternalLink, Printer } from 'lucide-react';
 
 import UserAPI from '../../../../../services/UserAPI';
 import { useNotification } from '../../../../../context/NotificationContext';
@@ -130,20 +95,25 @@ export default function ClinicalOrderDetailPage() {
         );
     }
 
-    // Deconstruct API properties
+    // Safe fallback references for null objects
+    const clinic = booking.clinicId || {};
+    const doctor = booking.doctorId || {};
+    const primaryPatient = (booking.patients && booking.patients[0]) || {};
+    const address = booking.address || null;
+    const pricingBreakdown = booking.pricingBreakdown || {};
+    const insuranceDetails = booking.insuranceDetails || {};
+    const clinicalSummary = booking.clinicalSummary || {};
+    const paymentDetails = booking.paymentDetails || {};
+    const ambulance = booking.ambulanceId || null;
+    const couponDetails = booking.couponDetails || null;
+
     const {
         bookingId: orderCode,
         bookingType,
-        bedBookingType,
         bookingReason,
-        patients = [],
-        address,
         appointmentDate,
         appointmentTime,
         consultationType,
-        pricingBreakdown = {},
-        couponDetails,
-        insuranceDetails = {},
         totalAmount,
         paymentStatus,
         status,
@@ -152,18 +122,9 @@ export default function ClinicalOrderDetailPage() {
         bedNumber,
         startDate,
         endDate,
-        clinicalSummary = {},
-        paymentDetails = {},
-        ambulanceId,
-        clinicId: clinic = {},
-        doctorId: doctor = {},
-        rescheduleReason,
-        rescheduleCount = 0,
-        cancellationCount = 0,
         createdAt
     } = booking;
 
-    const primaryPatient = patients[0] || {};
     const clinicImage = getMediaUrl(clinic.image) || CLINIC_PLACEHOLDER;
     const doctorImage = getMediaUrl(doctor.profileImage) || DOC_PLACEHOLDER;
 
@@ -172,28 +133,30 @@ export default function ClinicalOrderDetailPage() {
     const isHomeVisit = consultationType?.toLowerCase().includes('home');
     const isVideo = consultationType?.toLowerCase().includes('video') || consultationType?.toLowerCase().includes('tele');
 
-    const formattedBookedDate = new Date(createdAt).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+    const formattedBookedDate = createdAt
+        ? new Date(createdAt).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        })
+        : 'N/A';
 
     const formattedApptDate = appointmentDate
         ? new Date(appointmentDate).toLocaleDateString('en-US', {
-              weekday: 'short',
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric'
-          })
+            weekday: 'short',
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        })
         : 'Date Pending';
 
     const uploadedReportsList = clinicalSummary?.uploadedReports || [];
 
     return (
         <div className="min-h-screen bg-[#f8fbff] text-slate-800 pb-28 antialiased select-none text-left">
-            
+
             {/* Top Navigation Header */}
             <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-xs">
                 <div className="max-w-[1300px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -218,21 +181,19 @@ export default function ClinicalOrderDetailPage() {
 
                     <div className="flex items-center gap-2">
                         {/* Consultation Type Badge */}
-                        <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-xl border flex items-center gap-1.5 shadow-2xs ${
-                            isHomeVisit
-                                ? 'bg-orange-50 text-orange-700 border-orange-200'
-                                : isVideo
+                        <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-xl border flex items-center gap-1.5 shadow-2xs ${isHomeVisit
+                            ? 'bg-orange-50 text-orange-700 border-orange-200'
+                            : isVideo
                                 ? 'bg-purple-50 text-purple-700 border-purple-200'
                                 : 'bg-indigo-50 text-[#3d3f96] border-indigo-100'
-                        }`}>
+                            }`}>
                             {isHomeVisit ? <Home size={12} /> : isVideo ? <Video size={12} /> : <Building2 size={12} />}
                             <span>{consultationType || bookingType || "In-Clinic Visit"}</span>
                         </span>
 
                         {/* Status Badge */}
-                        <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-xl border flex items-center gap-1.5 shadow-2xs ${
-                            isConfirmed ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-700 border-slate-200'
-                        }`}>
+                        <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-xl border flex items-center gap-1.5 shadow-2xs ${isConfirmed ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-700 border-slate-200'
+                            }`}>
                             <CheckCircle2 size={12} className="text-emerald-500" />
                             <span>{status || 'Confirmed'}</span>
                         </span>
@@ -242,10 +203,10 @@ export default function ClinicalOrderDetailPage() {
 
             <main className="max-w-[1300px] mx-auto px-4 sm:px-6 lg:px-8 pt-8">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    
+
                     {/* LEFT COLUMN: ORDER DETAILS, DOCTOR, ADDRESS, REPORTS (7/12) */}
                     <div className="lg:col-span-7 space-y-6">
-                        
+
                         {/* 1. Clinic Facility Overview */}
                         <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
                             <div className="flex items-center justify-between border-b border-slate-50 pb-3">
@@ -264,7 +225,7 @@ export default function ClinicalOrderDetailPage() {
                                 <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-200 overflow-hidden shrink-0 shadow-2xs">
                                     <img
                                         src={clinicImage}
-                                        alt={clinic.clinicName || clinic.name}
+                                        alt={clinic?.clinicName || clinic?.name || "Clinic"}
                                         className="w-full h-full object-cover"
                                         onError={(e) => { e.currentTarget.src = CLINIC_PLACEHOLDER; }}
                                     />
@@ -272,11 +233,14 @@ export default function ClinicalOrderDetailPage() {
 
                                 <div className="space-y-1 min-w-0 flex-1">
                                     <h4 className="text-base font-black text-slate-900 truncate">
-                                        {clinic.clinicName || clinic.name || "Mudabir's Clinic"}
+                                        {clinic?.clinicName || clinic?.name || "Healthcare Clinic"}
                                     </h4>
                                     <p className="text-xs text-slate-500 font-semibold flex items-center gap-1 leading-relaxed">
                                         <MapPin size={13} className="text-rose-500 shrink-0" />
-                                        <span>{clinic.address ? `${clinic.address}, ` : ''}{clinic.city}, {clinic.state}</span>
+                                        <span>
+                                            {clinic?.address ? `${clinic.address}, ` : ''}
+                                            {clinic?.city || 'Local City'}{clinic?.state ? `, ${clinic.state}` : ''}
+                                        </span>
                                     </p>
                                 </div>
                             </div>
@@ -293,7 +257,7 @@ export default function ClinicalOrderDetailPage() {
                                         </h3>
                                     </div>
                                     <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-md bg-indigo-50 text-[#3d3f96] border border-indigo-100 font-mono">
-                                        {consultationType}
+                                        {consultationType || "General"}
                                     </span>
                                 </div>
 
@@ -319,7 +283,7 @@ export default function ClinicalOrderDetailPage() {
                                             )}
                                         </div>
                                         <p className="text-xs font-bold text-[#3d3f96]">
-                                            {doctor.speciality} {doctor.experienceYears ? `• ${doctor.experienceYears}+ Yrs Experience` : ''}
+                                            {doctor.speciality || "General Physician"} {doctor.experienceYears ? `• ${doctor.experienceYears}+ Yrs Experience` : ''}
                                         </p>
                                     </div>
                                 </div>
@@ -338,7 +302,7 @@ export default function ClinicalOrderDetailPage() {
                             </div>
                         )}
 
-                        {/* 3. Home Visit Patient Address (Rendered when address is provided) */}
+                        {/* 3. Home Visit Patient Address */}
                         {address && (address.houseNo || address.city || address.name) && (
                             <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
                                 <div className="flex items-center justify-between border-b border-slate-50 pb-3">
@@ -402,8 +366,8 @@ export default function ClinicalOrderDetailPage() {
                                 </div>
                                 <div>
                                     <span className="text-[10px] font-bold text-slate-400 uppercase block">Insurance Linked</span>
-                                    <span className={`font-bold block mt-0.5 ${insuranceDetails.hasInsurance ? 'text-emerald-700' : 'text-slate-500'}`}>
-                                        {insuranceDetails.hasInsurance ? `Yes (${insuranceDetails.insuranceNumber || 'Active'})` : 'Self-Pay / None'}
+                                    <span className={`font-bold block mt-0.5 ${insuranceDetails?.hasInsurance ? 'text-emerald-700' : 'text-slate-500'}`}>
+                                        {insuranceDetails?.hasInsurance ? `Yes (${insuranceDetails.insuranceNumber || 'Active'})` : 'Self-Pay / None'}
                                     </span>
                                 </div>
                             </div>
@@ -439,7 +403,7 @@ export default function ClinicalOrderDetailPage() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     {uploadedReportsList.map((reportPath, idx) => {
                                         const reportUrl = getMediaUrl(reportPath);
-                                        const isPdf = reportPath.toLowerCase().endsWith('.pdf');
+                                        const isPdf = reportPath?.toLowerCase().endsWith('.pdf');
 
                                         return (
                                             <div
@@ -529,7 +493,7 @@ export default function ClinicalOrderDetailPage() {
                         )}
 
                         {/* 7. Emergency Ambulance Dispatch (If Dispatched) */}
-                        {ambulanceId && ambulanceId.vehicleNumber && (
+                        {ambulance && ambulance.vehicleNumber && (
                             <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
                                 <div className="flex items-center justify-between border-b border-slate-50 pb-3">
                                     <div className="flex items-center gap-2 text-rose-600">
@@ -539,7 +503,7 @@ export default function ClinicalOrderDetailPage() {
                                         </h3>
                                     </div>
                                     <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-md bg-rose-50 text-rose-600 border border-rose-200">
-                                        {ambulanceId.vehicleType || "ICU Ambulance"}
+                                        {ambulance.vehicleType || "ICU Ambulance"}
                                     </span>
                                 </div>
 
@@ -547,13 +511,13 @@ export default function ClinicalOrderDetailPage() {
                                     <div>
                                         <span className="text-[10px] font-bold text-slate-400 uppercase block">Vehicle Number</span>
                                         <strong className="text-sm font-mono font-black text-slate-900 block mt-0.5">
-                                            {ambulanceId.vehicleNumber}
+                                            {ambulance.vehicleNumber}
                                         </strong>
                                     </div>
                                     <div>
                                         <span className="text-[10px] font-bold text-slate-400 uppercase block">Driver Emergency Contact</span>
                                         <span className="text-slate-800 font-bold block mt-0.5 flex items-center gap-1">
-                                            <Phone size={12} className="text-rose-500" /> {ambulanceId.phone}
+                                            <Phone size={12} className="text-rose-500" /> {ambulance.phone}
                                         </span>
                                     </div>
                                 </div>
@@ -564,7 +528,7 @@ export default function ClinicalOrderDetailPage() {
 
                     {/* RIGHT COLUMN: PAYMENT RECEIPT & TRANSACTION INFO (5/12) */}
                     <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
-                        
+
                         {/* 8. Itemized Payment & Pricing Receipt */}
                         <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-100 shadow-sm space-y-5">
                             <div className="flex items-center justify-between pb-3 border-b border-slate-50">
@@ -574,27 +538,26 @@ export default function ClinicalOrderDetailPage() {
                                         Payment Receipt
                                     </h3>
                                 </div>
-                                <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-md ${
-                                    isPaid ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700'
-                                }`}>
+                                <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-md ${isPaid ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700'
+                                    }`}>
                                     {paymentStatus || "Paid"}
                                 </span>
                             </div>
 
                             <div className="space-y-3 text-xs font-medium text-slate-600">
                                 <div className="flex items-center justify-between">
-                                    <span>Doctor Consultation Fee ({consultationType})</span>
-                                    <span className="font-mono font-bold text-slate-900">₹{pricingBreakdown.baseFee || 0}</span>
+                                    <span>Doctor Consultation Fee ({consultationType || 'Standard'})</span>
+                                    <span className="font-mono font-bold text-slate-900">₹{pricingBreakdown?.baseFee || 0}</span>
                                 </div>
 
-                                {pricingBreakdown.visitCharges > 0 && (
+                                {(pricingBreakdown?.visitCharges || 0) > 0 && (
                                     <div className="flex items-center justify-between">
                                         <span>Home Visit / Travel Surcharge</span>
                                         <span className="font-mono font-bold text-slate-900">₹{pricingBreakdown.visitCharges}</span>
                                     </div>
                                 )}
 
-                                {pricingBreakdown.extraCharges > 0 && (
+                                {(pricingBreakdown?.extraCharges || 0) > 0 && (
                                     <div className="flex items-center justify-between">
                                         <span>Ward Bed &amp; Facilities Charge</span>
                                         <span className="font-mono font-bold text-slate-900">₹{pricingBreakdown.extraCharges}</span>
@@ -603,7 +566,7 @@ export default function ClinicalOrderDetailPage() {
 
                                 <div className="flex items-center justify-between pt-1 border-t border-slate-50 text-slate-700">
                                     <span>Subtotal Fee</span>
-                                    <span className="font-mono font-bold text-slate-900">₹{pricingBreakdown.subtotal || totalAmount}</span>
+                                    <span className="font-mono font-bold text-slate-900">₹{pricingBreakdown?.subtotal || totalAmount || 0}</span>
                                 </div>
 
                                 {/* Coupon Discount */}
@@ -623,7 +586,7 @@ export default function ClinicalOrderDetailPage() {
                                         <span className="text-[10px] text-slate-400 font-medium">Inclusive of taxes &amp; consultation fees</span>
                                     </div>
                                     <strong className="text-2xl font-black font-mono text-[#3d3f96]">
-                                        ₹{totalAmount}
+                                        ₹{totalAmount || 0}
                                     </strong>
                                 </div>
                             </div>
@@ -683,7 +646,7 @@ export default function ClinicalOrderDetailPage() {
 
             {/* Lightbox Image Preview Modal for Uploaded Reports */}
             {selectedImagePreview && (
-                <div 
+                <div
                     onClick={() => setSelectedImagePreview(null)}
                     className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in"
                 >

@@ -2,41 +2,7 @@
 
 import React, { useEffect, useState, useMemo, use } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-    ChevronLeft,
-    Calendar,
-    Clock,
-    HeartPulse,
-    Tag,
-    X,
-    AlertTriangle,
-    Check,
-    RotateCcw,
-    MapPin,
-    Printer,
-    XCircle,
-    CalendarClock,
-    BadgeCheck,
-    Video,
-    Home,
-    Building2,
-    Stethoscope,
-    ShieldCheck,
-    CheckCircle2,
-    AlertCircle,
-    Loader2,
-    Receipt,
-    CreditCard,
-    User,
-    Phone,
-    Mail,
-    FileText,
-    Download,
-    Share2,
-    Sparkles,
-    Key,
-    RefreshCw
-} from 'lucide-react';
+import { ChevronLeft, Calendar, Clock, HeartPulse, Tag, X, AlertTriangle, Check, RotateCcw, MapPin, Printer, XCircle, CalendarClock, BadgeCheck, Video, Home, Building2, Stethoscope, ShieldCheck, CheckCircle2, AlertCircle, Loader2, Receipt, CreditCard, User, Phone, Mail, FileText, Download, Share2, Sparkles, Key, RefreshCw } from 'lucide-react';
 
 import UserAPI from '../../../../../services/UserAPI';
 import { useNotification } from '../../../../../context/NotificationContext';
@@ -51,7 +17,7 @@ const getMediaUrl = (path) => {
     return `${BASE_SERVER_URL}/${cleanPath}`;
 };
 
-const DOC_PLACEHOLDER = "https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=400&auto=format&fit=crop";
+const DOC_PLACEHOLDER = "https://img.magnific.com/premium-vector/profile-icon-male-avatar-icon-user-circles-default-profile-picture-anonymous-user-avatar-person-icon-head-icon-social-network-avatar-portrait-male-female-businessman-photo-placeholder_180124-4.jpg?semt=ais_hybrid&w=740&q=80";
 
 /**
  * Format 24hr "HH:mm" string to 12hr "hh:mm A" string (e.g., "09:00" -> "09:00 AM", "16:30" -> "04:30 PM")
