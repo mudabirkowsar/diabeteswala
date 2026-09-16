@@ -533,6 +533,70 @@ const UserAPI = {
         const response = await authApi.get(`/user/doctors/slots/${doctorId}`, { params });
         return response.data;
     },
+    // ===================================================
+    // --- USER DOCTOR CHECKOUT, BOOKING & PAYMENT APIS --
+    // ===================================================
+
+    // --- 1. Get Applicable Coupons for Doctor ---
+    getDoctorCoupons: async (doctorId) => {
+        // doctorId: Doctor unique ObjectID (_id) (e.g. "6aa78493d7a1fa839c5ac7b0")
+        const response = await authApi.get(`/user/doctors/coupons/${doctorId}`);
+        return response.data;
+    },
+
+    // --- 2. Validate & Apply Coupon Code ---
+    validateDoctorCoupon: async (couponPayload) => {
+        // couponPayload: { couponCode: "DOCDR20", subtotal: 800, doctorId: "6aa78493d7a1fa839c5ac7b0" }
+        const response = await authApi.post('/user/doctors/validate-coupon', couponPayload);
+        return response.data;
+    },
+
+    // --- 3. Get Checkout Summary & Bill Preview ---
+    getDoctorCheckoutSummary: async (summaryPayload) => {
+        // summaryPayload: { doctorId, consultationType: 'Clinic Visit'|'Video Consult'|'Home Visit', appointmentDate, timeSlot, couponCode, distance, address, patients, specialServices }
+        const response = await authApi.post('/user/doctors/checkout-summary', summaryPayload);
+        return response.data;
+    },
+
+    // --- 4. Book Appointment (Create Order & Book) ---
+    bookDoctorAppointment: async (bookingPayload) => {
+        // bookingPayload: JSON object or FormData instance (if uploading patient medicalReport file)
+        const response = await authApi.post('/user/doctors/book', bookingPayload, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    // --- 5. Verify Razorpay Payment & Confirm Booking ---
+    verifyDoctorPayment: async (paymentPayload) => {
+        // paymentPayload: { appointmentId, razorpayOrderId, razorpayPaymentId, razorpaySignature }
+        const response = await authApi.post('/user/doctors/verify-payment', paymentPayload);
+        return response.data;
+    },
+
+    getIndependentDoctorBookingsList: async () => {
+        const response = await authApi.get('/user/doctors/my-appointments');
+        return response.data;
+    },
+
+    getIndependentDoctorBookingDetails: async (bookingId) => {
+        const response = await authApi.get(`/user/doctors/my-appointments/${bookingId}`);
+        return response.data;
+    },
+    // ===================================================
+    // --- DOCTOR APPOINTMENTS MANAGEMENT APIS -----------
+    // ===================================================
+
+    // --- 1. Cancel Appointment (Doctor-Side) ---
+    cancelDoctorAppointment: async (appointmentId, cancelPayload) => {
+        // appointmentId: Target appointment MongoDB Object ID (_id) (e.g. "66e57a3e14515a448ac2dcbb")
+        // cancelPayload: { reason: "Doctor has an emergency surgery", isPermanent: true }
+        // (Set isPermanent to true for full refund; false allows free patient reschedule)
+        const response = await authApi.patch(`/doctor/appointments/cancel/${appointmentId}`, cancelPayload);
+        return response.data;
+    },
 
 }
 export default UserAPI;

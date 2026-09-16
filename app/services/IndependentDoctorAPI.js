@@ -106,6 +106,46 @@ const IndependentDoctorAPI = {
         // payload: { time: "13:30" } in 24h string format
         const response = await authApi.post('/doctor/availability/unblock', payload);
         return response.data;
+    },
+
+    // ===================================================
+    // --- DOCTOR COUPON MANAGEMENT APIS ----------------
+    // ===================================================
+
+    // --- 1. Create Doctor Coupon ---
+    createDoctorCoupon: async (couponData) => {
+        // couponData: { couponName, discountPercentage, maxDiscount, expiryDate, minOrderAmount, maxUsagePerUser, startDate }
+        const response = await authApi.post('/doctor/coupon/add', couponData);
+        return response.data;
+    },
+
+    // --- 2. List Doctor Coupons (Own + Admin Global) ---
+    getDoctorCouponsList: async () => {
+        // Fetches doctor's own created coupons along with platform-wide admin global vouchers
+        const response = await authApi.get('/doctor/coupon/list');
+        return response.data;
+    },
+
+    // --- 3. Toggle Coupon Status (Active / Inactive) ---
+    toggleDoctorCouponStatus: async (id) => {
+        // id: Coupon unique ObjectID (_id) (e.g. "6aa8a1015949ee41047f9001")
+        const response = await authApi.patch(`/doctor/coupon/toggle/${id}`);
+        return response.data;
+    },
+
+    // --- 4. Update Doctor Coupon ---
+    updateDoctorCoupon: async (id, couponData) => {
+        // id: Coupon unique ObjectID (_id)
+        // couponData: Partial object containing the fields needing update (e.g. { discountPercentage: 25, maxDiscount: 250 })
+        const response = await authApi.put(`/doctor/coupon/update/${id}`, couponData);
+        return response.data;
+    },
+
+    // --- 5. Delete Doctor Coupon ---
+    deleteDoctorCoupon: async (id) => {
+        // id: Coupon unique ObjectID (_id) to permanently remove from database
+        const response = await authApi.delete(`/doctor/coupon/delete/${id}`);
+        return response.data;
     }
 }
 

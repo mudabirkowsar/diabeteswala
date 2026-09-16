@@ -645,6 +645,10 @@ export default function Sidebar({ sidebarOpen }) {
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/others/promotions") ? theme.primary : "#D1D5DB" }} />
                                     Manage Coupon
                                 </Link>
+                                <Link href="/admin/others/managereshcedulelimit" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/others/managereshcedulelimit") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/others/managereshcedulelimit") ? theme.primary : "#D1D5DB" }} />
+                                    Manage Reschedule Limit
+                                </Link>
                                 
                                 <Link href="/admin/others/maganedoctordegreeandspecilization" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/others/maganedoctordegreeandspecilization") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/others/maganedoctordegreeandspecilization") ? theme.primary : "#D1D5DB" }} />

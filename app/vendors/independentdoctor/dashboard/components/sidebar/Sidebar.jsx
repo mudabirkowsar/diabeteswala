@@ -36,6 +36,7 @@ export default function ClinicSidebar({ sidebarOpen }) {
         { name: "Manage Profile", route: "/vendors/independentdoctor/dashboard/profile", icon: FaUniversity },
         { name: "Appointments", route: "/vendors/independentdoctor/dashboard/appointments", icon: FaCalendarCheck },
         { name: "Manage Slots", route: "/vendors/independentdoctor/dashboard/manageslots", icon: FaClock },
+        { name: "Manage Coupons", route: "/vendors/independentdoctor/dashboard/managecoupon", icon: FaClock },
         // { name: "Achievements", route: "/vendors/independentdoctor/dashboard/achievements", icon: FaTrophy },
         // { name: "Services", route: "/vendors/independentdoctor/dashboard/services", icon: FaHandHoldingMedical },
         { name: "Documents", route: "/vendors/independentdoctor/dashboard/documents", icon: FaFileMedical },

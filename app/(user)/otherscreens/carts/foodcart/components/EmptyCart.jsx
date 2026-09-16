@@ -18,7 +18,7 @@ export default function EmptyCart() {
             </p>
             <button
                 type="button"
-                onClick={() => router.push('/food/nearest')}
+                onClick={() => router.push('/food')}
                 className="mt-6 inline-flex items-center gap-2 bg-[#3d3f96] hover:bg-[#2d2f75] text-white px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-indigo-950/15"
             >
                 <span>Explore Healthy Meals</span>

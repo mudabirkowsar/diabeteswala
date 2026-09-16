@@ -118,7 +118,8 @@ function BookingContent() {
     setSelectedMember(member);
   };
 
-  const handleConfirmSlot = () => {
+  // Proceed to Review Booking Page
+  const handleProceedToReview = () => {
     if (!selectedSlot) {
       alert('Please select an appointment time slot.');
       return;
@@ -130,22 +131,32 @@ function BookingContent() {
       return;
     }
 
-    // Pass complete booking payload forward
-    const sessionPayload = {
-      ...bookingData,
+    // Save full review payload to localStorage
+    const reviewPayload = {
+      doctorId: bookingData?.doctorId,
+      doctorName: bookingData?.doctorName,
+      doctorSpeciality: bookingData?.doctorSpeciality,
+      doctorQualification: bookingData?.doctorQualification,
+      doctorImage: bookingData?.doctorImage,
+      slotDuration: bookingData?.slotDuration || 30,
+      clinicDetails: bookingData?.clinicDetails,
+      practiceAddress: bookingData?.address,
       consultationType: selectedType,
       consultationFee: selectedFee,
       slot: selectedSlot,
       patient: selectedMember,
-      address: selectedType === 'Home Visit' ? selectedAddress : bookingData?.address,
-      totalFee: totalAmountPayable
+      homeAddress: selectedType === 'Home Visit' ? selectedAddress : null,
+      premiumFee: selectedSlot?.premiumFee || 0,
+      totalFee: totalAmountPayable,
+      createdAt: new Date().toISOString()
     };
 
     if (typeof window !== 'undefined') {
-      localStorage.setItem('confirmedDoctorAppointment', JSON.stringify(sessionPayload));
+      localStorage.setItem('doctorBookingReview', JSON.stringify(reviewPayload));
     }
 
-    alert(`Appointment confirmed for ${selectedMember.memberName} on ${selectedSlot.date} at ${selectedSlot.formattedTime}! Total: ₹${totalAmountPayable}`);
+    // Navigate to Review Page
+    router.push('/doctor/reviewbooking');
   };
 
   if (loading) {
@@ -390,7 +401,7 @@ function BookingContent() {
               <div className="space-y-3 text-xs mb-5">
                 <div className="flex justify-between items-center py-2 border-b border-slate-100">
                   <span className="text-slate-500 font-medium">Patient:</span>
-                  <span className="font-bold text-slate-900">
+                  <span className="font-bold text-slate-900 truncate max-w-[190px]">
                     {selectedMember?.memberName} ({selectedMember?.relation || 'SELF'})
                   </span>
                 </div>
@@ -454,14 +465,14 @@ function BookingContent() {
                 </div>
               </div>
 
-              {/* Proceed Button */}
+              {/* Review & Proceed Button */}
               <button
                 type="button"
-                onClick={handleConfirmSlot}
+                onClick={handleProceedToReview}
                 disabled={!selectedSlot || (selectedType === 'Home Visit' && !selectedAddress)}
                 className="w-full bg-[#3d3f96] hover:bg-slate-900 text-white py-4 rounded-2xl text-xs font-extrabold tracking-wider uppercase transition-all duration-200 shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed mb-3"
               >
-                <span>Proceed to Checkout</span>
+                <span>Review & Proceed</span>
                 <ArrowRight size={15} />
               </button>
 

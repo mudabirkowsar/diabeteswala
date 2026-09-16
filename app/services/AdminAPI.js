@@ -47,6 +47,24 @@ const AdminAPI = {
         return response.data;
     },
 
+    // ==========================================================
+    // --- ADMIN DOCTOR RESCHEDULE POLICY CONFIGURATION APIS ----
+    // ==========================================================
+
+    // --- 1. Update Doctor Reschedule Limit ---
+    updateDoctorRescheduleLimit: async (limitPayload) => {
+        // limitPayload: { limit: 3 } (Number or String indicating max allowed reschedules)
+        const response = await authApi.patch('/admin/doctor/update-reschedule-limit', limitPayload);
+        return response.data;
+    },
+
+    // --- 2. Get Current Doctor Reschedule Limit ---
+    getDoctorRescheduleLimit: async () => {
+        // Fetches the active platform-wide reschedule limit (returns default 2 if unconfigured)
+        const response = await authApi.get('/admin/doctor/reschedule-limit');
+        return response.data;
+    },
+
     // ===================================================
     // --- ADMIN PROFILE UPDATE APPROVAL APIS ------------
     // ===================================================
