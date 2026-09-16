@@ -525,7 +525,7 @@ const UserAPI = {
     // ===================================================
     // --- USER DOCTOR APPOINTMENT & SLOTS APIS ---------
     // ===================================================
-
+    
     // --- 1. Get Doctor Available Slots by Date ---
     getDoctorAvailableSlots: async (doctorId, params) => {
         // doctorId: Doctor unique ObjectID (_id) (e.g. "6aa273f1a14515a448ac2dca")
@@ -533,6 +533,7 @@ const UserAPI = {
         const response = await authApi.get(`/user/doctors/slots/${doctorId}`, { params });
         return response.data;
     },
+
     // ===================================================
     // --- USER DOCTOR CHECKOUT, BOOKING & PAYMENT APIS --
     // ===================================================
@@ -585,18 +586,26 @@ const UserAPI = {
         const response = await authApi.get(`/user/doctors/my-appointments/${bookingId}`);
         return response.data;
     },
+
     // ===================================================
-    // --- DOCTOR APPOINTMENTS MANAGEMENT APIS -----------
+    // --- USER DOCTOR CANCELLATION & RESCHEDULE APIS ----
     // ===================================================
 
-    // --- 1. Cancel Appointment (Doctor-Side) ---
-    cancelDoctorAppointment: async (appointmentId, cancelPayload) => {
-        // appointmentId: Target appointment MongoDB Object ID (_id) (e.g. "66e57a3e14515a448ac2dcbb")
-        // cancelPayload: { reason: "Doctor has an emergency surgery", isPermanent: true }
-        // (Set isPermanent to true for full refund; false allows free patient reschedule)
-        const response = await authApi.patch(`/doctor/appointments/cancel/${appointmentId}`, cancelPayload);
+    // --- 1. Cancel Doctor Appointment (Patient-Side) ---
+    cancelUserDoctorAppointment: async (appointmentId, cancelPayload) => {
+        // appointmentId: Appointment unique ObjectID (_id) (e.g. "6aa8ee4f3bc4a40491d5b8ca")
+        // cancelPayload: { reason: "Personal emergency, will reschedule later.", isPermanent: false }
+        // (Set isPermanent to false for Reschedule-Ready mode; true triggers permanent refund calculation)
+        const response = await authApi.patch(`/user/doctors/cancel/${appointmentId}`, cancelPayload);
         return response.data;
     },
+
+    // --- 2. Reschedule Doctor Appointment ---
+    rescheduleUserDoctorAppointment: async (reschedulePayload) => {
+        // reschedulePayload: { appointmentId: "6aa8ee4f3bc4a40491d5b8ca", newDate: "YYYY-MM-DD", newTimeSlot: "04:00 PM" }
+        const response = await authApi.post('/user/doctors/reschedule', reschedulePayload);
+        return response.data;
+    }
 
 }
 export default UserAPI;
