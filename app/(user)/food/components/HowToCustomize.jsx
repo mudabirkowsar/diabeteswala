@@ -68,7 +68,7 @@ export default function HowToCustomize() {
     }, [paused]);
 
     return (
-        <div className="py-8 px-4 sm:px-6 lg:px-10">
+        <div className="py-0 px-4 sm:px-6 lg:px-10">
             <div
                 className="bg-gradient-to-br from-[#181926] via-[#121320] to-[#0b0c15] rounded-3xl p-5 sm:p-7 lg:p-8 text-white shadow-2xl shadow-black/40 relative overflow-hidden border border-red-500/20"
                 onMouseEnter={() => setPaused(true)}
@@ -160,8 +160,8 @@ export default function HowToCustomize() {
                                                 <div
                                                     key={`${d.label}-${i}`}
                                                     className={`h-7 rounded-md flex items-center justify-center text-[10px] font-black border transition-all animate-[popIn_0.35s_ease-out_both] ${d.active
-                                                            ? 'bg-red-500 text-white border-red-400/60 shadow-sm shadow-red-500/30'
-                                                            : 'bg-white/[0.04] text-slate-400 border-white/5 opacity-50'
+                                                        ? 'bg-red-500 text-white border-red-400/60 shadow-sm shadow-red-500/30'
+                                                        : 'bg-white/[0.04] text-slate-400 border-white/5 opacity-50'
                                                         }`}
                                                     style={{ animationDelay: active === 1 ? `${i * 60}ms` : '0ms' }}
                                                 >
@@ -187,8 +187,8 @@ export default function HowToCustomize() {
                                                 <div
                                                     key={row.day}
                                                     className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 border transition-all animate-[fadeSlideIn_0.4s_ease-out_both] ${row.active
-                                                            ? 'bg-red-500/15 border-red-400/40 text-white'
-                                                            : 'bg-white/[0.03] border-white/5 text-slate-300'
+                                                        ? 'bg-red-500/15 border-red-400/40 text-white'
+                                                        : 'bg-white/[0.03] border-white/5 text-slate-300'
                                                         }`}
                                                     style={{ animationDelay: active === 2 ? `${i * 100}ms` : '0ms' }}
                                                 >
@@ -249,14 +249,14 @@ export default function HowToCustomize() {
                                         key={step.num}
                                         onClick={() => setActive(i)}
                                         className={`relative text-left flex items-start gap-3 rounded-xl p-3 border transition-all duration-300 cursor-pointer select-none ${isActive
-                                                ? 'bg-white/[0.07] border-red-500/50 shadow-md shadow-red-950/20'
-                                                : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10'
+                                            ? 'bg-white/[0.07] border-red-500/50 shadow-md shadow-red-950/20'
+                                            : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10'
                                             }`}
                                     >
                                         <span
                                             className={`shrink-0 mt-0.5 flex items-center justify-center w-7 h-7 rounded-lg transition-all ${isActive
-                                                    ? 'bg-red-600 text-white shadow-sm shadow-red-600/40'
-                                                    : 'bg-white/5 text-slate-400'
+                                                ? 'bg-red-600 text-white shadow-sm shadow-red-600/40'
+                                                : 'bg-white/5 text-slate-400'
                                                 }`}
                                         >
                                             <Icon size={14} />
@@ -376,8 +376,8 @@ function PanelStep({ visible, children }) {
     return (
         <div
             className={`transition-all duration-400 ease-out ${visible
-                    ? 'opacity-100 translate-x-0 pointer-events-auto block'
-                    : 'opacity-0 translate-x-2 pointer-events-none hidden'
+                ? 'opacity-100 translate-x-0 pointer-events-auto block'
+                : 'opacity-0 translate-x-2 pointer-events-none hidden'
                 }`}
         >
             {children}
@@ -418,7 +418,7 @@ function TiffinCharacter({ step }) {
                     {/* Bottom Tier */}
                     <rect x="42" y="73" width="40" height="13" rx="3.5" fill="url(#metalGlow)" />
                     <rect x="42" y="73" width="40" height="13" rx="3.5" fill="url(#tierShade)" opacity="0.4" />
-                    
+
                     {/* Middle Tier */}
                     <rect x="44" y="62" width="36" height="12" rx="3" fill="url(#metalGlow)" />
                     <rect x="44" y="62" width="36" height="12" rx="3" fill="url(#tierShade)" opacity="0.4" />
@@ -461,14 +461,14 @@ function TiffinCharacter({ step }) {
 
                     {/* Torso / Clothes */}
                     <rect x="18" y="52" width="22" height="30" rx="6" fill="#1e293b" />
-                    
+
                     {/* Apron */}
                     <path d="M20 56 h18 v20 q-9 4 -18 0 z" fill="#dc2626" />
                     <line x1="20" y1="56" x2="29" y2="50" stroke="#b91c1c" strokeWidth="1.5" />
 
                     {/* Head */}
                     <circle cx="29" cy="40" r="11" fill="#fbcfe8" />
-                    
+
                     {/* Hair */}
                     <path d="M19 38 q2 -8 11 -8 q8 0 10 5 q-5 0 -9 2 z" fill="#451a03" />
 

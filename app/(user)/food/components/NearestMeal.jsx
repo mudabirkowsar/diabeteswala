@@ -300,10 +300,9 @@ export default function NearestMeal() {
                 </div>
             )}
             {/* --- BOTTOM PROMO BANNER: DIABETESWALA BRAND --- */}
-            <div className="bg-gradient-to-br from-[#1c1d2d] via-[#141624] to-[#0d0f1a] rounded-[2.5rem] p-8 sm:p-12 text-white shadow-xl shadow-slate-950/20 flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden text-center sm:text-left border border-red-500/15">
+            {/* <div className="bg-gradient-to-br from-[#1c1d2d] via-[#141624] to-[#0d0f1a] rounded-[2.5rem] p-8 sm:p-12 text-white shadow-xl shadow-slate-950/20 flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden text-center sm:text-left border border-red-500/15">
 
                 <div className="space-y-3 z-10 max-w-xl">
-                    {/* Secondary Color Badge */}
                     <span className="inline-flex items-center gap-1.5 bg-red-50/60 text-red-600 text-[10px] font-black uppercase tracking-widest px-3.5 py-1.5 rounded-full border border-red-200/60 shadow-sm backdrop-blur-md">
                         <ShieldCheck size={13} className="text-red-600" /> Powered by DiabetesWala™ Certified Kitchens
                     </span>
@@ -316,8 +315,6 @@ export default function NearestMeal() {
                         All meals are prepared in FSSAI-licensed cloud facilities using Low-GI ingredients and zero refined sugar under the strict supervision of qualified dietitians.
                     </p>
                 </div>
-
-                {/* Call to Action Button */}
                 <button
                     onClick={() => router.push('/food/allfooditems')}
                     className="inline-flex items-center gap-2.5 bg-red-600 hover:bg-red-500 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-red-600/30 transition-all cursor-pointer shrink-0 hover:scale-[1.02] z-10"
@@ -326,10 +323,9 @@ export default function NearestMeal() {
                     <ArrowRight size={16} />
                 </button>
 
-                {/* Ambient lighting shapes */}
                 <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-red-600/15 rounded-full blur-3xl pointer-events-none" />
                 <div className="absolute left-10 -top-10 w-48 h-48 bg-rose-500/10 rounded-full blur-2xl pointer-events-none" />
-            </div>
+            </div> */}
 
         </div>
     );

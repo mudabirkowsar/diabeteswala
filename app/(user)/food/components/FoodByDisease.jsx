@@ -366,9 +366,8 @@ export default function FoodByDisease() {
       )}
 
       {/* --- BOTTOM PROMO BANNER: DIABETESWALA PROMOTION --- */}
-      <div className="bg-gradient-to-br from-[#1c1d2d] via-[#141624] to-[#0d0f1a] rounded-[2.5rem] p-8 sm:p-12 text-white shadow-xl shadow-slate-950/20 flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden text-center sm:text-left border border-red-500/15">
+      {/* <div className="bg-gradient-to-br from-[#1c1d2d] via-[#141624] to-[#0d0f1a] rounded-[2.5rem] p-8 sm:p-12 text-white shadow-xl shadow-slate-950/20 flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden text-center sm:text-left border border-red-500/15">
         <div className="space-y-3 z-10 max-w-xl">
-          {/* Secondary Color Badge */}
           <span className="inline-flex items-center gap-1.5 bg-red-50/60 text-red-600 text-[10px] font-black uppercase tracking-widest px-3.5 py-1.5 rounded-full border border-red-200/60 shadow-sm backdrop-blur-md">
             <HeartPulse size={13} className="text-red-600" /> Powered by DiabetesWala™ Care
           </span>
@@ -379,7 +378,6 @@ export default function FoodByDisease() {
             Formulated by certified clinical dietitians with low glycemic index (Low-GI) grains, balanced portion macros, and zero refined sugar to help keep your glucose levels balanced.
           </p>
         </div>
-        {/* Call to Action Button */}
         <button
           onClick={() => {
             router.push('/food/allfooditems');
@@ -390,10 +388,9 @@ export default function FoodByDisease() {
           <ArrowRight size={16} />
         </button>
 
-        {/* Ambient background blur accents */}
         <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-red-600/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute left-10 -top-10 w-48 h-48 bg-rose-500/10 rounded-full blur-2xl pointer-events-none" />
-      </div>
+      </div> */}
 
     </div>
   );

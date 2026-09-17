@@ -19,22 +19,22 @@ import AbulancePromoBanner from './homePageComponents/AmbulancePromoBanner'
 function page() {
   return (
     <>
-    <Hero />
-    <MedicineShowcase />
-    {/* <MiniCarePrograms /> */}
-    <MedicinePromotion />
-    <DoctorShowcase />
-    <DoctorPromotion />
-    <AmbulancesList />
-    <AbulancePromoBanner />
-    <LabTestShowcase />
-    {/* <ServiceShortcuts /> */}
-    <WayChooseDiabetesWala />
-    {/* <HealthMetricsStrip /> */}
-    <ClinicShowcase />
-    <LabPromotion />
-    {/* <LabBookingBanner/> */}
-    {/* <DiabetesScienceHub /> */}
+      <Hero />
+      <MedicineShowcase />
+      {/* <MiniCarePrograms /> */}
+      <MedicinePromotion />
+      <DoctorShowcase />
+      <DoctorPromotion />
+      <AmbulancesList />
+      <AbulancePromoBanner />
+      <LabTestShowcase />
+      {/* <ServiceShortcuts /> */}
+      <WayChooseDiabetesWala />
+      {/* <HealthMetricsStrip /> */}
+      <ClinicShowcase />
+      <LabPromotion />
+      {/* <LabBookingBanner/> */}
+      {/* <DiabetesScienceHub /> */}
     </>
   )
 }

@@ -10,7 +10,9 @@ import {
   Loader2,
   ArrowRight,
   ShieldCheck,
-  HeartPulse
+  HeartPulse,
+  CheckCircle2,
+  Leaf
 } from 'lucide-react';
 
 // Import your API service functions & Notification Context
@@ -108,13 +110,15 @@ export default function GetNearComboOffers() {
 
     return (
       <div
-        className={`w-4 h-4 border-2 rounded flex items-center justify-center p-[2px] shrink-0 bg-white/95 shadow-sm ${isVeg ? 'border-emerald-500' : isEgg ? 'border-amber-500' : isNonVeg ? 'border-rose-500' : 'border-slate-300'
-          }`}
+        className={`w-4 h-4 border-2 rounded flex items-center justify-center p-[2px] shrink-0 bg-white/95 shadow-sm ${
+          isVeg ? 'border-emerald-500' : isEgg ? 'border-amber-500' : isNonVeg ? 'border-red-500' : 'border-slate-300'
+        }`}
         title={type}
       >
         <span
-          className={`w-1.5 h-1.5 rounded-full ${isVeg ? 'bg-emerald-500' : isEgg ? 'bg-amber-500' : isNonVeg ? 'bg-rose-500' : 'bg-slate-400'
-            }`}
+          className={`w-1.5 h-1.5 rounded-full ${
+            isVeg ? 'bg-emerald-500' : isEgg ? 'bg-amber-500' : isNonVeg ? 'bg-red-500' : 'bg-slate-400'
+          }`}
         />
       </div>
     );
@@ -188,17 +192,24 @@ export default function GetNearComboOffers() {
                 0
               );
 
+              // Health goal tag determination
+              const healthGoalTag = totalCalories > 0 && totalCalories < 500
+                ? "Weight Loss • Calorie Smart"
+                : "Active Fuel • High Nutrition";
+
               return (
+                /* --- REDESIGNED HEALTH MEAL PLAN CARD --- */
                 <div
                   key={combo._id}
                   onClick={() => router.push(`/food/combodetail/${combo._id}`)}
-                  className={`bg-white rounded-3xl border border-slate-100 shadow-sm transition-all duration-300 overflow-hidden flex flex-col justify-between group text-left cursor-pointer ${isAvailable
-                    ? 'hover:shadow-xl hover:-translate-y-1'
-                    : 'opacity-65 saturate-[0.25] border-slate-200 shadow-none'
-                    }`}
+                  className={`bg-white rounded-3xl border border-slate-200/90 shadow-sm transition-all duration-300 overflow-hidden flex flex-col justify-between group text-left cursor-pointer ${
+                    isAvailable
+                      ? 'hover:shadow-xl hover:border-[#3d3f96]/50 hover:-translate-y-1'
+                      : 'opacity-65 saturate-[0.25] border-slate-200 shadow-none'
+                  }`}
                 >
                   <div>
-                    {/* Visual Banner with Badges */}
+                    {/* Visual Banner with Health Badges */}
                     <div className="relative h-52 w-full overflow-hidden bg-slate-100">
                       <img
                         src={bannerImage}
@@ -206,86 +217,92 @@ export default function GetNearComboOffers() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
 
-                      {/* Top Badges */}
-                      <div className="absolute top-3.5 left-3.5 flex items-center gap-2">
+                      {/* Top Badges: Diet + Health Category */}
+                      <div className="absolute top-3.5 left-3.5 flex items-center gap-2 z-20">
                         {renderDietBadge(dietType)}
-                        <span className="bg-black/60 backdrop-blur-md text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider border border-white/10 z-20">
-                          {combo.comboId || "COMBO"}
+                        <span className="bg-[#3d3f96] text-white text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider shadow border border-white/15">
+                          {healthGoalTag}
                         </span>
                       </div>
 
                       {/* Distance Pill */}
                       <div className="absolute top-3.5 right-3.5 bg-black/60 backdrop-blur-md text-white px-2.5 py-1 rounded-xl text-[10px] font-black tracking-wide flex items-center gap-1 shadow-sm border border-white/10 z-20">
-                        <MapPin size={11} className="text-rose-400 shrink-0" />
+                        <MapPin size={11} className="text-red-400 shrink-0" />
                         <span>{combo.distanceText || `${combo.distance || 0} km`}</span>
                       </div>
 
-                      {/* Availability Overlays if Unavailable near client location */}
-                      {!isAvailable && (
-                        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[1.5px] flex items-center justify-center z-10">
-                          <span className="bg-rose-600 text-white text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl shadow-lg border border-rose-500/50">
-                            Not Available Near You
-                          </span>
-                        </div>
-                      )}
-
                       {/* Savings Percentage Tag */}
                       {discountPct > 0 && (
-                        <span className="absolute bottom-3.5 left-4 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg shadow-sm z-20">
-                          Save {discountPct}% Off
+                        <span className="absolute bottom-3.5 left-4 bg-red-500 text-white text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg shadow-sm z-20">
+                          Save {discountPct}% on Plan
                         </span>
+                      )}
+
+                      {/* Availability Overlays */}
+                      {!isAvailable && (
+                        <div className="absolute inset-0 bg-slate-900/65 backdrop-blur-[2px] flex items-center justify-center z-30">
+                          <span className="bg-red-600 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl shadow-lg border border-red-500/50">
+                            Currently Unavailable Near You
+                          </span>
+                        </div>
                       )}
                     </div>
 
                     {/* Content Section */}
                     <div className="p-6 space-y-4">
-                      {/* Kitchen / Vendor Info Header */}
-                      <div className="flex items-center gap-2 pb-2 border-b border-slate-50">
-                        <div className="w-5 h-5 rounded-md overflow-hidden bg-slate-100 shrink-0 border border-slate-200/60">
-                          <img
-                            src={kitchenImage}
-                            alt={vendor.name || "Kitchen"}
-                            className="w-full h-full object-cover"
-                            onError={(e) => { e.target.src = KITCHEN_PLACEHOLDER; }}
-                          />
+                      {/* Certified Kitchen / Health Tag Header */}
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                        <div className="flex items-center gap-2">
+                          <div className="w-5 h-5 rounded-full overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
+                            <img
+                              src={kitchenImage}
+                              alt={vendor.name || "Kitchen"}
+                              className="w-full h-full object-cover"
+                              onError={(e) => { e.target.src = KITCHEN_PLACEHOLDER; }}
+                            />
+                          </div>
+                          <span className="text-[11px] font-bold text-slate-600 truncate max-w-[150px]" title={vendor.name}>
+                            {vendor.name || "Certified Health Kitchen"}
+                          </span>
                         </div>
-                        <span className="text-[11px] font-bold text-slate-500 truncate" title={vendor.name}>
-                          {vendor.name || "Partner Health Kitchen"}
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <Leaf size={10} /> Clean Nutrition
                         </span>
                       </div>
 
+                      {/* Plan Name & Description */}
                       <div>
                         <h3 className="font-extrabold text-slate-900 text-lg leading-snug line-clamp-1 group-hover:text-[#3d3f96] transition-colors">
                           {combo.name}
                         </h3>
                         <p className="text-xs text-slate-500 mt-1 leading-relaxed line-clamp-2">
-                          {combo.description}
+                          {combo.description || "Physician & chef-crafted meal package for complete daily wellness and balanced macros."}
                         </p>
                       </div>
 
-                      {/* Dot-Track for Included Dishes */}
-                      <div className="space-y-3 py-2 border-t border-slate-100/70">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
-                          Included in Bundle ({combo.dishes?.length || 0} items):
-                        </span>
-                        <div className="relative pl-6 space-y-3">
-                          <div className="absolute left-2 top-2 bottom-2 w-[1.5px] bg-slate-200" />
+                      {/* Curated Entrées Box */}
+                      <div className="space-y-2.5 py-3 border-t border-slate-100 bg-slate-50/70 p-3.5 rounded-2xl">
+                        <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-slate-400">
+                          <span>Included Entrées & Sides</span>
+                          <span className="text-[#3d3f96] font-bold">{combo.dishes?.length || 0} Items</span>
+                        </div>
 
+                        <div className="space-y-2">
                           {(combo.dishes || []).map((item, idx) => {
                             const dishObj = item.foodServiceId || {};
                             return (
                               <div
                                 key={idx}
-                                className="relative flex items-center justify-between text-xs font-bold text-slate-700 transition-colors"
+                                className="flex items-center justify-between text-xs font-bold text-slate-700"
                               >
-                                <span className="absolute -left-5 w-2 h-2 rounded-full bg-[#3d3f96] border border-white" />
-                                <span className="truncate max-w-[190px]">
-                                  {dishObj.name || "Dish"} <strong className="text-[#3d3f96]">x{item.quantity}</strong>
-                                </span>
+                                <div className="flex items-center gap-2 truncate max-w-[200px]">
+                                  <CheckCircle2 size={13} className="text-[#3d3f96] shrink-0" />
+                                  <span className="truncate">{dishObj.name || "Curated Dish"}</span>
+                                </div>
                                 <span className="text-slate-400 font-mono text-[11px]">
-                                  ₹{(dishObj.price || 0) * (item.quantity || 1)}
+                                  x{item.quantity || 1}
                                 </span>
                               </div>
                             );
@@ -293,42 +310,42 @@ export default function GetNearComboOffers() {
                         </div>
                       </div>
 
-                      {/* Nutrient & Price Summary Box */}
-                      <div className="grid grid-cols-2 gap-3 py-3 border-y border-slate-50 text-xs font-bold items-center bg-slate-50 p-3.5 rounded-2xl">
-                        <div>
-                          <span className="text-slate-400 block uppercase text-[9px] font-black">Sum Price</span>
-                          <span className="text-slate-400 text-sm line-through font-mono">₹{combo.basePrice}</span>
-                        </div>
-                        <div>
-                          <span className="text-[#3d3f96] block uppercase text-[9px] font-black">Combo Deal</span>
-                          <span className="text-[#3d3f96] text-xl font-black font-mono">₹{combo.comboPrice}</span>
-                        </div>
-                      </div>
-
-                      {/* Badges & Metrics */}
-                      <div className="flex items-center justify-between pt-1">
-                        <div className="flex items-center gap-1.5">
-                          {totalCalories > 0 && (
-                            <span className="flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg">
-                              <Flame size={12} className="text-amber-500" /> {totalCalories} Kcal
-                            </span>
-                          )}
-                          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg">
-                            {combo.spicyLevel || 'Mild'}
+                      {/* Macro & Calories Pill */}
+                      <div className="flex items-center gap-2 pt-1">
+                        {totalCalories > 0 && (
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">
+                            <Flame size={12} className="text-red-500" /> {totalCalories} Kcal
                           </span>
-                        </div>
-
+                        )}
+                        <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">
+                          {combo.spicyLevel || 'Mild Spice'} • Zero Prep
+                        </span>
                         {combo.isPopular && (
-                          <span className="text-[9px] font-black uppercase text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md">
-                            Popular
+                          <span className="text-[9px] font-black uppercase text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded-md ml-auto">
+                            Doctor Pick
                           </span>
                         )}
                       </div>
+
+                      {/* Price Comparison Summary */}
+                      <div className="grid grid-cols-2 gap-3 py-3 border-t border-slate-100 items-center">
+                        <div>
+                          <span className="text-slate-400 block uppercase text-[9px] font-bold">Base Value</span>
+                          <span className="text-slate-400 text-xs line-through font-mono">₹{combo.basePrice}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-red-500 block uppercase text-[9px] font-extrabold">Plan Price</span>
+                          <span className="text-[#3d3f96] text-xl font-black font-mono leading-none">
+                            ₹{combo.comboPrice}
+                          </span>
+                        </div>
+                      </div>
+
                     </div>
                   </div>
 
-                  {/* Order Button Footer */}
-                  <div className="px-6 py-4 bg-slate-50/70 border-t border-slate-100">
+                  {/* Plan CTA Button */}
+                  <div className="px-6 py-4 bg-slate-50/80 border-t border-slate-100">
                     <button
                       type="button"
                       disabled={!isAvailable}
@@ -336,55 +353,23 @@ export default function GetNearComboOffers() {
                         e.stopPropagation();
                         router.push(`/food/combodetail/${combo._id}`);
                       }}
-                      className={`w-full py-3 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 ${isAvailable
-                        ? 'bg-[#3d3f96] hover:bg-[#2d2f75] shadow-md shadow-indigo-950/10 cursor-pointer'
-                        : 'bg-slate-350 border border-slate-200 text-slate-400 cursor-not-allowed shadow-none'
-                        }`}
+                      className={`w-full py-3.5 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 ${
+                        isAvailable
+                          ? 'bg-[#3d3f96] hover:bg-[#32347c] text-white shadow-md shadow-[#3d3f96]/20 cursor-pointer'
+                          : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
+                      }`}
                     >
-                      <span>{isAvailable ? 'Order Combo Deal' : 'Unavailable in Your Area'}</span>
+                      <span>{isAvailable ? 'View Plan & Order' : 'Unavailable in Your Area'}</span>
                       <ArrowRight size={14} />
                     </button>
                   </div>
+
                 </div>
               );
             })}
           </div>
         </div>
       )}
-
-      {/* --- BOTTOM HYGIENE & DIABETESWALA PROMO BANNER --- */}
-      <div className="bg-gradient-to-br from-[#1c1d2d] via-[#141624] to-[#0d0f1a] rounded-[2.5rem] p-8 sm:p-12 text-white shadow-xl shadow-slate-950/20 flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden text-center sm:text-left border border-red-500/15">
-
-        {/* Left Content Area */}
-        <div className="space-y-3 z-10 max-w-xl">
-          {/* Secondary Color Badge */}
-          <span className="inline-flex items-center gap-1.5 bg-red-50/60 text-red-600 text-[10px] font-black uppercase tracking-widest px-3.5 py-1.5 rounded-full border border-red-200/60 shadow-sm backdrop-blur-md">
-            <HeartPulse size={13} className="text-red-600" /> Powered by DiabetesWala™ Care
-          </span>
-
-          <h3 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
-            Fresh Diabetic Combo Offers by <span className="text-red-400">DiabetesWala</span>
-          </h3>
-
-          <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
-            All meal packages are freshly prepared in sanitized cloud kitchens using low-GI grains, zero refined sugars, and packed in 100% food-grade eco containers.
-          </p>
-        </div>
-
-        {/* CTA Action Button */}
-        <button
-          onClick={() => router.push('/food/allfooditems')}
-          className="inline-flex items-center gap-2.5 bg-red-600 hover:bg-red-500 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-red-600/30 transition-all cursor-pointer shrink-0 hover:scale-[1.02] z-10"
-        >
-          <span>Explore Diabetic Tiffins</span>
-          <ArrowRight size={16} />
-        </button>
-
-        {/* Ambient background blur accents */}
-        <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-red-600/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute left-10 -top-10 w-48 h-48 bg-rose-500/10 rounded-full blur-2xl pointer-events-none" />
-      </div>
-
     </div>
   );
 }
