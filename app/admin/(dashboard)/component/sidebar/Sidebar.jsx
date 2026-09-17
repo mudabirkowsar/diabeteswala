@@ -336,6 +336,9 @@ export default function Sidebar({ sidebarOpen }) {
                                 <Link href="/admin/food/managebanner" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/managebanner") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/managebanner") ? theme.primary : "#D1D5DB" }} /> Manage Banners
                                 </Link>
+                                <Link href="/admin/food/healthplan" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/healthplan") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/healthplan") ? theme.primary : "#D1D5DB" }} /> Manage Health Plans
+                                </Link>
 
 
                                 {/* Interactive Expandable Tiffin Sub-Dropdown */}

@@ -502,6 +502,58 @@ const AdminAPI = {
         return response.data;
     },
 
+    // =========================================================================
+    // HEALTHY DIET PLANS
+    // Base URL: /admin/food/healthy-plans
+    // =========================================================================
+
+    // 1. Create Healthy Plan (Multi-part Form-Data)
+    // formData should contain all text fields + files (bannerImage & images)
+    createHealthyPlan: async (formData) => {
+        const response = await authApi.post('/admin/food/healthy-plans/add', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    // 2. Get All Healthy Plans (with search, filter & pagination params)
+    // params example: { mainCategory, subCategory, programType, daysCount, search, page, limit }
+    getAllHealthyPlans: async (params = {}) => {
+        const response = await publicApi.get('/admin/food/healthy-plans/get', { params });
+        return response.data;
+    },
+
+    // 3. Get Single Healthy Plan Full Details (by _id or planId e.g. HLP-102)
+    getHealthyPlanById: async (id) => {
+        const response = await publicApi.get(`/admin/food/healthy-plans/get/${id}`);
+        return response.data;
+    },
+
+    // 4. Update Healthy Plan (Multi-part Form-Data)
+    // id can be MongoDB _id or planId (HLP-102)
+    updateHealthyPlan: async (id, formData) => {
+        const response = await authApi.put(`/admin/food/healthy-plans/update/${id}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    // 5. Toggle Plan Active / Inactive Status
+    toggleHealthyPlanStatus: async (id) => {
+        const response = await authApi.patch(`/admin/food/healthy-plans/toggle-status/${id}`);
+        return response.data;
+    },
+
+    // 6. Delete Healthy Plan
+    deleteHealthyPlan: async (id) => {
+        const response = await authApi.delete(`/admin/food/healthy-plans/delete/${id}`);
+        return response.data;
+    },
+
     // ===================================================
     // --- ADMIN COUPONS & PROMOTIONS APIS ---------------
     // ===================================================
@@ -602,6 +654,37 @@ const AdminAPI = {
 
     deleteAddon: async (id) => {
         const response = await authApi.delete(`/api/food/checkout/addons/delete/${id}`);
+        return response.data;
+    },
+
+    // 1. Add / Sync Category & Subcategories
+    addHealthyCategory: async (categoryData) => {
+        const response = await authApi.post('/admin/food/healthy-plans/categories/add', categoryData);
+        return response.data;
+    },
+
+    // 2. Get All Healthy Categories
+    getAllHealthyCategories: async () => {
+        const response = await publicApi.get('/admin/food/healthy-plans/categories/get');
+        return response.data;
+    },
+
+    // 3. Update Category & Subcategories
+    updateHealthyCategory: async (id, updateData) => {
+        const response = await authApi.put(`/admin/food/healthy-plans/categories/update/${id}`, updateData);
+        return response.data;
+    },
+
+    // 4. Delete Single Subcategory
+    deleteHealthySubCategory: async (mainCategoryId, subCategoryName) => {
+        const encodedName = encodeURIComponent(subCategoryName);
+        const response = await authApi.delete(`/admin/food/healthy-plans/categories/${mainCategoryId}/sub/${encodedName}`);
+        return response.data;
+    },
+
+    // 5. Delete Entire Main Category
+    deleteHealthyMainCategory: async (id) => {
+        const response = await authApi.delete(`/admin/food/healthy-plans/categories/${id}`);
         return response.data;
     },
 
