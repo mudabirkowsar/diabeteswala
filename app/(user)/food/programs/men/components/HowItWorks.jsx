@@ -42,7 +42,7 @@ export default function HowItWorks() {
 
                 {/* Section Header with Decorative Lines */}
                 <div className="text-center max-w-3xl mx-auto mb-16">
-                    
+
                     {/* Title with Classic Flanking Rules */}
                     <div className="flex items-center justify-center gap-4 mb-4">
                         <span className="hidden sm:block h-[2px] w-16 md:w-24 bg-gradient-to-r from-transparent to-[#3d3f96]/40" />
@@ -56,13 +56,13 @@ export default function HowItWorks() {
                     <p className="text-slate-600 text-sm sm:text-base md:text-lg leading-relaxed font-normal">
                         Our program helps adjust your body’s specific metabolic rate so that you can lose weight and successfully maintain it. The balanced nutrition in our entrées retrains your body to sustain healthy and effective fat loss. From our chefs preparing your meals in our kitchens to our Registered Dietitians planning your daily and weekly menus, all of the hard work is done for you—so you can eat healthy effortlessly.
                     </p>
-                    
+
                 </div>
 
                 {/* 4 Circular Steps Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 lg:gap-10">
                     {STEPS.map((item, index) => (
-                        <div 
+                        <div
                             key={index}
                             className="group flex flex-col items-center text-center"
                         >
