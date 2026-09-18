@@ -3,6 +3,18 @@
 import React, { useState, useEffect } from 'react';
 import FoodAPI from '../../../../services/FoodVendorAPI';
 
+// --- BASE MEDIA HELPER ---
+const BASE_SERVER_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.3:5002";
+
+const getMediaUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+  const cleanPath = path.startsWith("/") ? path.substring(1) : path;
+  return `${BASE_SERVER_URL}/${cleanPath}`;
+};
+
 export default function ManageFoodList() {
   const [catalog, setCatalog] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -171,6 +183,15 @@ export default function ManageFoodList() {
 
   const uniqueEffects = ['All', ...new Set(catalog.map(i => i.foodEffectCategory).filter(Boolean))];
 
+  // Helper to safely format ingredients text in the table
+  const formatIngredientsSummary = (ingredients) => {
+    if (!Array.isArray(ingredients) || ingredients.length === 0) return 'Fresh Greens';
+    return ingredients
+      .slice(0, 3)
+      .map(ing => (typeof ing === 'object' && ing !== null ? `${ing.name}${ing.quantity ? ` (${ing.quantity})` : ''}` : ing))
+      .join(', ');
+  };
+
   return (
     <div className="min-h-screen bg-slate-50/50 py-10 px-4 sm:px-6 lg:px-8 relative">
       <div className="max-w-7xl mx-auto">
@@ -334,6 +355,7 @@ export default function ManageFoodList() {
                       {groupedCatalog[categoryName].map((item) => {
                         const isCheckedLocal = !!localSelections[item._id];
                         const isCurrentlyActiveDb = !!item.isAvailable;
+                        const itemImage = getMediaUrl(item.imageUrl);
 
                         return (
                           <tr 
@@ -378,11 +400,12 @@ export default function ManageFoodList() {
 
                                 {/* Rounded Preview Image */}
                                 <div className="relative h-12 w-12 rounded-xl overflow-hidden border border-slate-100 bg-slate-50">
-                                  {item.imageUrl ? (
+                                  {itemImage ? (
                                     <img
                                       className="h-full w-full object-cover animate-fade-in"
-                                      src={item.imageUrl}
+                                      src={itemImage}
                                       alt={item.name}
+                                      onError={(e) => { e.target.style.display = 'none'; }}
                                     />
                                   ) : (
                                     <div className="h-full w-full flex items-center justify-center text-slate-300">
@@ -435,8 +458,8 @@ export default function ManageFoodList() {
                                   )}
                                   <span className="text-[11px] font-bold text-slate-500">Size: {item.servingSize || '1 Person'}</span>
                                 </div>
-                                <div className="text-[10px] text-slate-400 font-semibold truncate max-w-[180px]">
-                                  Ingredients: {Array.isArray(item.ingredients) ? item.ingredients.slice(0, 3).join(', ') : 'Fresh Greens'}
+                                <div className="text-[10px] text-slate-400 font-semibold truncate max-w-[180px]" title={formatIngredientsSummary(item.ingredients)}>
+                                  Ingredients: {formatIngredientsSummary(item.ingredients)}
                                 </div>
                               </div>
                             </td>
@@ -485,11 +508,12 @@ export default function ManageFoodList() {
             
             {/* Modal Header banner/image */}
             <div className="relative h-60 bg-slate-100 flex-shrink-0">
-              {selectedItem.imageUrl ? (
+              {getMediaUrl(selectedItem.imageUrl) ? (
                 <img
                   className="w-full h-full object-cover"
-                  src={selectedItem.imageUrl}
+                  src={getMediaUrl(selectedItem.imageUrl)}
                   alt={selectedItem.name}
+                  onError={(e) => { e.target.style.display = 'none'; }}
                 />
               ) : (
                 <div className="flex items-center justify-center h-full w-full text-slate-400 text-sm font-semibold">
@@ -499,7 +523,7 @@ export default function ManageFoodList() {
               {/* Close Button */}
               <button 
                 onClick={() => setSelectedItem(null)}
-                className="absolute top-4 right-4 bg-slate-950/40 hover:bg-slate-950/60 text-white rounded-full p-2 focus:outline-none transition"
+                className="absolute top-4 right-4 bg-slate-950/40 hover:bg-slate-950/60 text-white rounded-full p-2 focus:outline-none transition cursor-pointer"
               >
                 <svg className="w-5 h-5 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -531,7 +555,7 @@ export default function ManageFoodList() {
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                     <div>
                       <span className="text-[10px] font-bold text-[#3D3F96] uppercase tracking-wider">
-                        {selectedItem.categoryId?.foodCategory || 'General Catalog'} • {selectedItem.categoryId?.foodEffectCategory || 'General'}
+                        {selectedItem.categoryId?.foodCategory || 'General Catalog'} • {selectedItem.categoryId?.foodEffectCategory || selectedItem.foodEffectCategory || 'General'}
                       </span>
                       <h2 className="text-xl font-extrabold text-slate-900 tracking-tight mt-1">
                         {selectedItem.name}
@@ -581,39 +605,55 @@ export default function ManageFoodList() {
                         <span className="text-[10px] font-bold text-slate-400">Calories</span>
                         <span className="text-sm font-extrabold text-slate-800 mt-1">{selectedItem.calories || '0'} Kcal</span>
                       </div>
-                      <div className="bg-[#3D3F96]/5 border border-[#3D3F96]/10 rounded-2xl p-3 flex flex-col justify-between">
-                        <span className="text-[10px] font-bold text-[#3D3F96]">Glycemic Index</span>
-                        <span className="text-sm font-extrabold text-[#3D3F96] mt-1">{selectedItem.glycemicIndex ?? '0'} GI</span>
-                      </div>
-                      <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3 flex flex-col justify-between">
-                        <span className="text-[10px] font-bold text-slate-400">Net Carbs</span>
-                        <span className="text-sm font-extrabold text-slate-800 mt-1">{selectedItem.netCarbs ?? '0'}g</span>
-                      </div>
-                      <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3 flex flex-col justify-between">
-                        <span className="text-[10px] font-bold text-slate-400">Sodium</span>
-                        <span className="text-sm font-extrabold text-slate-800 mt-1">{selectedItem.sodium ?? '0'} mg</span>
-                      </div>
-                      <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3 flex flex-col justify-between">
-                        <span className="text-[10px] font-bold text-slate-400">Potassium</span>
-                        <span className="text-sm font-extrabold text-slate-800 mt-1">{selectedItem.potassium ?? '0'} mg</span>
-                      </div>
-                      <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3 flex flex-col justify-between">
-                        <span className="text-[10px] font-bold text-slate-400">Phosphorus</span>
-                        <span className="text-sm font-extrabold text-slate-800 mt-1">{selectedItem.phosphorus ?? '0'} mg</span>
-                      </div>
                     </div>
                   </div>
 
-                  {/* Ingredients Array Block */}
+                  {/* Ingredients Table Block */}
                   {Array.isArray(selectedItem.ingredients) && selectedItem.ingredients.length > 0 && (
-                    <div className="space-y-2">
-                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Raw Ingredients</span>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedItem.ingredients.map((ing, idx) => (
-                          <span key={idx} className="bg-slate-50 border border-slate-100 text-slate-600 text-[11px] font-bold px-3 py-1 rounded-xl">
-                            {ing}
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                          Ingredients Breakdown ({selectedItem.ingredients.length})
+                        </span>
+                        {selectedItem.calories && (
+                          <span className="text-[10px] font-extrabold text-[#3D3F96] bg-[#3D3F96]/10 px-2.5 py-0.5 rounded-lg">
+                            {selectedItem.calories} Kcal Total
                           </span>
-                        ))}
+                        )}
+                      </div>
+
+                      <div className="overflow-hidden border border-slate-100 rounded-2xl bg-white">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr className="bg-slate-50/80 text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-100">
+                              <th className="py-2.5 px-4">Ingredient</th>
+                              <th className="py-2.5 px-4 text-center">Portion / Qty</th>
+                              <th className="py-2.5 px-4 text-right">Calories</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 text-slate-700">
+                            {selectedItem.ingredients.map((ing, idx) => {
+                              const isObject = typeof ing === 'object' && ing !== null;
+                              const ingName = isObject ? ing.name : ing;
+                              const ingQty = isObject ? (ing.quantity || '—') : '—';
+                              const ingCal = isObject ? (ing.calories !== undefined && ing.calories !== null ? `${ing.calories} Kcal` : '—') : '—';
+
+                              return (
+                                <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                                  <td className="py-2.5 px-4 font-bold text-slate-800">{ingName}</td>
+                                  <td className="py-2.5 px-4 text-center font-medium text-slate-500">
+                                    <span className="bg-slate-100 px-2 py-0.5 rounded-md text-[10px] font-semibold text-slate-600">
+                                      {ingQty}
+                                    </span>
+                                  </td>
+                                  <td className="py-2.5 px-4 text-right font-mono font-bold text-amber-600 text-xs">
+                                    {ingCal}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       </div>
                     </div>
                   )}
@@ -639,7 +679,7 @@ export default function ManageFoodList() {
             <div className="border-t border-slate-100 p-6 flex justify-end flex-shrink-0 bg-white">
               <button 
                 onClick={() => setSelectedItem(null)}
-                className="px-5 py-2.5 bg-[#3D3F96] hover:bg-[#3D3F96]/95 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-[#3D3F96]/15"
+                className="px-5 py-2.5 bg-[#3D3F96] hover:bg-[#3D3F96]/95 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-[#3D3F96]/15 cursor-pointer"
               >
                 Close Profile
               </button>
