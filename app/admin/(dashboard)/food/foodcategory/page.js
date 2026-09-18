@@ -8,12 +8,11 @@ import {
   Pencil,
   Trash2,
   Inbox,
-  RefreshCw,
   Loader2,
-  HeartPulse,
   Layers,
   ToggleLeft,
-  ToggleRight
+  ToggleRight,
+  Flame
 } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
 import AddFoodItem from './components/AddFoodItem';
@@ -39,7 +38,6 @@ export default function ManageFoodPage() {
   const [categories, setCategories] = useState([]);
   const [diseases, setDiseases] = useState([]);
   const [foods, setFoods] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [loadingFoods, setLoadingFoods] = useState(true);
   const [togglingId, setTogglingId] = useState(null);
 
@@ -59,21 +57,19 @@ export default function ManageFoodPage() {
 
   const router = useRouter();
 
-  // --- Fetch Onboarding Requirements (Categories & Therapy Focuses) ---
+  // --- Fetch Categories & Therapeutic Medical Focuses ---
   const fetchRequirements = async () => {
     try {
       const response = await AdminAPI.getFoodCategories();
       if (response && response.success) {
         const allData = response.data || [];
 
-        // Segment general categories
         const foodCats = allData.filter(item =>
           item.foodCategory !== null &&
           item.foodCategory !== undefined &&
           item.foodCategory !== ""
         );
 
-        // Segment therapy focuses
         const effectCats = allData.filter(item =>
           item.foodEffectCategory !== null &&
           item.foodEffectCategory !== undefined &&
@@ -86,12 +82,10 @@ export default function ManageFoodPage() {
     } catch (err) {
       console.error(err);
       toast.error("Failed to load global category indexes.");
-    } finally {
-      setLoading(false);
     }
   };
 
-  // --- Fetch Food Listings (API queries) ---
+  // --- Fetch Food Listings ---
   const fetchFoodsList = async () => {
     setLoadingFoods(true);
     try {
@@ -119,18 +113,15 @@ export default function ManageFoodPage() {
     fetchFoodsList();
   }, [searchQuery, selectedDiseaseFilter]);
 
-  // --- Toggle Food availability online state directly on table ---
+  // --- Toggle Food availability ---
   const toggleFoodAvailability = async (id) => {
     setTogglingId(id);
     try {
       const response = await AdminAPI.toggleFoodStatus(id);
       if (response && response.success) {
         toast.success(response.message || "Food status updated successfully.");
-        
-        // Resolve the new boolean state returned from the backend
         const newStatus = response.data?.isActive ?? response.isActive;
 
-        // Update local state immediately for instant feedback
         setFoods(prev => prev.map(f => {
           if (f._id === id) {
             return {
@@ -167,21 +158,19 @@ export default function ManageFoodPage() {
     }
   };
 
-  // Open modal for creation
   const openCreateModal = () => {
     setModalMode('create');
     setSelectedFoodForEdit(null);
     setIsFoodModalOpen(true);
   };
 
-  // Open modal for editing
   const openEditModal = (food) => {
     setModalMode('edit');
     setSelectedFoodForEdit(food);
     setIsFoodModalOpen(true);
   };
 
-  // Filter items based on local lifestyle toggles (Veg/Egg/Non-Veg)
+  // Filter items based on diet toggles
   const displayFilteredFoods = foods.filter(food => {
     if (food.dietType === "Veg" && !isVegLive) return false;
     if (food.dietType === "Egg" && !isEggLive) return false;
@@ -194,7 +183,6 @@ export default function ManageFoodPage() {
     return !categories.some(c => c._id === parentId);
   });
 
-  // Type symbol visual indicators
   const renderTypeSymbol = (type) => {
     const colors = {
       Veg: 'border-emerald-500 text-emerald-500',
@@ -212,6 +200,22 @@ export default function ManageFoodPage() {
         <span className={`w-1.5 h-1.5 rounded-full ${fillColors[type] || 'bg-slate-300'}`} />
       </div>
     );
+  };
+
+  // Format ingredients for listing display
+  const formatIngredientsList = (ingredients) => {
+    if (!ingredients) return "None specified";
+    if (Array.isArray(ingredients)) {
+      return ingredients
+        .map(ing => {
+          if (typeof ing === 'object' && ing !== null) {
+            return `${ing.name}${ing.quantity ? ` (${ing.quantity})` : ''}`;
+          }
+          return ing;
+        })
+        .join(', ');
+    }
+    return String(ingredients);
   };
 
   return (
@@ -241,9 +245,8 @@ export default function ManageFoodPage() {
         </div>
       </div>
 
-      {/* Quick Filters Panel */}
+      {/* Filters Panel */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-
         <div className="relative w-full max-w-md">
           <input
             type="text"
@@ -264,7 +267,7 @@ export default function ManageFoodPage() {
           >
             <option value="All">🌐 All Profiles / General</option>
             {diseases.map(d => (
-              <option key={d._id} value={d.foodEffectCategory}>{d.foodEffectCategory}</option>
+              <option key={d._id || d.foodEffectCategory} value={d.foodEffectCategory}>{d.foodEffectCategory}</option>
             ))}
           </select>
         </div>
@@ -278,13 +281,8 @@ export default function ManageFoodPage() {
               type="button"
               onClick={() => setIsVegLive(!isVegLive)}
               className="focus:outline-none transition-colors duration-200 cursor-pointer"
-              title={isVegLive ? "Hide Veg Items" : "Show Veg Items"}
             >
-              {isVegLive ? (
-                <ToggleRight className="text-emerald-500" size={26} />
-              ) : (
-                <ToggleLeft className="text-slate-300" size={26} />
-              )}
+              {isVegLive ? <ToggleRight className="text-emerald-500" size={26} /> : <ToggleLeft className="text-slate-300" size={26} />}
             </button>
           </div>
 
@@ -297,13 +295,8 @@ export default function ManageFoodPage() {
               type="button"
               onClick={() => setIsEggLive(!isEggLive)}
               className="focus:outline-none transition-colors duration-200 cursor-pointer"
-              title={isEggLive ? "Hide Eggitarian Items" : "Show Eggitarian Items"}
             >
-              {isEggLive ? (
-                <ToggleRight className="text-amber-500" size={26} />
-              ) : (
-                <ToggleLeft className="text-slate-300" size={26} />
-              )}
+              {isEggLive ? <ToggleRight className="text-amber-500" size={26} /> : <ToggleLeft className="text-slate-300" size={26} />}
             </button>
           </div>
 
@@ -316,17 +309,11 @@ export default function ManageFoodPage() {
               type="button"
               onClick={() => setIsNonVegLive(!isNonVegLive)}
               className="focus:outline-none transition-colors duration-200 cursor-pointer"
-              title={isNonVegLive ? "Hide Non-Veg Items" : "Show Non-Veg Items"}
             >
-              {isNonVegLive ? (
-                <ToggleRight className="text-rose-500" size={26} />
-              ) : (
-                <ToggleLeft className="text-slate-300" size={26} />
-              )}
+              {isNonVegLive ? <ToggleRight className="text-rose-500" size={26} /> : <ToggleLeft className="text-slate-300" size={26} />}
             </button>
           </div>
         </div>
-
       </div>
 
       {/* Main Table Display */}
@@ -359,7 +346,7 @@ export default function ManageFoodPage() {
                   return (
                     <React.Fragment key={cat._id}>
                       <tr className="bg-slate-50/80 border-y border-slate-100/60 pointer-events-none">
-                        <td colSpan={8} className="py-5 px-6 text-base font-black text-[#3d3f96] tracking-tight border-l-4 border-l-[#3d3f96]">
+                        <td colSpan={6} className="py-4 px-6 text-sm font-black text-[#3d3f96] tracking-tight border-l-4 border-l-[#3d3f96]">
                           <div className="flex items-center justify-between">
                             <span className="flex items-center gap-1.5"><Layers size={16} /> {cat.foodCategory}</span>
                             <span className="text-[10px] font-extrabold text-slate-400 bg-slate-200/50 px-3 py-1 rounded-full uppercase tracking-widest">
@@ -371,6 +358,8 @@ export default function ManageFoodPage() {
 
                       {categoryFoods.map((food) => {
                         const isFoodActive = food.isActive !== undefined ? food.isActive : (food.isAvailable ?? true);
+                        const ingredientsText = formatIngredientsList(food.ingredients);
+
                         return (
                           <tr
                             key={food._id}
@@ -393,9 +382,16 @@ export default function ManageFoodPage() {
                                   </div>
                                   <div>
                                     <p className="font-bold text-slate-800 text-[13px] leading-snug group-hover:underline">{food.name}</p>
-                                    <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-1.5">
-                                      {food.categoryId?.foodCategory || "Healthy Meal"}
-                                    </p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
+                                        {food.categoryId?.foodCategory || cat.foodCategory}
+                                      </span>
+                                      {food.foodEffectCategory && (
+                                        <span className="text-[9px] font-bold bg-[#3d3f96]/10 text-[#3d3f96] px-1.5 py-0.5 rounded">
+                                          {food.foodEffectCategory}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -415,15 +411,16 @@ export default function ManageFoodPage() {
                             </td>
                             <td className="py-5 px-6 space-y-1">
                               <div className="flex items-center gap-1.5">
-                                <span className="px-2 py-0.5 bg-[#3d3f96]/5 text-[#3d3f96] rounded font-extrabold text-[10px]">{food.calories} Kcal</span>
-                                <span className="text-[10px] text-slate-500 font-bold">Size: {food.servingSize}</span>
+                                <span className="px-2 py-0.5 bg-[#3d3f96]/5 text-[#3d3f96] rounded font-extrabold text-[10px] flex items-center gap-1">
+                                  <Flame size={11} /> {food.calories} Kcal
+                                </span>
+                                <span className="text-[10px] text-slate-500 font-bold">Size: {food.servingSize || "1 Person"}</span>
                               </div>
-                              <p className="text-[10px] text-slate-400 font-semibold truncate max-w-[155px]" title={Array.isArray(food.ingredients) ? food.ingredients.join(', ') : food.ingredients}>
-                                <strong className="text-slate-500">Ingredients:</strong> {Array.isArray(food.ingredients) ? food.ingredients.join(', ') : food.ingredients}
+                              <p className="text-[10px] text-slate-400 font-semibold truncate max-w-[170px]" title={ingredientsText}>
+                                <strong className="text-slate-500">Ingredients:</strong> {ingredientsText}
                               </p>
                             </td>
 
-                            {/* Toggle Directory Status Button */}
                             <td className="py-5 px-6 text-center" onClick={(e) => e.stopPropagation()}>
                               <div className="flex items-center justify-center">
                                 <button
@@ -447,12 +444,14 @@ export default function ManageFoodPage() {
                                 <button
                                   onClick={() => openEditModal(food)}
                                   className="p-1.5 border border-slate-200 text-slate-400 hover:text-[#3d3f96] hover:bg-[#3d3f96]/5 rounded-lg transition-all cursor-pointer"
+                                  title="Edit"
                                 >
                                   <Pencil className="w-4 h-4" strokeWidth={2} />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteFoodItem(food._id)}
                                   className="p-1.5 border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
+                                  title="Delete"
                                 >
                                   <Trash2 className="w-4 h-4" strokeWidth={2} />
                                 </button>
@@ -469,12 +468,13 @@ export default function ManageFoodPage() {
                 {uncategorizedFoods.length > 0 && (
                   <React.Fragment>
                     <tr className="bg-slate-100/60 border-y border-slate-100 pointer-events-none">
-                      <td colSpan={8} className="py-4 px-6 text-sm font-extrabold text-slate-500 tracking-wider uppercase border-l-4 border-l-slate-400">
+                      <td colSpan={6} className="py-4 px-6 text-sm font-extrabold text-slate-500 tracking-wider uppercase border-l-4 border-l-slate-400">
                         Uncategorized ({uncategorizedFoods.length} Items)
                       </td>
                     </tr>
                     {uncategorizedFoods.map((food) => {
                       const isFoodActive = food.isActive !== undefined ? food.isActive : (food.isAvailable ?? true);
+                      const ingredientsText = formatIngredientsList(food.ingredients);
                       return (
                         <tr
                           key={food._id}
@@ -519,15 +519,15 @@ export default function ManageFoodPage() {
                           </td>
                           <td className="py-5 px-6 space-y-1">
                             <div className="flex items-center gap-1.5">
-                              <span className="px-2 py-0.5 bg-[#3d3f96]/5 text-[#3d3f96] rounded font-extrabold text-[10px]">{food.calories} Kcal</span>
-                              <span className="text-[10px] text-slate-500 font-bold">Size: {food.servingSize}</span>
+                              <span className="px-2 py-0.5 bg-[#3d3f96]/5 text-[#3d3f96] rounded font-extrabold text-[10px] flex items-center gap-1">
+                                <Flame size={11} /> {food.calories} Kcal
+                              </span>
+                              <span className="text-[10px] text-slate-500 font-bold">Size: {food.servingSize || "1 Person"}</span>
                             </div>
-                            <p className="text-[10px] text-slate-400 font-semibold truncate max-w-[155px]" title={Array.isArray(food.ingredients) ? food.ingredients.join(', ') : food.ingredients}>
-                              <strong className="text-slate-500">Ingredients:</strong> {Array.isArray(food.ingredients) ? food.ingredients.join(', ') : food.ingredients}
+                            <p className="text-[10px] text-slate-400 font-semibold truncate max-w-[170px]" title={ingredientsText}>
+                              <strong className="text-slate-500">Ingredients:</strong> {ingredientsText}
                             </p>
                           </td>
-
-                          {/* Toggle Directory Status Button */}
                           <td className="py-5 px-6 text-center" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center justify-center">
                               <button
@@ -535,7 +535,6 @@ export default function ManageFoodPage() {
                                 disabled={togglingId === food._id}
                                 onClick={() => toggleFoodAvailability(food._id)}
                                 className="focus:outline-none transition-colors duration-200 cursor-pointer inline-flex items-center justify-center disabled:opacity-50"
-                                title={isFoodActive ? "Set Inactive" : "Set Active"}
                               >
                                 {isFoodActive ? (
                                   <ToggleRight className="text-[#3d3f96]" size={28} />
@@ -545,7 +544,6 @@ export default function ManageFoodPage() {
                               </button>
                             </div>
                           </td>
-
                           <td className="py-5 px-6 text-right" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center justify-end gap-1.5">
                               <button
@@ -588,7 +586,6 @@ export default function ManageFoodPage() {
         diseases={diseases}
         onSubmit={fetchFoodsList}
       />
-
     </div>
   );
 }

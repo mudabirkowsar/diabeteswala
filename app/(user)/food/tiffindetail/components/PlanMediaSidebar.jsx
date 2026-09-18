@@ -98,7 +98,7 @@ export default function PlanMediaSidebar({ plan, isAvailable, aggregatedIngredie
             )}
 
             {/* Ingredients Summary */}
-            {aggregatedIngredients?.length > 0 && (
+            {/* {aggregatedIngredients?.length > 0 && (
                 <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">
                     <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">Combined Ingredients Included</span>
                     <div className="flex flex-wrap gap-1.5">
@@ -109,7 +109,7 @@ export default function PlanMediaSidebar({ plan, isAvailable, aggregatedIngredie
                         ))}
                     </div>
                 </div>
-            )}
+            )} */}
         </div>
     );
 }

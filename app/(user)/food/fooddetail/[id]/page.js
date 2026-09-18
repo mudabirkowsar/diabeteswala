@@ -12,7 +12,8 @@ import {
     AlertCircle, 
     ShieldCheck,
     Star,
-    Trash2
+    Trash2,
+    MapPin
 } from 'lucide-react';
 
 // Import your API service functions, Notification Context & Cart Context
@@ -72,7 +73,7 @@ export default function FoodDetailPage() {
         }
     }, [id]);
 
-    // Check if the current item is already in the user's food cart [cite: custom_context]
+    // Check if the current item is already in the user's food cart
     const isItemInCart = foodCart?.items?.some(
         (item) => (item.itemId?._id || item.itemId) === id
     );
@@ -165,7 +166,7 @@ export default function FoodDetailPage() {
         );
     }
 
-    const isAvailable = dish.isAvailable !== false && !dish.UnavailableFoodItem; // Dynamic availability checks
+    const isAvailable = dish.isAvailable !== false && !dish.UnavailableFoodItem;
     const dishImage = getMediaUrl(dish.imageUrl) || PLACEHOLDER_IMAGE;
     const vendor = dish.vendorId || {};
     const kitchenImage = getMediaUrl(vendor.profileImage) || KITCHEN_PLACEHOLDER;
@@ -288,6 +289,13 @@ export default function FoodDetailPage() {
                                         Spicy: {dish.spicyLevel}
                                     </span>
                                 )}
+
+                                {dish.distanceText && (
+                                    <span className="inline-flex items-center gap-1 text-xs text-slate-500 font-bold bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-xl">
+                                        <MapPin size={13} className="text-[#3d3f96]" />
+                                        {dish.distanceText}
+                                    </span>
+                                )}
                             </div>
                         </div>
 
@@ -299,16 +307,71 @@ export default function FoodDetailPage() {
                             </p>
                         </div>
 
-                        {/* Ingredients */}
+                        {/* Ingredients Table */}
                         {ingredientsList.length > 0 && (
                             <div className="space-y-3">
-                                <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">Key Ingredients</span>
-                                <div className="flex flex-wrap gap-2">
-                                    {ingredientsList.map((ing) => (
-                                        <span key={ing} className="px-3.5 py-1.5 bg-slate-50 border border-slate-100 text-xs font-bold text-slate-600 rounded-xl">
-                                            {ing}
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">
+                                        Ingredients Breakdown ({ingredientsList.length})
+                                    </span>
+                                    {dish.calories > 0 && (
+                                        <span className="text-[10px] font-extrabold text-[#3d3f96] bg-[#3d3f96]/10 px-2.5 py-1 rounded-lg border border-[#3d3f96]/20 flex items-center gap-1">
+                                            <Flame size={12} className="text-amber-500" />
+                                            {dish.calories} Kcal Total
                                         </span>
-                                    ))}
+                                    )}
+                                </div>
+
+                                <div className="overflow-hidden border border-slate-200/80 rounded-2xl bg-white shadow-xs">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left text-xs border-collapse">
+                                            <thead>
+                                                <tr className="bg-slate-50/80 text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-100">
+                                                    <th className="py-2.5 px-4">Ingredient</th>
+                                                    <th className="py-2.5 px-4 text-center">Quantity</th>
+                                                    <th className="py-2.5 px-4 text-right">Calories</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 text-slate-700">
+                                                {ingredientsList.map((ing, idx) => {
+                                                    const isObject = typeof ing === 'object' && ing !== null;
+                                                    const keyId = isObject ? (ing._id || `${ing.name}-${idx}`) : `${ing}-${idx}`;
+                                                    const ingName = isObject ? ing.name : ing;
+                                                    const ingQty = isObject ? (ing.quantity || '—') : '—';
+                                                    const ingCal = isObject ? (ing.calories !== undefined ? `${ing.calories} Kcal` : '—') : '—';
+
+                                                    return (
+                                                        <tr key={keyId} className="hover:bg-slate-50/50 transition-colors">
+                                                            <td className="py-3 px-4 font-bold text-slate-800">
+                                                                {ingName}
+                                                            </td>
+                                                            <td className="py-3 px-4 text-center font-medium text-slate-500">
+                                                                <span className="bg-slate-100/70 px-2.5 py-1 rounded-md text-[11px] font-semibold text-slate-600">
+                                                                    {ingQty}
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-3 px-4 text-right font-mono font-bold text-amber-600 text-xs">
+                                                                {ingCal}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                            <tfoot>
+                                                <tr className="bg-slate-50 font-bold border-t border-slate-200/80 text-slate-800">
+                                                    <td className="py-3 px-4 text-[11px] uppercase tracking-wider text-slate-500">
+                                                        Total Nutritional Calories
+                                                    </td>
+                                                    <td className="py-3 px-4 text-center text-slate-400 text-[11px]">
+                                                        —
+                                                    </td>
+                                                    <td className="py-3 px-4 text-right font-mono font-black text-xs text-[#3d3f96]">
+                                                        {dish.calories || 0} Kcal
+                                                    </td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -318,8 +381,8 @@ export default function FoodDetailPage() {
                             <div className="space-y-3 pt-2">
                                 <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">Classifications</span>
                                 <div className="flex flex-wrap gap-1.5">
-                                    {tagsList.map((tag) => (
-                                        <span key={tag} className="px-2.5 py-1 bg-indigo-50/50 text-[#3d3f96] text-[10px] font-bold rounded-lg uppercase tracking-wide">
+                                    {tagsList.map((tag, idx) => (
+                                        <span key={`${tag}-${idx}`} className="px-2.5 py-1 bg-indigo-50/50 text-[#3d3f96] text-[10px] font-bold rounded-lg uppercase tracking-wide">
                                             #{tag}
                                         </span>
                                     ))}
@@ -342,6 +405,9 @@ export default function FoodDetailPage() {
                                     <div>
                                         <p className="text-[10px] font-black uppercase text-slate-400 tracking-wide">Prepared By</p>
                                         <p className="text-xs font-black text-slate-800">{vendor.name}</p>
+                                        {vendor.address && (
+                                            <p className="text-[10px] text-slate-400 font-medium truncate max-w-[200px]">{vendor.address}</p>
+                                        )}
                                     </div>
                                 </div>
                                 {vendor.rating !== undefined && (

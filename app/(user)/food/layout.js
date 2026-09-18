@@ -67,7 +67,7 @@ export default function FoodLayout({ children }) {
               {/* Action Button Redirecting to /food/programs/men */}
               <div className="pt-2">
                 <Link
-                  href="/food/programs/men"
+                  href="/food/aboutfoodandnutrition"
                   onClick={() => setShowPopup(false)}
                   className="inline-flex items-center justify-center gap-1.5 w-full py-2.5 px-4 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-red-500/20 hover:shadow-lg transition-all"
                 >

@@ -14,6 +14,8 @@ import {
   Layers,
   Trash2,
   Star,
+  MapPin,
+  Sparkles,
 } from 'lucide-react';
 
 // Import your API service functions, Notification Context & Cart Context
@@ -87,19 +89,21 @@ export default function SingleMealDetailPage() {
 
     return (
       <div
-        className={`w-5 h-5 border-2 rounded-md flex items-center justify-center p-[2px] shrink-0 bg-white shadow-sm ${isVeg ? 'border-emerald-500' : isEgg ? 'border-amber-500' : isNonVeg ? 'border-rose-500' : 'border-slate-300'
-          }`}
+        className={`w-4 h-4 border-2 rounded-md flex items-center justify-center p-[2px] shrink-0 bg-white shadow-xs ${
+          isVeg ? 'border-emerald-500' : isEgg ? 'border-amber-500' : isNonVeg ? 'border-rose-500' : 'border-slate-300'
+        }`}
         title={type}
       >
         <span
-          className={`w-2 h-2 rounded-full ${isVeg ? 'bg-emerald-500' : isEgg ? 'bg-amber-500' : isNonVeg ? 'bg-rose-500' : 'bg-slate-400'
-            }`}
+          className={`w-1.5 h-1.5 rounded-full ${
+            isVeg ? 'bg-emerald-500' : isEgg ? 'bg-amber-500' : isNonVeg ? 'bg-rose-500' : 'bg-slate-400'
+          }`}
         />
       </div>
     );
   };
 
-  // Check if this combo package is already in the user's food cart [cite: custom_context]
+  // Check if this combo package is already in the user's food cart
   const cartItem = foodCart?.items?.find(item => (item.itemId?._id || item.itemId) === mealId);
   const isItemInCart = !!cartItem;
 
@@ -183,13 +187,13 @@ export default function SingleMealDetailPage() {
     );
   }
 
-  // Safely extract the first available child image to display as the main background banner [cite: custom_context]
+  // Safely extract banner image from the first child item with a valid image
   const bannerImage = meal.dishes?.find(d => d.foodServiceId?.imageUrl)?.foodServiceId?.imageUrl || null;
   const firstDish = meal.dishes?.[0]?.foodServiceId || {};
   const dietType = firstDish.dietType || "Veg";
   const vendor = meal.vendorId || {};
 
-  const isAvailable = meal.isAvailable !== false && !meal.UnavailableCombo; // Validate availability state [cite: custom_context]
+  const isAvailable = meal.isAvailable !== false && !meal.UnavailableCombo;
 
   const discountPct = meal.basePrice && meal.comboPrice && meal.basePrice > meal.comboPrice
     ? Math.round(((meal.basePrice - meal.comboPrice) / meal.basePrice) * 100)
@@ -206,11 +210,30 @@ export default function SingleMealDetailPage() {
     0
   );
 
-  // Aggregate tags and ingredients from children safely
-  const aggregatedIngredients = Array.from(new Set(
-    (meal.dishes || []).flatMap(d => d.foodServiceId?.ingredients || [])
-  ));
+  // Helper to format individual ingredients safely (handles both Object and String formats)
+  const formatSingleIngredient = (ing) => {
+    if (typeof ing === 'object' && ing !== null) {
+      return {
+        name: ing.name || '',
+        quantity: ing.quantity || '',
+        calories: ing.calories !== undefined ? ing.calories : null
+      };
+    }
+    return { name: String(ing), quantity: '', calories: null };
+  };
 
+  // Aggregate all ingredients safely across dishes and remove duplicate names
+  const rawIngredients = (meal.dishes || []).flatMap(d => d.foodServiceId?.ingredients || []);
+  const aggregatedIngredientsMap = new Map();
+  rawIngredients.forEach(item => {
+    const formatted = formatSingleIngredient(item);
+    if (formatted.name && !aggregatedIngredientsMap.has(formatted.name.toLowerCase())) {
+      aggregatedIngredientsMap.set(formatted.name.toLowerCase(), formatted);
+    }
+  });
+  const aggregatedIngredients = Array.from(aggregatedIngredientsMap.values());
+
+  // Aggregate tags safely
   const aggregatedTags = Array.from(new Set(
     (meal.dishes || []).flatMap(d => d.foodServiceId?.tags || [])
   ));
@@ -288,6 +311,9 @@ export default function SingleMealDetailPage() {
                   <div>
                     <p className="text-[10px] font-black uppercase text-slate-400 tracking-wide">Prepared By</p>
                     <p className="text-xs font-black text-slate-800">{vendor.name}</p>
+                    {vendor.address && (
+                      <p className="text-[10px] text-slate-400 font-medium truncate max-w-[180px]">{vendor.address}</p>
+                    )}
                   </div>
                 </div>
                 {vendor.rating !== undefined && (
@@ -303,11 +329,25 @@ export default function SingleMealDetailPage() {
           <div className="lg:col-span-7 space-y-6">
 
             <div>
-              {/* Category Pill */}
-              <span className="inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-100/60 px-3 py-1 rounded-full text-[10px] font-black text-indigo-700 uppercase tracking-widest mb-3">
-                <Bookmark size={10} className="fill-indigo-500 text-indigo-600" />
-                Combo Bundle Offer
-              </span>
+              {/* Category & Status Pills */}
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className="inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-100/60 px-3 py-1 rounded-full text-[10px] font-black text-indigo-700 uppercase tracking-widest">
+                  <Bookmark size={10} className="fill-indigo-500 text-indigo-600" />
+                  Combo Bundle Offer
+                </span>
+
+                {meal.isPopular && (
+                  <span className="inline-flex items-center gap-1 bg-amber-50 border border-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide">
+                    <Sparkles size={11} className="text-amber-500" /> Popular
+                  </span>
+                )}
+
+                {meal.isRecommended && (
+                  <span className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide">
+                    Recommended
+                  </span>
+                )}
+              </div>
 
               <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
                 {meal.name}
@@ -326,6 +366,12 @@ export default function SingleMealDetailPage() {
                 </div>
 
                 <span className="text-xs font-bold text-slate-400">• Taxes & Packing Included</span>
+
+                {meal.distanceText && (
+                  <span className="inline-flex items-center gap-1 text-xs text-slate-500 font-bold bg-white border border-slate-200/80 px-2.5 py-1 rounded-xl shadow-xs">
+                    <MapPin size={12} className="text-[#3d3f96]" /> {meal.distanceText}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -351,7 +397,7 @@ export default function SingleMealDetailPage() {
               </div>
               <div className="space-y-0.5 border-l border-slate-100">
                 <span className="text-[10px] font-black uppercase text-slate-400 block">Spicy Level</span>
-                <span className="text-xs sm:text-sm font-black text-slate-700 block pt-0.5">
+                <span className="text-xs sm:text-sm font-black text-slate-700 block pt-0.5 truncate px-1">
                   {meal.spicyLevel || "Medium"}
                 </span>
               </div>
@@ -366,9 +412,8 @@ export default function SingleMealDetailPage() {
             {/* Interactive Cart Action Controller */}
             <div className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
 
-              {isAvailable && (
+              {isAvailable ? (
                 isItemInCart ? (
-                  // Item already exists in cart [cite: custom_context]
                   <div className="flex items-center justify-between gap-4 w-full">
                     <button
                       type="button"
@@ -381,7 +426,6 @@ export default function SingleMealDetailPage() {
                     </button>
                   </div>
                 ) : (
-                  // Item is not in cart [cite: custom_context]
                   <div className="flex items-center justify-between gap-4 w-full">
                     <button
                       type="button"
@@ -398,9 +442,7 @@ export default function SingleMealDetailPage() {
                     </button>
                   </div>
                 )
-              )}
-
-              {!isAvailable && (
+              ) : (
                 <button
                   disabled
                   className="w-full py-3.5 bg-slate-100 text-slate-400 font-black text-xs uppercase tracking-wider rounded-2xl border border-slate-200 flex items-center justify-center gap-2 cursor-not-allowed"
@@ -415,85 +457,164 @@ export default function SingleMealDetailPage() {
           </div>
         </div>
 
-        {/* --- SECTION 2: COMBOS NESTED DISHES CHECKLIST --- */}
-        <div className="space-y-4 text-left">
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-            <Layers className="text-[#3d3f96]" size={16} /> Included Items in this Bundle
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {(meal.dishes || []).map((item) => {
-              const dishObj = item.foodServiceId || {};
-              return (
-                <div key={item._id} className="border border-slate-100 rounded-2xl p-4 flex gap-4 bg-white shadow-sm">
-                  <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0 border border-slate-200/50">
-                    <img
-                      src={getMediaUrl(dishObj.imageUrl) || PLACEHOLDER_IMAGE}
-                      alt={dishObj.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
-                    />
-                  </div>
-                  <div className="space-y-1 min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 justify-between">
-                      <h4 className="text-xs sm:text-sm font-extrabold text-slate-800 truncate" title={dishObj.name}>
-                        {dishObj.name}
-                      </h4>
-                      {renderDietBadge(dishObj.dietType)}
-                    </div>
-                    <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">
-                      Qty: <span className="text-[#3d3f96] font-black">{item.quantity}</span>
-                    </p>
-                    {dishObj.ingredients && dishObj.ingredients.length > 0 && (
-                      <p className="text-[10px] text-slate-400 font-medium truncate">
-                        Ingredients: {dishObj.ingredients.join(', ')}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+        {/* --- SECTION 2: INCLUDED ITEMS IN THIS BUNDLE (TABLE FORMAT) --- */}
+        <div className="space-y-3 text-left">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <Layers className="text-[#3d3f96]" size={16} /> Included Items in this Bundle ({meal.dishes?.length || 0})
+            </h3>
+            <span className="text-[10px] font-extrabold text-slate-400 bg-white border border-slate-200/80 px-2.5 py-1 rounded-lg">
+              Total Units: {totalDishUnits}
+            </span>
+          </div>
+
+          <div className="overflow-hidden border border-slate-200/80 rounded-2xl bg-white shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/80 text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-100">
+                    <th className="py-3 px-4">Dish Details</th>
+                    <th className="py-3 px-4">Key Ingredients</th>
+                    <th className="py-3 px-4 text-center">Bundle Qty</th>
+                    <th className="py-3 px-4 text-right">Calories</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-700">
+                  {(meal.dishes || []).map((item) => {
+                    const dishObj = item.foodServiceId || {};
+                    const dishIngredients = (dishObj.ingredients || [])
+                      .map(ing => typeof ing === 'object' && ing !== null ? `${ing.name}${ing.quantity ? ` (${ing.quantity})` : ''}` : ing)
+                      .join(', ');
+
+                    return (
+                      <tr key={item._id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200/70 overflow-hidden shrink-0">
+                              <img
+                                src={getMediaUrl(dishObj.imageUrl) || PLACEHOLDER_IMAGE}
+                                alt={dishObj.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+                              />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{dishObj.name}</span>
+                                {renderDietBadge(dishObj.dietType)}
+                              </div>
+                              {dishObj.dietType && (
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mt-0.5">
+                                  {dishObj.dietType} Dish
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 max-w-[260px]">
+                          <p className="text-xs text-slate-500 font-medium truncate" title={dishIngredients || "Standard preparation"}>
+                            {dishIngredients || "Standard wholesome recipe"}
+                          </p>
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          <span className="px-2.5 py-1 bg-slate-100 text-[#3d3f96] font-black rounded-lg text-xs">
+                            {item.quantity}x
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-800 text-xs">
+                          {dishObj.calories ? `${dishObj.calories * (item.quantity || 1)} Kcal` : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
-        {/* --- SECTION 3: AGGREGATED INGREDIENTS & SEARCH TAGS --- */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+        {/* --- SECTION 3: COMBINED INGREDIENTS TABLE & TAGS --- */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left items-start">
 
-          {/* Ingredients Breakdown */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm space-y-4">
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <Utensils className="text-[#3d3f96]" size={16} /> Combined Ingredients List
-            </h3>
+          {/* Combined Ingredients Table */}
+          <div className="lg:col-span-8 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <Utensils className="text-[#3d3f96]" size={16} /> Combined Ingredients Breakdown ({aggregatedIngredients.length})
+              </h3>
+              {totalCalories > 0 && (
+                <span className="text-[10px] font-extrabold text-[#3d3f96] bg-[#3d3f96]/10 px-2.5 py-1 rounded-lg border border-[#3d3f96]/20 flex items-center gap-1">
+                  <Flame size={12} className="text-amber-500" />
+                  {totalCalories} Kcal Combined
+                </span>
+              )}
+            </div>
 
             {aggregatedIngredients.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {aggregatedIngredients.map((ing, idx) => (
-                  <span
-                    key={idx}
-                    className="bg-slate-50 text-slate-700 border border-slate-100 text-xs font-semibold px-3 py-1.5 rounded-xl"
-                  >
-                    {ing}
-                  </span>
-                ))}
+              <div className="overflow-hidden border border-slate-200/80 rounded-2xl bg-white shadow-xs">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/80 text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-100">
+                        <th className="py-2.5 px-4">Ingredient Name</th>
+                        <th className="py-2.5 px-4 text-center">Portion / Qty</th>
+                        <th className="py-2.5 px-4 text-right">Calories</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-slate-700">
+                      {aggregatedIngredients.map((ing, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="py-3 px-4 font-bold text-slate-800">
+                            {ing.name}
+                          </td>
+                          <td className="py-3 px-4 text-center font-medium text-slate-500">
+                            <span className="bg-slate-100/80 px-2 py-0.5 rounded-md text-[11px] font-semibold text-slate-600">
+                              {ing.quantity || "—"}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono font-bold text-amber-600 text-xs">
+                            {ing.calories !== null ? `${ing.calories} Kcal` : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="bg-slate-50 font-bold border-t border-slate-200/80 text-slate-800">
+                        <td className="py-3 px-4 text-[11px] uppercase tracking-wider text-slate-500">
+                          Total Bundle Energy
+                        </td>
+                        <td className="py-3 px-4 text-center text-slate-400 text-[11px]">
+                          —
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono font-black text-xs text-[#3d3f96]">
+                          {totalCalories} Kcal
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
               </div>
             ) : (
-              <p className="text-xs text-slate-400 font-medium italic">Standard organic fresh farm ingredients.</p>
+              <div className="bg-white rounded-2xl p-6 border border-slate-200/80 text-center">
+                <p className="text-xs text-slate-400 font-medium italic">Standard organic farm ingredients.</p>
+              </div>
             )}
           </div>
 
-          {/* Search & Dietary Tags */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm space-y-4">
+          {/* Combined Search & Dietary Tags */}
+          <div className="lg:col-span-4 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-3">
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <Tag className="text-[#3d3f96]" size={16} /> Combined Dietary Tags & Health Filters
+              <Tag className="text-[#3d3f96]" size={16} /> Dietary Tags & Focus
             </h3>
 
             {aggregatedTags.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5 pt-1">
                 {aggregatedTags.map((tag, idx) => (
                   <span
                     key={idx}
-                    className="bg-indigo-50 text-[#3d3f96] border border-indigo-100/60 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-xl"
+                    className="bg-indigo-50 text-[#3d3f96] border border-indigo-100/60 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl"
                   >
-                    {tag}
+                    #{tag}
                   </span>
                 ))}
               </div>
