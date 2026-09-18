@@ -96,20 +96,6 @@ export default function PlanMediaSidebar({ plan, isAvailable, aggregatedIngredie
                     )}
                 </div>
             )}
-
-            {/* Ingredients Summary */}
-            {/* {aggregatedIngredients?.length > 0 && (
-                <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">
-                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">Combined Ingredients Included</span>
-                    <div className="flex flex-wrap gap-1.5">
-                        {aggregatedIngredients.map((ing) => (
-                            <span key={ing} className="px-2.5 py-1 bg-slate-50 border border-slate-100 text-[11px] font-bold text-slate-600 rounded-lg">
-                                {ing}
-                            </span>
-                        ))}
-                    </div>
-                </div>
-            )} */}
         </div>
     );
 }

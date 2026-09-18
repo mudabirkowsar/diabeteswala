@@ -691,7 +691,7 @@ export default function CustomTiffinDetailPage() {
                                             </div>
 
                                             {/* Tags & Ingredients Preview */}
-                                            {(tags.length > 0 || ingredients.length > 0) && (
+                                            {/* {(tags.length > 0 || ingredients.length > 0) && (
                                                 <div className="flex flex-wrap gap-1 pt-1 border-t border-slate-100">
                                                     {tags.map((t) => (
                                                         <span key={t} className="text-[9px] font-bold px-2 py-0.5 bg-white border border-slate-200 text-slate-600 rounded-md">
@@ -704,7 +704,7 @@ export default function CustomTiffinDetailPage() {
                                                         </span>
                                                     ))}
                                                 </div>
-                                            )}
+                                            )} */}
                                         </div>
                                     );
                                 })
