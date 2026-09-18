@@ -21,7 +21,7 @@ export default function FoodStorefront() {
       <HomeOfferingsShowcase />
       <NearestMeal />
       <HowToCustomize />
-      <GetNearComboOffers />
+      <GetNearComboOffers /> 
       <FoodByDisease />
       <OurTiffin />
       <CustomTiffin />
