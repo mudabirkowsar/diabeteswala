@@ -16,7 +16,7 @@ export default function FoodStorefront() {
 
   return (
     <>
-      <MainPage />
+      <MainPage /> a
       <MarqueeStrip />
       <HomeOfferingsShowcase />
       <NearestMeal />
