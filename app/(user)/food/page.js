@@ -1,6 +1,5 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
 import MainPage from './components/MainPage';
 import OurTiffin from './components/OurTiffin';
 import FoodByDisease from './components/FoodByDisease';
@@ -11,6 +10,7 @@ import HowToCustomize from './components/HowToCustomize';
 import Testimonials from './components/Testimonials';
 import MarqueeStrip from './components/MarqueeStrip';
 import GenderPrograms from './components/GenderPrograms';
+import HomeOfferingsShowcase from './components/HomeOfferingsShowcase';
 
 export default function FoodStorefront() {
 
@@ -18,6 +18,7 @@ export default function FoodStorefront() {
     <>
       <MainPage />
       <MarqueeStrip />
+      <HomeOfferingsShowcase />
       <NearestMeal />
       <HowToCustomize />
       <GetNearComboOffers />

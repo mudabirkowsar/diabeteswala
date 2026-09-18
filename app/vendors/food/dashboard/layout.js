@@ -50,6 +50,8 @@ export default function FoodVendorLayout({ children }) {
         { name: 'Manage Food', href: '/vendors/food/dashboard/manage-food', icon: Utensils },
         { name: 'Manage Combo', href: '/vendors/food/dashboard/combo-bundles', icon: Utensils },
         { name: 'Manage Tiffin', href: '/vendors/food/dashboard/managetiffin', icon: Utensils },
+        { name: 'Manage Health Plans', href: '/vendors/food/dashboard/managehealthplans', icon: Utensils },
+        
       ]
     },
     {

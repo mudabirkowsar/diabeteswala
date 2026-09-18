@@ -214,6 +214,82 @@ const FoodAPI = {
         return response.data;
     },
 
+        // ==========================================
+    // HEALTHY PLANS INVENTORY (VENDOR/KITCHEN)
+    // ==========================================
+
+    /**
+     * 1. Get Master Healthy Plans Checklist (Vendor Menu Selection)
+     * Fetch all active master plans created by Admin to check availability & custom pricing.
+     * @param {Object} [params] - Query filters
+     * @param {string} [params.mainCategory] - e.g. "Men" or "Women"
+     * @param {string} [params.subCategory] - e.g. "Keto Flex" or "PCOD / PCOS Care"
+     */
+    getMasterHealthyPlans: async (params = {}) => {
+        const response = await authApi.get('/provider/food/inventory/master-healthy-plans', {
+            params,
+        });
+        return response.data;
+    },
+
+    /**
+     * 2. Sync / Multi-Select Healthy Plans (Bulk Save & Pricing)
+     * Select multiple plans to activate & set optional custom selling prices.
+     * @param {Object} payload
+     * @param {string[]} payload.selectedPlanIds - Array of Healthy Plan ObjectIDs
+     * @param {Object} [payload.customPricing] - Map of planId to custom price overrides
+     * Example payload:
+     * {
+     *   selectedPlanIds: ["6aab921903d5cec8e2745d3e"],
+     *   customPricing: {
+     *     "6aab921903d5cec8e2745d3e": { customPrice: 2800, customDiscountPrice: 2100 }
+     *   }
+     * }
+     */
+    syncHealthyPlans: async (payload) => {
+        const response = await authApi.post('/provider/food/inventory/sync-healthy-plans', payload);
+        return response.data;
+    },
+
+    /**
+     * 3. Instant Single Plan Availability Switch (Toggle)
+     * Instantly toggle a single healthy plan between Active (true) and Inactive (false).
+     * @param {string} healthyPlanId - MongoDB _id or planId (e.g., "HLP-102")
+     */
+    toggleHealthyPlanAvailability: async (healthyPlanId) => {
+        const response = await authApi.patch(
+            `/provider/food/inventory/toggle-healthy-plan/${healthyPlanId}`
+        );
+        return response.data;
+    },
+
+    /**
+     * 4. Get Vendor Healthy Plans (Inventory List)
+     * Fetch the filtered list of vendor's active and inactive healthy plans.
+     * @param {Object} [params] - Query filters
+     * @param {boolean|string} [params.isAvailable] - Filter by status (true / false)
+     * @param {string} [params.mainCategory] - Filter by Main Category ("Men" / "Women")
+     * @param {string} [params.subCategory] - Filter by Subcategory ("Keto Flex", etc.)
+     */
+    getVendorHealthyPlans: async (params = {}) => {
+        const response = await authApi.get('/provider/food/inventory/healthy-plans', {
+            params,
+        });
+        return response.data;
+    },
+
+    /**
+     * 5. Get Single Vendor Healthy Plan Full Details
+     * Fetch complete day-wise schedule, meal breakdown, ingredients, and custom pricing.
+     * @param {string} id - Plan MongoDB _id or planId (e.g., "6aab9219..." or "HLP-102")
+     */
+    getSingleVendorHealthyPlan: async (id) => {
+        const response = await authApi.get(`/provider/food/inventory/healthy-plans/${id}`);
+        return response.data;
+    },
+
+
+
 };
 
 export default FoodAPI;

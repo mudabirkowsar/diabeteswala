@@ -516,7 +516,7 @@ export default function CustomTiffinBuilderPage() {
                                             : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                                             }`}
                                     >
-                                        {days}D
+                                        {days} D--
                                     </button>
                                 ))}
 
