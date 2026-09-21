@@ -14,7 +14,7 @@ import HomeOfferingsShowcase from './components/HomeOfferingsShowcase';
 
 export default function FoodStorefront() {
 
-  return (
+  return (  
     <>
       <MainPage /> a
       <MarqueeStrip />
