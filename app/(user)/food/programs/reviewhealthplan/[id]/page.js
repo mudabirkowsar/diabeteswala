@@ -428,7 +428,7 @@ export default function ReviewHealthPlanPage({ params }) {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-24">
-      
+
       {/* Top Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
@@ -448,10 +448,10 @@ export default function ReviewHealthPlanPage({ params }) {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Left 2 Columns: Plan Customization & Preferences */}
           <div className="lg:col-span-2 space-y-6">
-            
+
             {/* Selected Plan Summary Card */}
             <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-5 items-start sm:items-center">
               <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-slate-900 overflow-hidden flex-shrink-0 relative">
@@ -475,7 +475,7 @@ export default function ReviewHealthPlanPage({ params }) {
                 </div>
                 <h3 className="text-lg font-black text-slate-900">{plan.title}</h3>
                 <p className="text-xs text-slate-500 font-medium line-clamp-1">{plan.tagline}</p>
-                
+
                 {plan.vendorId && (
                   <p className="text-xs text-slate-600 font-semibold flex items-center gap-1 pt-1">
                     <Utensils className="w-3.5 h-3.5 text-[#3d3f96]" />
@@ -524,7 +524,7 @@ export default function ReviewHealthPlanPage({ params }) {
                 </div>
 
                 <div className={`grid grid-cols-1 ${activeSlotsCount === 1 ? 'sm:grid-cols-1' : activeSlotsCount === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-4 pt-2`}>
-                  
+
                   {hasBreakfast && (
                     <div className="bg-amber-50/50 border border-amber-200/80 p-4 rounded-2xl space-y-2">
                       <div className="flex items-center gap-1.5 text-amber-900 font-black text-xs">
@@ -707,20 +707,18 @@ export default function ReviewHealthPlanPage({ params }) {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
-                
+
                 {/* Online Payment Card */}
                 <div
                   onClick={() => setPaymentMethod("Online")}
-                  className={`p-4 rounded-2xl border-2 transition cursor-pointer flex items-center justify-between ${
-                    paymentMethod === "Online"
+                  className={`p-4 rounded-2xl border-2 transition cursor-pointer flex items-center justify-between ${paymentMethod === "Online"
                       ? "border-[#3d3f96] bg-[#3d3f96]/5"
                       : "border-slate-200 hover:border-slate-300"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                      paymentMethod === "Online" ? "bg-[#3d3f96] text-white" : "bg-slate-100 text-slate-600"
-                    }`}>
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${paymentMethod === "Online" ? "bg-[#3d3f96] text-white" : "bg-slate-100 text-slate-600"
+                      }`}>
                       <CreditCard className="w-4 h-4" />
                     </div>
                     <div>
@@ -728,9 +726,8 @@ export default function ReviewHealthPlanPage({ params }) {
                       <div className="text-[10px] text-slate-500 font-semibold">UPI, Cards, NetBanking (Razorpay)</div>
                     </div>
                   </div>
-                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                    paymentMethod === "Online" ? "border-[#3d3f96] bg-[#3d3f96]" : "border-slate-300"
-                  }`}>
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${paymentMethod === "Online" ? "border-[#3d3f96] bg-[#3d3f96]" : "border-slate-300"
+                    }`}>
                     {paymentMethod === "Online" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                   </div>
                 </div>
@@ -739,16 +736,14 @@ export default function ReviewHealthPlanPage({ params }) {
                 {isCodAvailable && (
                   <div
                     onClick={() => setPaymentMethod("COD")}
-                    className={`p-4 rounded-2xl border-2 transition cursor-pointer flex items-center justify-between ${
-                      paymentMethod === "COD"
+                    className={`p-4 rounded-2xl border-2 transition cursor-pointer flex items-center justify-between ${paymentMethod === "COD"
                         ? "border-[#3d3f96] bg-[#3d3f96]/5"
                         : "border-slate-200 hover:border-slate-300"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                        paymentMethod === "COD" ? "bg-[#3d3f96] text-white" : "bg-slate-100 text-slate-600"
-                      }`}>
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${paymentMethod === "COD" ? "bg-[#3d3f96] text-white" : "bg-slate-100 text-slate-600"
+                        }`}>
                         <Banknote className="w-4 h-4" />
                       </div>
                       <div>
@@ -756,9 +751,8 @@ export default function ReviewHealthPlanPage({ params }) {
                         <div className="text-[10px] text-slate-500 font-semibold">Pay at first delivery drop</div>
                       </div>
                     </div>
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                      paymentMethod === "COD" ? "border-[#3d3f96] bg-[#3d3f96]" : "border-slate-300"
-                    }`}>
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${paymentMethod === "COD" ? "border-[#3d3f96] bg-[#3d3f96]" : "border-slate-300"
+                      }`}>
                       {paymentMethod === "COD" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                     </div>
                   </div>
@@ -772,7 +766,7 @@ export default function ReviewHealthPlanPage({ params }) {
           {/* Right 1 Column: Live Calculated Billing Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xl sticky top-24 space-y-6">
-              
+
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <h4 className="text-base font-black text-slate-900">
                   Bill Summary

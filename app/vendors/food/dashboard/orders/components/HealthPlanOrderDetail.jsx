@@ -76,7 +76,7 @@ export default function HealthPlanOrderDetail({ orderId, isOpen, onClose, onStat
             if (response && response.success && response.data) {
                 setOrderData(response.data);
                 const schedule = response.data.healthyPlanDetails?.dayWiseSchedule || [];
-                
+
                 // Calculate today's day number if within schedule
                 const start = response.data.healthyPlanDetails?.startDate;
                 let initialDay = 1;
@@ -400,7 +400,7 @@ export default function HealthPlanOrderDetail({ orderId, isOpen, onClose, onStat
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-xs antialiased text-left select-none overflow-hidden">
-            
+
             {/* Modal Outer Container */}
             <div className="relative w-full max-w-7xl max-h-[94vh] flex flex-col bg-[#f8fafc] rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden">
 
@@ -722,11 +722,10 @@ export default function HealthPlanOrderDetail({ orderId, isOpen, onClose, onStat
                                                     <button
                                                         key={tab}
                                                         onClick={() => setSelectedMealTab(tab)}
-                                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer ${
-                                                            selectedMealTab === tab
+                                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer ${selectedMealTab === tab
                                                                 ? 'bg-[#3d3f96] text-white shadow-xs'
                                                                 : 'text-slate-600 hover:text-slate-900'
-                                                        }`}
+                                                            }`}
                                                     >
                                                         {tab}
                                                     </button>
@@ -743,17 +742,15 @@ export default function HealthPlanOrderDetail({ orderId, isOpen, onClose, onStat
                                                     <button
                                                         key={d.dayNumber}
                                                         onClick={() => setSelectedDayNumber(d.dayNumber)}
-                                                        className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer border flex items-center gap-1.5 ${
-                                                            isSelected
+                                                        className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer border flex items-center gap-1.5 ${isSelected
                                                                 ? 'bg-[#3d3f96] text-white border-[#3d3f96] font-black shadow-sm'
                                                                 : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
-                                                        }`}
+                                                            }`}
                                                     >
                                                         <span>{d.dayName || `Day ${d.dayNumber}`}</span>
                                                         {isToday && (
-                                                            <span className={`text-[9px] font-black px-1.5 py-0.2 rounded ${
-                                                                isSelected ? 'bg-amber-400 text-slate-900' : 'bg-emerald-100 text-emerald-800'
-                                                            }`}>
+                                                            <span className={`text-[9px] font-black px-1.5 py-0.2 rounded ${isSelected ? 'bg-amber-400 text-slate-900' : 'bg-emerald-100 text-emerald-800'
+                                                                }`}>
                                                                 Today
                                                             </span>
                                                         )}

@@ -144,11 +144,10 @@ export default function HealthPlanOrder() {
                                 <button
                                     key={status}
                                     onClick={() => setSelectedStatus(status)}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer border ${
-                                        isSelected
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer border ${isSelected
                                             ? 'bg-red-50/60 text-red-600 border-red-200/60 font-black shadow-sm'
                                             : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
-                                    }`}
+                                        }`}
                                 >
                                     {status}
                                 </button>
@@ -278,11 +277,10 @@ export default function HealthPlanOrder() {
                                                         ₹{order.totalAmount || 0}
                                                     </strong>
                                                     <span
-                                                        className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded ${
-                                                            order.paymentStatus === 'Paid'
+                                                        className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded ${order.paymentStatus === 'Paid'
                                                                 ? 'bg-emerald-50 text-emerald-600'
                                                                 : 'bg-amber-50 text-amber-600'
-                                                        }`}
+                                                            }`}
                                                     >
                                                         {order.paymentStatus || 'Unpaid'}
                                                     </span>

@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import { 
-    Utensils, 
-    Layers, 
-    ShoppingBag, 
+import {
+    Utensils,
+    Layers,
+    ShoppingBag,
     ChefHat,
     Sparkles,
     CalendarClock
@@ -61,7 +61,7 @@ export default function OrdersManagementPage() {
 
     return (
         <div className="max-w-[1400px] mx-auto py-6 px-4 sm:px-6 space-y-8 select-none antialiased text-left">
-            
+
             {/* --- PAGE HEADER & MULTI-TAB NAVIGATION BAR --- */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 border-b border-slate-100 pb-6">
 
@@ -76,24 +76,22 @@ export default function OrdersManagementPage() {
                                 key={tab.id}
                                 type="button"
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 flex items-center gap-2.5 shrink-0 border cursor-pointer ${
-                                    isActive
+                                className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 flex items-center gap-2.5 shrink-0 border cursor-pointer ${isActive
                                         ? 'bg-red-50/60 text-red-600 border-red-200/60 shadow-sm shadow-red-100/50 scale-[1.01]'
                                         : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-white/55'
-                                }`}
+                                    }`}
                             >
-                                <TabIcon 
-                                    size={15} 
-                                    className={isActive ? 'text-red-600' : 'text-slate-400'} 
+                                <TabIcon
+                                    size={15}
+                                    className={isActive ? 'text-red-600' : 'text-slate-400'}
                                     strokeWidth={isActive ? 2.5 : 2}
                                 />
                                 <span>{tab.label}</span>
-                                
-                                <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md uppercase hidden sm:inline-block border ${
-                                    isActive 
-                                        ? 'bg-red-100/80 border-red-200/60 text-red-600' 
+
+                                <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md uppercase hidden sm:inline-block border ${isActive
+                                        ? 'bg-red-100/80 border-red-200/60 text-red-600'
                                         : 'bg-slate-200 border-transparent text-slate-500'
-                                }`}>
+                                    }`}>
                                     {tab.badge}
                                 </span>
                             </button>
