@@ -340,8 +340,8 @@ export default function ReviewHealthPlanPage({ params }) {
               const verifyRes = await UserAPI.verifyPayment(verifyPayload);
 
               if (verifyRes?.success) {
-                alert("🎉 " + (verifyRes?.message || "Payment verified successfully & Healthy Diet Plan is now Active!"));
-                router.push("/food/programs");
+                // alert("🎉 " + (verifyRes?.message || "Payment verified successfully & Healthy Diet Plan is now Active!"));
+                router.push("/otherscreens/tiffinorders");
               } else {
                 alert(verifyRes?.message || "Payment verification failed. Please contact support.");
               }

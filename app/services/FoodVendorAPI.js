@@ -207,14 +207,14 @@ const FoodAPI = {
         const response = await authApi.patch(`/provider/food/tiffin/custom-requests/${id}/action`, actionPayload);
         return response.data;
     },
-     cancelSubscriptionTiffin: async (id, actionPayload) => {
+    cancelSubscriptionTiffin: async (id, actionPayload) => {
         // id: Document Object ID (_id) or custom bookingId
         // actionPayload: { action: 'Accept' | 'Reject', rejectReason: "Mandatory description if rejecting" }
         const response = await authApi.patch(`provider/food/tiffin/subscriptions/${id}/action`, actionPayload);
         return response.data;
     },
 
-        // ==========================================
+    // ==========================================
     // HEALTHY PLANS INVENTORY (VENDOR/KITCHEN)
     // ==========================================
 
@@ -288,6 +288,28 @@ const FoodAPI = {
         return response.data;
     },
 
+    getUserHealthPlanOrders: async (params) => {
+        // params (optional): { status, bookingType, search, page, limit }
+        const response = await authApi.get('/provider/food/healthy-plans/orders', { params })
+        return response.data
+    },
+
+    getUserHealthPlanOrderDetail: async (id) => {
+        // id: Order Mongoose Object ID (_id) or custom bookingId (e.g. "ORD-FD-281415")
+        const response = await authApi.get(`/provider/food/healthy-plans/orders/${id}`);
+        return response.data;
+    },
+    /**
+         * Cancel Healthy Diet Plan Order (Emergency with Reason)
+         * @param {string} id - MongoDB _id or bookingId (e.g. "HLP-ORD-781920")
+         * @param {string} cancelReason - Reason for cancellation
+         */
+    cancelUserHealthPlan: async (id, cancelReason) => {
+        const response = await authApi.patch(`/provider/food/healthy-plans/orders/${id}/cancel`, {
+            cancelReason
+        });
+        return response.data;
+    },
 
 
 };

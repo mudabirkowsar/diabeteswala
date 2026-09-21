@@ -1,14 +1,15 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Calendar, Utensils, ChefHat, Sparkles } from 'lucide-react';
+import { Calendar, Utensils, ChefHat, HeartPulse, Sparkles } from 'lucide-react';
 
-// Import your components from the ../components folder
-import SubscriptionTiffin from './components/Tiffin'; // or ../components/OurTiffin
+// Import your components from the ./components folder
+import SubscriptionTiffin from './components/Tiffin';
 import CustomTiffin from './components/CustomTiffin';
+import HealthPlans from './components/HealthPlans';
 
 export default function TiffinPage() {
-    const [activeTab, setActiveTab] = useState('subscription'); // 'subscription' | 'custom'
+    const [activeTab, setActiveTab] = useState('subscription'); // 'subscription' | 'custom' | 'health-plans'
 
     return (
         <div className="min-h-screen bg-[#f8fbff] py-8 px-4 sm:px-6 lg:px-10 max-w-[1600px] mx-auto space-y-8 antialiased select-none text-left">
@@ -24,7 +25,7 @@ export default function TiffinPage() {
                             Tiffin &amp; Meal Services
                         </h1>
                         <p className="text-xs text-slate-500 font-bold mt-0.5">
-                            Choose between curated dietitian subscription plans or customize your own daily tiffin meal.
+                            Choose between daily subscription meals, custom tiffins, or dietitian-curated health plans.
                         </p>
                     </div>
                 </div>
@@ -32,24 +33,26 @@ export default function TiffinPage() {
 
             {/* --- NAVIGATION TABS --- */}
             <div className="flex items-center justify-center sm:justify-start">
-                <div className="inline-flex p-1.5 bg-slate-200/60 backdrop-blur-md rounded-2xl border border-slate-200 shadow-inner gap-1.5">
+                <div className="inline-flex flex-wrap p-1.5 bg-slate-200/60 backdrop-blur-md rounded-2xl border border-slate-200 shadow-inner gap-1.5">
 
                     {/* Subscription Tiffin Tab */}
                     <button
                         type="button"
                         onClick={() => setActiveTab('subscription')}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${activeTab === 'subscription'
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
+                            activeTab === 'subscription'
                                 ? 'bg-[#3d3f96] text-white shadow-md shadow-indigo-950/15'
                                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                            }`}
+                        }`}
                     >
                         <Calendar size={15} />
                         <span>Subscription Tiffin</span>
                         <span
-                            className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider ${activeTab === 'subscription'
+                            className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                                activeTab === 'subscription'
                                     ? 'bg-white/20 text-white'
                                     : 'bg-slate-300/60 text-slate-600'
-                                }`}
+                            }`}
                         >
                             Plans
                         </span>
@@ -59,20 +62,45 @@ export default function TiffinPage() {
                     <button
                         type="button"
                         onClick={() => setActiveTab('custom')}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${activeTab === 'custom'
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
+                            activeTab === 'custom'
                                 ? 'bg-[#3d3f96] text-white shadow-md shadow-indigo-950/15'
                                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                            }`}
+                        }`}
                     >
                         <Utensils size={15} />
                         <span>Custom Tiffin</span>
                         <span
-                            className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider ${activeTab === 'custom'
+                            className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                                activeTab === 'custom'
                                     ? 'bg-white/20 text-white'
                                     : 'bg-slate-300/60 text-slate-600'
-                                }`}
+                            }`}
                         >
                             Build Own
+                        </span>
+                    </button>
+
+                    {/* Health Plans Tab */}
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('health-plans')}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
+                            activeTab === 'health-plans'
+                                ? 'bg-[#3d3f96] text-white shadow-md shadow-indigo-950/15'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                        }`}
+                    >
+                        <HeartPulse size={15} />
+                        <span>Health Plans</span>
+                        <span
+                            className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                                activeTab === 'health-plans'
+                                    ? 'bg-white/20 text-white'
+                                    : 'bg-slate-300/60 text-slate-600'
+                            }`}
+                        >
+                            Curated
                         </span>
                     </button>
 
@@ -81,11 +109,9 @@ export default function TiffinPage() {
 
             {/* --- TAB CONTENT VIEW --- */}
             <div className="w-full transition-all duration-300">
-                {activeTab === 'subscription' ? (
-                    <SubscriptionTiffin />
-                ) : (
-                    <CustomTiffin />
-                )}
+                {activeTab === 'subscription' && <SubscriptionTiffin />}
+                {activeTab === 'custom' && <CustomTiffin />}
+                {activeTab === 'health-plans' && <HealthPlans />}
             </div>
 
         </div>

@@ -14,6 +14,7 @@ import {
 import FoodOrders from './components/FoodOrders';
 import TiffinOrders from './components/TiffinOrders';
 import CustomizedTiffinOrders from './components/CustomizedTiffinOrders';
+import HealthPlanOrder from './components/HealthPlanOrder';
 
 // --- Order Tabs Configuration ---
 const ORDER_TABS = [
@@ -40,6 +41,14 @@ const ORDER_TABS = [
         badge: 'Personalized',
         icon: ChefHat,
         component: CustomizedTiffinOrders
+    },
+    {
+        id: 'health_plan',
+        label: 'Health Plans',
+        shortLabel: 'Health Plans',
+        badge: 'Subscription',
+        icon: ChefHat,
+        component: HealthPlanOrder
     }
 ];
 

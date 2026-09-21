@@ -681,16 +681,16 @@ const UserAPI = {
      * 4. Get User's Healthy Plan Orders List
      * @param {Object} params - (Optional) pagination or status query params
      */
-    getMyPlans: async (params = {}) => {
+    getMyFoodHealthPlans: async (params = {}) => {
         const response = await authApi.get('/api/food/healthy-plans/my-plans', { params });
         return response.data;
     },
 
     /**
      * 5. Get Single Healthy Plan Order Details
-     * @param {string} orderId - MongoDB _id or custom bookingId
+     * @param {string} orderId - MongoDB _id 
      */
-    getMyPlanDetails: async (orderId) => {
+    getMyFoodHealthPlanDetails: async (orderId) => {
         const response = await authApi.get(`/api/food/healthy-plans/my-plan/${orderId}`);
         return response.data;
     },
