@@ -6,19 +6,19 @@ import BowlStory from './components/BowlStory'
 import PrecisionHealthMatrix from './components/PrecisionHealthMatrix'
 import ScrollSaladBowl from './components/ScrollSaladBowl'
 import KineticScrollBanner from './components/KineticScrollBanner'
-import CustomTiffinStory from './components/TiffinStory'
+import CustomTiffinStory from '../components/CustomTiffinStory'
 
 function page() {
   return (
     <>
-        <Hero/>
-        <HealthPlans />
-        <CupStory />
-        {/* <BowlStory /> */}
-        <PrecisionHealthMatrix />
-        <CustomTiffinStory />
-        {/* <ScrollSaladBowl /> */}
-        <KineticScrollBanner />
+      <Hero />
+      <HealthPlans />
+      <CupStory />
+      {/* <BowlStory /> */}
+      <PrecisionHealthMatrix />
+      <CustomTiffinStory />
+      {/* <ScrollSaladBowl /> */}
+      <KineticScrollBanner />
     </>
   )
 }

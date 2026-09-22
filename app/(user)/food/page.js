@@ -11,6 +11,7 @@ import Testimonials from './components/Testimonials';
 import MarqueeStrip from './components/MarqueeStrip';
 import GenderPrograms from './components/GenderPrograms';
 import HomeOfferingsShowcase from './components/HomeOfferingsShowcase';
+import CustomTiffinStory from './components/CustomTiffinStory';
 
 export default function FoodStorefront() {
 
@@ -18,9 +19,10 @@ export default function FoodStorefront() {
     <>
       <MainPage />
       <MarqueeStrip />
-      <HomeOfferingsShowcase />
+      {/* <HomeOfferingsShowcase /> */}
       <NearestMeal />
-      <HowToCustomize />
+      <CustomTiffinStory />
+      {/* <HowToCustomize /> */}
       <GetNearComboOffers />
       <FoodByDisease />
       <OurTiffin />
