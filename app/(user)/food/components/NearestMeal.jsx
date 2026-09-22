@@ -50,7 +50,6 @@ export default function NearestMeal() {
 
     // --- Retrieve Stored Coords on Mount ---
     const getInitialCoords = () => {
-        // Fallback default coordinates matching your store configuration
         let lat;
         let lng;
 
@@ -117,13 +116,15 @@ export default function NearestMeal() {
 
         return (
             <div
-                className={`w-4 h-4 border-2 rounded flex items-center justify-center p-[2px] shrink-0 bg-white/95 shadow-sm ${isVeg ? 'border-emerald-500' : isEgg ? 'border-amber-500' : isNonVeg ? 'border-rose-500' : 'border-slate-300'
-                    }`}
+                className={`w-4 h-4 border-2 rounded flex items-center justify-center p-[2px] shrink-0 bg-white/95 shadow-sm ${
+                    isVeg ? 'border-emerald-500' : isEgg ? 'border-amber-500' : isNonVeg ? 'border-rose-500' : 'border-slate-300'
+                }`}
                 title={type}
             >
                 <span
-                    className={`w-1.5 h-1.5 rounded-full ${isVeg ? 'bg-emerald-500' : isEgg ? 'bg-amber-500' : isNonVeg ? 'bg-rose-500' : 'bg-slate-400'
-                        }`}
+                    className={`w-1.5 h-1.5 rounded-full ${
+                        isVeg ? 'bg-emerald-500' : isEgg ? 'bg-amber-500' : isNonVeg ? 'bg-rose-500' : 'bg-slate-400'
+                    }`}
                 />
             </div>
         );
@@ -138,33 +139,24 @@ export default function NearestMeal() {
         const tagMatch = Array.isArray(meal.tags)
             ? meal.tags.some(t => t.toLowerCase().includes(query))
             : false;
-        // const ingredientMatch = Array.isArray(meal.ingredients)
-        //     ? meal.ingredients.some(i => i.toLowerCase().includes(query))
-        //     : false;
 
-        const matchesSearch = query === '' || nameMatch || descMatch || vendorMatch || tagMatch ;
+        const matchesSearch = query === '' || nameMatch || descMatch || vendorMatch || tagMatch;
         const matchesDiet = selectedDietType === 'All' || meal.dietType === selectedDietType;
         const matchesFocus = selectedFocus === 'All' || meal.foodEffectCategory === selectedFocus;
 
         return matchesSearch && matchesDiet && matchesFocus;
     });
 
-    // Extract distinct health/therapeutic focuses
-    const focusChips = [
-        'All',
-        ...new Set(meals.map(m => m.foodEffectCategory).filter(Boolean))
-    ];
-
     return (
-        <div className="min-h-screen bg-[#f8fbff] py-8 px-4 sm:px-6 lg:px-10 max-w-[1600px] mx-auto space-y-8 antialiased select-none text-left">
+        <div className="w-full bg-[#f8fbff] pt-8 pb-8 px-4 sm:px-6 lg:px-10 max-w-[1600px] mx-auto antialiased select-none text-left">
             {/* --- GEOLOCATED MEALS LISTING --- */}
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-32 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
                     <Loader2 className="animate-spin text-[#3d3f96] mb-3" size={40} />
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Scanning nearest kitchens in your area...</p>
                 </div>
             ) : filteredMeals.length === 0 ? (
-                <div className="flex flex-col items-center justify-center p-20 text-center bg-white rounded-3xl border border-slate-100 shadow-sm border-dashed">
+                <div className="flex flex-col items-center justify-center p-16 text-center bg-white rounded-3xl border border-slate-100 shadow-sm border-dashed">
                     <Utensils size={44} className="text-slate-300 mb-3" />
                     <h3 className="text-base font-bold text-slate-700">No Nearby Dishes Found</h3>
                     <p className="text-xs text-slate-400 mt-1 max-w-sm">
@@ -189,16 +181,17 @@ export default function NearestMeal() {
                             const vendor = dish.vendorId || {};
                             const dishImage = getMediaUrl(dish.imageUrl) || PLACEHOLDER_IMAGE;
                             const kitchenImage = getMediaUrl(vendor.profileImage) || KITCHEN_PLACEHOLDER;
-                            const isAvailable = dish.isAvailable !== false; // Check availability
+                            const isAvailable = dish.isAvailable !== false;
 
                             return (
                                 <div
                                     key={dish._id}
                                     onClick={() => handleMealClick(dish._id)}
-                                    className={`bg-white rounded-3xl border border-slate-100 shadow-sm transition-all duration-300 overflow-hidden flex flex-col justify-between group cursor-pointer text-left ${isAvailable
+                                    className={`bg-white rounded-3xl border border-slate-100 shadow-sm transition-all duration-300 overflow-hidden flex flex-col justify-between group cursor-pointer text-left ${
+                                        isAvailable
                                             ? 'hover:shadow-xl hover:-translate-y-1'
                                             : 'opacity-65 saturate-[0.25] border-slate-200 shadow-none'
-                                        }`}
+                                    }`}
                                 >
                                     {/* Photo Container with Overlays */}
                                     <div className="relative h-52 w-full overflow-hidden bg-slate-100">
