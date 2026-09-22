@@ -781,4 +781,4 @@ function BottomTiffinTelemetry({ progress, onSelectMilestone }) {
       </motion.div>
     </div>
   );
-}z
+}
