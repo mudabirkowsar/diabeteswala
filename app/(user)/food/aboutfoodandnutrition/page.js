@@ -5,9 +5,6 @@ import CupStory from './components/CupStory'
 import BowlStory from './components/BowlStory'
 import PrecisionHealthMatrix from './components/PrecisionHealthMatrix'
 import ScrollSaladBowl from './components/ScrollSaladBowl'
-import DiabetesNutrition3D from './components/DiabetesNutrition3D'
-import Scroll3DSaladBowl from './components/ScrollSaladBowl'
-import { ScrollTextBanner } from './components/ScrollTextBanner'
 import KineticScrollBanner from './components/KineticScrollBanner'
 
 function page() {
@@ -19,8 +16,6 @@ function page() {
         {/* <BowlStory /> */}
         <PrecisionHealthMatrix />
         {/* <ScrollSaladBowl /> */}
-        {/* <DiabetesNutrition3D /> */}
-        {/* <ScrollTextBanner /> */}
         <KineticScrollBanner />
     </>
   )
