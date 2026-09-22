@@ -1,10 +1,15 @@
 import React from 'react'
+import Hero from './components/Hero'
+import HealthPlans from './components/HealthPlans'
+import CupStory from './components/CupStory'
 
 function page() {
   return (
-    <div>
-        <h1>About food and nutrition</h1>
-    </div>
+    <>
+        <Hero/>
+        <HealthPlans />
+        <CupStory />
+    </>
   )
 }
 
