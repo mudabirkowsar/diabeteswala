@@ -440,6 +440,86 @@ const UserAPI = {
         return response.data;
     },
 
+    // ==========================================
+    // HEALTHY DIET PLANS STOREFRONT API SERVICES
+    // Base URL Path: /api/foodpage
+    // ==========================================
+
+    // --- 1. Get Nearest Geolocated Healthy Plans (Storefront List & Filter) ---
+    getNearestHealthyPlans: async (coordinatesPayload, filters = {}) => {
+        /**
+         * coordinatesPayload (Body - Required): 
+         *   { lat: 30.6983, lng: 76.6857 }
+         * 
+         * filters (Query Params - Optional): 
+         *   { 
+         *     mainCategory: "Men" | "Women", 
+         *     subCategory: "Keto Flex" | "PCOD / PCOS Care", 
+         *     programType: "Full Program" | "Breakfast & Lunch", 
+         *     daysCount: 5 | 7, 
+         *     search: "Keto", 
+         *     page: 1, 
+         *     limit: 20 
+         *   }
+         */
+        const response = await authApi.post('/api/foodpage/healthy-plans', coordinatesPayload, {
+            params: filters
+        });
+        return response.data;
+    },
+
+    // --- 2. Get Single Healthy Plan Full Details (Day-Wise Schedule & Ingredients Breakdown) ---
+    getSingleHealthyPlanDetails: async (planId, coordinates = {}) => {
+        /**
+         * planId (Path Param - Required): 
+         *   MongoDB _id (e.g., "6aab921903d5cec8e2745d3e")
+         * 
+         * coordinates (Query Params - Optional): 
+         *   { lat: 30.6983, lng: 76.6857 }
+         */
+        const response = await authApi.get(`/api/foodpage/healthy-plans/${planId}`, {
+            params: coordinates
+        });
+        return response.data;
+    },
+
+    /**
+     * 1. Calculate / Preview Healthy Plan Bill
+     * @param {Object} payload - { healthyPlanId, foodId, startAtThisDate, purposeOfBuying, userNote, deliveryTimes, couponCode, userLat, userLng, address }
+     */
+    calculateBill: async (payload) => {
+        const response = await authApi.post('/api/food/healthy-plans/calculate', payload);
+        return response.data;
+    },
+
+    /**
+     * 2. Subscribe / Buy Healthy Plan (COD & Online Razorpay Order)
+     * @param {Object} payload - { healthyPlanId, startAtThisDate, paymentMethod ('COD'|'Online'), purposeOfBuying, userNote, deliveryTimes, couponCode, userLat, userLng, address }
+     */
+    subscribePlan: async (payload) => {
+        const response = await authApi.post('/api/food/healthy-plans/subscribe', payload);
+        return response.data;
+    },
+
+    /**
+     * 3. Verify Razorpay Payment (Direct Plan Activation)
+     * @param {Object} paymentData - { bookingId, razorpayOrderId, razorpayPaymentId, razorpaySignature }
+     */
+    verifyPayment: async (paymentData) => {
+        const response = await authApi.post('/api/food/healthy-plans/verify-payment', paymentData);
+        return response.data;
+    },
+
+    getMyFoodHealthPlans: async (params = {}) => {
+        const response = await authApi.get('/api/food/healthy-plans/my-plans', { params });
+        return response.data;
+    },
+
+    getMyFoodHealthPlanDetails: async (orderId) => {
+        const response = await authApi.get(`/api/food/healthy-plans/my-plan/${orderId}`);
+        return response.data;
+    },
+
     // ===================================================
     // --- USER CLINIC DISCOVERY & DOCTOR DETAILS APIS ---
     // ===================================================
@@ -604,94 +684,6 @@ const UserAPI = {
     rescheduleUserDoctorAppointment: async (reschedulePayload) => {
         // reschedulePayload: { appointmentId: "6aa8ee4f3bc4a40491d5b8ca", newDate: "YYYY-MM-DD", newTimeSlot: "04:00 PM" }
         const response = await authApi.post('/user/doctors/reschedule', reschedulePayload);
-        return response.data;
-    },
-
-    // ==========================================
-    // HEALTHY DIET PLANS STOREFRONT API SERVICES
-    // Base URL Path: /api/foodpage
-    // ==========================================
-
-    // --- 1. Get Nearest Geolocated Healthy Plans (Storefront List & Filter) ---
-    getNearestHealthyPlans: async (coordinatesPayload, filters = {}) => {
-        /**
-         * coordinatesPayload (Body - Required): 
-         *   { lat: 30.6983, lng: 76.6857 }
-         * 
-         * filters (Query Params - Optional): 
-         *   { 
-         *     mainCategory: "Men" | "Women", 
-         *     subCategory: "Keto Flex" | "PCOD / PCOS Care", 
-         *     programType: "Full Program" | "Breakfast & Lunch", 
-         *     daysCount: 5 | 7, 
-         *     search: "Keto", 
-         *     page: 1, 
-         *     limit: 20 
-         *   }
-         */
-        const response = await authApi.post('/api/foodpage/healthy-plans', coordinatesPayload, {
-            params: filters
-        });
-        return response.data;
-    },
-
-    // --- 2. Get Single Healthy Plan Full Details (Day-Wise Schedule & Ingredients Breakdown) ---
-    getSingleHealthyPlanDetails: async (planId, coordinates = {}) => {
-        /**
-         * planId (Path Param - Required): 
-         *   MongoDB _id (e.g., "6aab921903d5cec8e2745d3e") OR planId (e.g., "HLP-102")
-         * 
-         * coordinates (Query Params - Optional): 
-         *   { lat: 30.6983, lng: 76.6857 }
-         */
-        const response = await authApi.get(`/api/foodpage/healthy-plans/${planId}`, {
-            params: coordinates
-        });
-        return response.data;
-    },
-
-    /**
-     * 1. Calculate / Preview Healthy Plan Bill
-     * @param {Object} payload - { healthyPlanId, foodId, startAtThisDate, purposeOfBuying, userNote, deliveryTimes, couponCode, userLat, userLng, address }
-     */
-    calculateBill: async (payload) => {
-        const response = await authApi.post('/api/food/healthy-plans/calculate', payload);
-        return response.data;
-    },
-
-    /**
-     * 2. Subscribe / Buy Healthy Plan (COD & Online Razorpay Order)
-     * @param {Object} payload - { healthyPlanId, startAtThisDate, paymentMethod ('COD'|'Online'), purposeOfBuying, userNote, deliveryTimes, couponCode, userLat, userLng, address }
-     */
-    subscribePlan: async (payload) => {
-        const response = await authApi.post('/api/food/healthy-plans/subscribe', payload);
-        return response.data;
-    },
-
-    /**
-     * 3. Verify Razorpay Payment (Direct Plan Activation)
-     * @param {Object} paymentData - { bookingId, razorpayOrderId, razorpayPaymentId, razorpaySignature }
-     */
-    verifyPayment: async (paymentData) => {
-        const response = await authApi.post('/api/food/healthy-plans/verify-payment', paymentData);
-        return response.data;
-    },
-
-    /**
-     * 4. Get User's Healthy Plan Orders List
-     * @param {Object} params - (Optional) pagination or status query params
-     */
-    getMyFoodHealthPlans: async (params = {}) => {
-        const response = await authApi.get('/api/food/healthy-plans/my-plans', { params });
-        return response.data;
-    },
-
-    /**
-     * 5. Get Single Healthy Plan Order Details
-     * @param {string} orderId - MongoDB _id 
-     */
-    getMyFoodHealthPlanDetails: async (orderId) => {
-        const response = await authApi.get(`/api/food/healthy-plans/my-plan/${orderId}`);
         return response.data;
     },
 

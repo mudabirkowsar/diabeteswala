@@ -20,6 +20,8 @@ import {
   Calendar,
   Sparkles,
   Image as ImageIcon,
+  Archive,
+  AlertCircle
 } from 'lucide-react';
 
 export default function HealthyPlansPage() {
@@ -99,7 +101,12 @@ export default function HealthyPlansPage() {
     fetchPlans(updated);
   };
 
-  const handleToggleStatus = async (id) => {
+  const handleToggleStatus = async (id, isDeleted) => {
+    if (isDeleted) {
+      alert('This plan is soft-deleted/archived and cannot be activated.');
+      return;
+    }
+
     try {
       await AdminAPI.toggleHealthyPlanStatus(id);
       fetchPlans();
@@ -108,15 +115,25 @@ export default function HealthyPlansPage() {
     }
   };
 
-  const handleDeletePlan = async (id, title) => {
-    const confirm = window.confirm(`Permanently delete healthy plan "${title}"?`);
-    if (!confirm) return;
+  // Soft Delete Handler with clear administrative feedback
+  const handleDeletePlan = async (id, title, planId) => {
+    const confirmArchival = window.confirm(
+      `Soft Delete / Archive Healthy Plan:\n"${title}" (${planId || id})\n\n` +
+      `• The plan will be disabled and auto-disabled from vendor menus.\n` +
+      `• Active user subscribers will continue their plan uninterrupted.\n\n` +
+      `Do you want to proceed with archiving this plan?`
+    );
+    if (!confirmArchival) return;
 
     try {
-      await AdminAPI.deleteHealthyPlan(id);
+      const res = await AdminAPI.deleteHealthyPlan(id);
+      if (res?.message) {
+        alert(res.message);
+      }
       fetchPlans();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to delete plan');
+      console.error('Failed to delete/archive plan', err);
+      alert(err.response?.data?.message || 'Failed to soft delete plan');
     }
   };
 
@@ -155,7 +172,7 @@ export default function HealthyPlansPage() {
           {/* View Categories */}
           <button
             onClick={() => setIsViewModalOpen(true)}
-            className="inline-flex items-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition"
+            className="inline-flex items-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition cursor-pointer"
           >
             <Eye size={18} className="text-[#3d3f96]" />
             <span>View Categories</span>
@@ -167,7 +184,7 @@ export default function HealthyPlansPage() {
               setSelectedCategoryToEdit(null);
               setIsCategoryModalOpen(true);
             }}
-            className="inline-flex items-center gap-2 bg-white border border-[#3d3f96]/30 text-[#3d3f96] hover:bg-[#3d3f96]/5 px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition"
+            className="inline-flex items-center gap-2 bg-white border border-[#3d3f96]/30 text-[#3d3f96] hover:bg-[#3d3f96]/5 px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition cursor-pointer"
           >
             <FolderPlus size={18} />
             <span>Create Category</span>
@@ -179,7 +196,7 @@ export default function HealthyPlansPage() {
               setSelectedPlanToEdit(null);
               setIsPlanModalOpen(true);
             }}
-            className="inline-flex items-center gap-2 bg-[#3d3f96] hover:bg-[#343680] text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition"
+            className="inline-flex items-center gap-2 bg-[#3d3f96] hover:bg-[#343680] text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition cursor-pointer"
           >
             <PlusCircle size={18} />
             <span>Create Plan</span>
@@ -211,7 +228,7 @@ export default function HealthyPlansPage() {
             <select
               value={filters.mainCategory}
               onChange={(e) => handleFilterChange('mainCategory', e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#3d3f96] outline-none bg-white"
+              className="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#3d3f96] outline-none bg-white cursor-pointer"
             >
               <option value="">All Categories</option>
               {categories.map((cat) => (
@@ -226,7 +243,7 @@ export default function HealthyPlansPage() {
               value={filters.subCategory}
               disabled={!filters.mainCategory}
               onChange={(e) => handleFilterChange('subCategory', e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#3d3f96] outline-none bg-white disabled:bg-gray-100"
+              className="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#3d3f96] outline-none bg-white disabled:bg-gray-100 cursor-pointer"
             >
               <option value="">All Subcategories</option>
               {selectedCategoryObj?.subCategories?.map((sub) => (
@@ -240,7 +257,7 @@ export default function HealthyPlansPage() {
             <select
               value={filters.programType}
               onChange={(e) => handleFilterChange('programType', e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#3d3f96] outline-none bg-white"
+              className="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#3d3f96] outline-none bg-white cursor-pointer"
             >
               <option value="">All Program Types</option>
               <option value="Full Program">Full Program</option>
@@ -252,7 +269,7 @@ export default function HealthyPlansPage() {
             <select
               value={filters.daysCount}
               onChange={(e) => handleFilterChange('daysCount', e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#3d3f96] outline-none bg-white"
+              className="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#3d3f96] outline-none bg-white cursor-pointer"
             >
               <option value="">All Durations</option>
               <option value="3">3 Days</option>
@@ -282,11 +299,15 @@ export default function HealthyPlansPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {plans.map((plan) => {
               const bannerSrc = getFullImageUrl(plan.bannerImage);
+              const isSoftDeleted = !!plan.isDeleted;
 
               return (
                 <div
                   key={plan._id}
-                  className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between group"
+                  className={`bg-white border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between group ${isSoftDeleted
+                      ? 'border-rose-200 bg-rose-50/20 opacity-80'
+                      : 'border-gray-200'
+                    }`}
                 >
                   <div>
                     {/* Banner Image Preview */}
@@ -313,18 +334,24 @@ export default function HealthyPlansPage() {
                       )}
 
                       {/* Top Category Badge */}
-                      <div className="absolute top-3 left-3 flex gap-1">
+                      <div className="absolute top-3 left-3 flex gap-1 flex-wrap">
                         <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-[#3d3f96] text-white shadow-sm">
                           {plan.mainCategory} • {plan.subCategory}
                         </span>
                       </div>
 
-                      {/* Badges */}
-                      <div className="absolute top-3 right-3 flex gap-1">
-                        {plan.isPopular && (
-                          <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500 text-white flex items-center gap-1 shadow-sm">
-                            <Sparkles size={10} /> Popular
+                      {/* Top Right Badges: Popular / Soft-Deleted */}
+                      <div className="absolute top-3 right-3 flex gap-1 flex-wrap">
+                        {isSoftDeleted ? (
+                          <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-rose-600 text-white flex items-center gap-1 shadow-sm">
+                            <Archive size={10} /> Archived
                           </span>
+                        ) : (
+                          plan.isPopular && (
+                            <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500 text-white flex items-center gap-1 shadow-sm">
+                              <Sparkles size={10} /> Popular
+                            </span>
+                          )
                         )}
                       </div>
                     </div>
@@ -377,47 +404,56 @@ export default function HealthyPlansPage() {
 
                   {/* Card Footer Actions */}
                   <div className="px-5 py-3 bg-gray-50/70 border-t border-gray-100 flex items-center justify-between">
-                    {/* Status Toggle Button */}
-                    <button
-                      onClick={() => handleToggleStatus(plan._id)}
-                      className={`text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 transition ${
-                        plan.isActive
-                          ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                          : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                      }`}
-                    >
-                      {plan.isActive ? <CheckCircle size={12} /> : <XCircle size={12} />}
-                      {plan.isActive ? 'Active' : 'Inactive'}
-                    </button>
+                    {/* Status Toggle Button / Archived Label */}
+                    {isSoftDeleted ? (
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 flex items-center gap-1">
+                        <AlertCircle size={12} /> Archived (Soft-Deleted)
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleToggleStatus(plan._id, isSoftDeleted)}
+                        className={`text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 transition cursor-pointer ${plan.isActive
+                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                            : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                          }`}
+                      >
+                        {plan.isActive ? <CheckCircle size={12} /> : <XCircle size={12} />}
+                        {plan.isActive ? 'Active' : 'Inactive'}
+                      </button>
+                    )}
 
                     {/* Action icons */}
                     <div className="flex items-center gap-1">
                       {/* View Details Button */}
                       <button
                         onClick={() => handleOpenPlanDetails(plan._id)}
-                        className="p-1.5 text-gray-400 hover:text-[#3d3f96] rounded-lg hover:bg-gray-100 transition"
+                        className="p-1.5 text-gray-400 hover:text-[#3d3f96] rounded-lg hover:bg-gray-100 transition cursor-pointer"
                         title="View Full Details"
                       >
                         <Eye size={16} />
                       </button>
 
                       {/* Edit Button */}
-                      <button
-                        onClick={() => handleOpenEditPlan(plan)}
-                        className="p-1.5 text-gray-400 hover:text-[#3d3f96] rounded-lg hover:bg-gray-100 transition"
-                        title="Edit Plan"
-                      >
-                        <Edit size={16} />
-                      </button>
+                      {!isSoftDeleted && (
+                        <button
+                          onClick={() => handleOpenEditPlan(plan)}
+                          className="p-1.5 text-gray-400 hover:text-[#3d3f96] rounded-lg hover:bg-gray-100 transition cursor-pointer"
+                          title="Edit Plan"
+                        >
+                          <Edit size={16} />
+                        </button>
+                      )}
 
-                      {/* Delete Button */}
-                      <button
-                        onClick={() => handleDeletePlan(plan._id, plan.title)}
-                        className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition"
-                        title="Delete Plan"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      {/* Soft Delete / Archive Button */}
+                      {!isSoftDeleted && (
+                        <button
+                          onClick={() => handleDeletePlan(plan._id, plan.title, plan.planId)}
+                          className="p-1.5 text-gray-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition cursor-pointer"
+                          title="Soft Delete / Archive Plan"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

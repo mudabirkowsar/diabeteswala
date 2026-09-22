@@ -73,10 +73,10 @@ export default function HealthyPlansInventoryPage() {
       if (response && response.success && Array.isArray(response.data)) {
         setPlans(response.data);
 
-        // Synchronize local checklist states with isAvailable property
+        // Synchronize local checklist states with isAvailable property (forcing false if deleted by admin)
         const initialSelections = {};
         response.data.forEach((item) => {
-          initialSelections[item._id] = !!item.isAvailable;
+          initialSelections[item._id] = item.isDeletedByAdmin ? false : !!item.isAvailable;
         });
         setLocalSelections(initialSelections);
       } else {
@@ -102,9 +102,10 @@ export default function HealthyPlansInventoryPage() {
     setActionLoading(true);
     setError(null);
 
-    const selectedPlanIds = Object.keys(localSelections).filter(
-      (id) => localSelections[id] === true
-    );
+    const selectedPlanIds = Object.keys(localSelections).filter((id) => {
+      const planItem = plans.find((p) => p._id === id);
+      return localSelections[id] === true && !planItem?.isDeletedByAdmin;
+    });
 
     try {
       const payload = { selectedPlanIds };
@@ -124,6 +125,12 @@ export default function HealthyPlansInventoryPage() {
   // 3. Instant Single Plan Availability Switch (PATCH /toggle-healthy-plan/:healthyPlanId)
   const handleToggleSinglePlan = async (planId, e) => {
     e?.stopPropagation();
+    const targetPlan = plans.find((p) => p._id === planId);
+    if (targetPlan?.isDeletedByAdmin) {
+      setError("This plan has been disabled by Admin and cannot be activated.");
+      return;
+    }
+
     setTogglingId(planId);
     setError(null);
 
@@ -161,6 +168,9 @@ export default function HealthyPlansInventoryPage() {
   // Checkbox toggle for local multi-select
   const handleCheckboxChange = (planId, e) => {
     e.stopPropagation();
+    const targetPlan = plans.find((p) => p._id === planId);
+    if (targetPlan?.isDeletedByAdmin) return;
+
     setLocalSelections((prev) => ({
       ...prev,
       [planId]: !prev[planId]
@@ -192,6 +202,7 @@ export default function HealthyPlansInventoryPage() {
   // Check if vendor has modified selections compared to saved database states
   const hasPendingChanges = () => {
     return plans.some((plan) => {
+      if (plan.isDeletedByAdmin) return false;
       const dbVal = !!plan.isAvailable;
       const localVal = !!localSelections[plan._id];
       return dbVal !== localVal;
@@ -208,8 +219,8 @@ export default function HealthyPlansInventoryPage() {
 
     const matchesStatus =
       selectedStatusFilter === 'All' ||
-      (selectedStatusFilter === 'Active' && localSelections[item._id]) ||
-      (selectedStatusFilter === 'Inactive' && !localSelections[item._id]);
+      (selectedStatusFilter === 'Active' && localSelections[item._id] && !item.isDeletedByAdmin) ||
+      (selectedStatusFilter === 'Inactive' && (!localSelections[item._id] || item.isDeletedByAdmin));
 
     return matchesSearch && matchesStatus;
   });
@@ -240,11 +251,10 @@ export default function HealthyPlansInventoryPage() {
             <button
               onClick={handleBulkSync}
               disabled={actionLoading || !hasPendingChanges()}
-              className={`px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all duration-200 shadow-lg flex items-center gap-2 cursor-pointer ${
-                hasPendingChanges() && !actionLoading
-                  ? 'bg-[#3D3F96] hover:bg-[#2F3175] text-white shadow-indigo-950/15 active:scale-95'
-                  : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
-              }`}
+              className={`px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all duration-200 shadow-lg flex items-center gap-2 cursor-pointer ${hasPendingChanges() && !actionLoading
+                ? 'bg-[#3D3F96] hover:bg-[#2F3175] text-white shadow-indigo-950/15 active:scale-95'
+                : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
+                }`}
             >
               {actionLoading ? (
                 <>
@@ -279,7 +289,7 @@ export default function HealthyPlansInventoryPage() {
         {/* Filter Controls Panel */}
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-5 sm:p-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-            
+
             {/* Search Input */}
             <div className="md:col-span-5 relative">
               <input
@@ -301,11 +311,10 @@ export default function HealthyPlansInventoryPage() {
                     key={cat}
                     type="button"
                     onClick={() => setSelectedMainCategory(cat)}
-                    className={`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition cursor-pointer ${
-                      selectedMainCategory === cat
-                        ? 'bg-[#3D3F96] text-white shadow-xs'
-                        : 'text-slate-600 hover:bg-white'
-                    }`}
+                    className={`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition cursor-pointer ${selectedMainCategory === cat
+                      ? 'bg-[#3D3F96] text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-white'
+                      }`}
                   >
                     {cat}
                   </button>
@@ -359,37 +368,49 @@ export default function HealthyPlansInventoryPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
                   {filteredPlans.map((plan) => {
-                    const isChecked = !!localSelections[plan._id];
+                    const isChecked = !!localSelections[plan._id] && !plan.isDeletedByAdmin;
                     const isTogglingThis = togglingId === plan._id;
+                    const isDeleted = !!plan.isDeletedByAdmin;
 
                     return (
                       <tr
                         key={plan._id}
                         onClick={() => handleOpenPlanDetails(plan._id)}
-                        className={`hover:bg-[#3D3F96]/5 transition-colors cursor-pointer group ${
-                          !isChecked ? 'opacity-65 bg-slate-50/30' : ''
-                        }`}
+                        className={`hover:bg-[#3D3F96]/5 transition-colors cursor-pointer group ${isDeleted
+                          ? 'bg-rose-50/30 opacity-75'
+                          : !isChecked
+                            ? 'opacity-65 bg-slate-50/30'
+                            : ''
+                          }`}
                       >
                         {/* Checkbox Selector for Multi-select */}
                         <td className="py-4 px-5 text-center" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
+                            disabled={isDeleted}
                             checked={isChecked}
                             onChange={(e) => handleCheckboxChange(plan._id, e)}
-                            className="h-4.5 w-4.5 rounded text-[#3D3F96] focus:ring-[#3D3F96] border-slate-300 cursor-pointer"
+                            className={`h-4.5 w-4.5 rounded text-[#3D3F96] focus:ring-[#3D3F96] border-slate-300 ${isDeleted ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
+                              }`}
                           />
                         </td>
 
                         {/* Title & Plan Identifier */}
                         <td className="py-4 px-5">
                           <div className="space-y-1">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-[10px] font-black uppercase text-[#3D3F96] bg-[#3D3F96]/10 px-2 py-0.5 rounded">
                                 {plan.planId || 'HLP-100'}
                               </span>
                               <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600">
                                 {plan.mainCategory || 'General'}
                               </span>
+                              {isDeleted && (
+                                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-rose-100 text-rose-700 border border-rose-200 flex items-center gap-1">
+                                  <AlertCircle size={10} />
+                                  {plan.adminStatusText || 'Deleted by Admin'}
+                                </span>
+                              )}
                             </div>
                             <p className="font-extrabold text-slate-900 text-[13px] group-hover:underline leading-snug">
                               {plan.title}
@@ -419,17 +440,25 @@ export default function HealthyPlansInventoryPage() {
                         <td className="py-4 px-5 text-center" onClick={(e) => e.stopPropagation()}>
                           <button
                             type="button"
-                            disabled={isTogglingThis}
+                            disabled={isDeleted || isTogglingThis}
                             onClick={(e) => handleToggleSinglePlan(plan._id, e)}
-                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 ${
-                              isChecked ? 'bg-[#3D3F96]' : 'bg-slate-200'
-                            }`}
-                            title={isChecked ? "Set Inactive" : "Set Active"}
+                            className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isDeleted
+                              ? 'bg-slate-200 opacity-50 cursor-not-allowed'
+                              : isChecked
+                                ? 'bg-[#3D3F96] cursor-pointer'
+                                : 'bg-slate-200 cursor-pointer'
+                              }`}
+                            title={
+                              isDeleted
+                                ? "Disabled by Admin"
+                                : isChecked
+                                  ? "Set Inactive"
+                                  : "Set Active"
+                            }
                           >
                             <span
-                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                isChecked ? 'translate-x-5' : 'translate-x-0'
-                              }`}
+                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${!isDeleted && isChecked ? 'translate-x-5' : 'translate-x-0'
+                                }`}
                             />
                           </button>
                         </td>
@@ -461,7 +490,7 @@ export default function HealthyPlansInventoryPage() {
           <div className="absolute inset-0" onClick={() => setSelectedPlan(null)} />
 
           <div className="bg-white rounded-3xl border border-slate-200 max-w-4xl w-full max-h-[92vh] overflow-hidden shadow-2xl relative z-10 flex flex-col">
-            
+
             {/* Modal Header */}
             <div className="bg-slate-50 px-6 py-5 border-b border-slate-200/80 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-3">
@@ -469,11 +498,16 @@ export default function HealthyPlansInventoryPage() {
                   <Calendar className="w-5 h-5 stroke-[2.2]" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-[10px] font-black uppercase text-[#3D3F96] bg-[#3D3F96]/10 px-2 py-0.5 rounded">
                       {selectedPlan.planId || 'HLP-100'}
                     </span>
                     <span className="text-xs font-black text-slate-800">{selectedPlan.title}</span>
+                    {selectedPlan.isDeletedByAdmin && (
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-rose-100 text-rose-700 border border-rose-200">
+                        {selectedPlan.adminStatusText || 'Disabled by Admin'}
+                      </span>
+                    )}
                   </div>
                   <p className="text-[11px] text-slate-400 font-bold mt-0.5">
                     {selectedPlan.mainCategory} • {selectedPlan.subCategory || "Clinical Diet"} • {selectedPlan.daysCount || 5} Days Program
@@ -545,7 +579,7 @@ export default function HealthyPlansInventoryPage() {
                     </div>
                   </div>
 
-                  {/* Pricing Matrix (From API 5 Deep Response) */}
+                  {/* Pricing Matrix */}
                   {selectedPlan.pricing && (
                     <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-left">
                       <div>
@@ -576,10 +610,17 @@ export default function HealthyPlansInventoryPage() {
 
                       <div className="border-l border-slate-200 pl-4">
                         <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Live Status</span>
-                        <span className={`inline-block text-[10px] font-black uppercase px-2.5 py-0.5 rounded-md mt-0.5 ${
-                          selectedPlan.isAvailable ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
-                        }`}>
-                          {selectedPlan.isAvailable ? 'Active on Menu' : 'Inactive'}
+                        <span className={`inline-block text-[10px] font-black uppercase px-2.5 py-0.5 rounded-md mt-0.5 ${selectedPlan.isDeletedByAdmin
+                          ? 'bg-rose-100 text-rose-700 border border-rose-200'
+                          : selectedPlan.isAvailable
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-rose-100 text-rose-700'
+                          }`}>
+                          {selectedPlan.isDeletedByAdmin
+                            ? (selectedPlan.adminStatusText || 'Deleted by Admin')
+                            : selectedPlan.isAvailable
+                              ? 'Active on Menu'
+                              : 'Inactive'}
                         </span>
                       </div>
                     </div>
@@ -598,11 +639,10 @@ export default function HealthyPlansInventoryPage() {
                               key={day.dayNumber}
                               type="button"
                               onClick={() => setActiveDayTab(day.dayNumber)}
-                              className={`px-3 py-1 text-xs font-extrabold rounded-lg transition cursor-pointer ${
-                                activeDayTab === day.dayNumber
-                                  ? 'bg-[#3D3F96] text-white shadow-xs'
-                                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                              }`}
+                              className={`px-3 py-1 text-xs font-extrabold rounded-lg transition cursor-pointer ${activeDayTab === day.dayNumber
+                                ? 'bg-[#3D3F96] text-white shadow-xs'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                }`}
                             >
                               {day.dayName || `Day ${day.dayNumber}`}
                             </button>

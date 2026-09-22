@@ -14,14 +14,14 @@ import HomeOfferingsShowcase from './components/HomeOfferingsShowcase';
 
 export default function FoodStorefront() {
 
-  return (  
+  return (
     <>
-      <MainPage /> a
+      <MainPage />
       <MarqueeStrip />
-      {/* <HomeOfferingsShowcase /> */}
+      <HomeOfferingsShowcase />
       <NearestMeal />
       <HowToCustomize />
-      <GetNearComboOffers /> 
+      <GetNearComboOffers />
       <FoodByDisease />
       <OurTiffin />
       <CustomTiffin />
