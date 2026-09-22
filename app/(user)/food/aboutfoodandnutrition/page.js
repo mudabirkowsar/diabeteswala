@@ -6,6 +6,7 @@ import BowlStory from './components/BowlStory'
 import PrecisionHealthMatrix from './components/PrecisionHealthMatrix'
 import ScrollSaladBowl from './components/ScrollSaladBowl'
 import KineticScrollBanner from './components/KineticScrollBanner'
+import CustomTiffinStory from './components/TiffinStory'
 
 function page() {
   return (
@@ -15,6 +16,7 @@ function page() {
         <CupStory />
         {/* <BowlStory /> */}
         <PrecisionHealthMatrix />
+        <CustomTiffinStory />
         {/* <ScrollSaladBowl /> */}
         <KineticScrollBanner />
     </>
