@@ -13,7 +13,8 @@ import {
     RotateCcw,
     Coffee,
     Sun,
-    Moon
+    Moon,
+    Archive
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import CreateTiffin from './components/CreateTiffin';
@@ -55,7 +56,7 @@ export default function SubscriptionPlans() {
             }
         } catch (err) {
             console.error("Error fetching tiffin subscription plans:", err);
-            toast.error("Failed to load subscription tiers.");
+            toast.error(err.response?.data?.message || "Failed to load subscription tiers.");
         } finally {
             setLoading(false);
         }
@@ -86,17 +87,36 @@ export default function SubscriptionPlans() {
         }
     };
 
-    // --- 3. Delete Plan with Confirmation ---
+    // --- 3. Smart Delete Tiffin Plan (Hard Delete / Soft Delete Archive) ---
     const handleDeletePlan = async (planId) => {
-        const isConfirmed = window.confirm("Are you sure you want to permanently delete this subscription plan tier?");
+        const isConfirmed = window.confirm("Are you sure you want to delete this subscription plan tier?");
         if (!isConfirmed) return;
 
         setActionLoadingId(planId);
         try {
             const response = await AdminAPI.deleteTiffinPlan(planId);
             if (response && response.success) {
-                setPlans(prev => prev.filter(p => p._id !== planId && p.planId !== planId));
-                toast.success('Subscription plan removed successfully.');
+                const isHardDelete = response.data?.isPermanentlyDeleted || response.deletionType?.includes("Permanent");
+
+                if (isHardDelete) {
+                    // Case 1: Permanently removed from database
+                    setPlans(prev => prev.filter(p => p._id !== planId && p.planId !== planId));
+                } else {
+                    // Case 2: Soft deleted / Archived in database
+                    setPlans(prev => prev.map(p => 
+                        (p._id === planId || p.planId === planId)
+                            ? { 
+                                ...p, 
+                                isDeleted: true, 
+                                isActive: false, 
+                                ...(response.data || {}) 
+                              }
+                            : p
+                    ));
+                }
+                toast.success(response.message || 'Subscription plan processed successfully.');
+            } else {
+                toast.error(response?.message || 'Failed to delete plan.');
             }
         } catch (err) {
             console.error("Error deleting plan:", err);
@@ -196,7 +216,8 @@ export default function SubscriptionPlans() {
                     {plans.map((plan) => {
                         const targetId = plan._id || plan.planId;
                         const isProcessing = actionLoadingId === targetId;
-                        const isActive = plan.isActive !== false;
+                        const isDeleted = Boolean(plan.isDeleted);
+                        const isActive = plan.isActive !== false && !isDeleted;
                         
                         // Extract first valid dish image as banner
                         const firstDish = plan.dishPool?.[0] || plan.slotDishes?.breakfast?.[0]?.itemId || plan.slotDishes?.lunch?.[0]?.itemId;
@@ -214,7 +235,7 @@ export default function SubscriptionPlans() {
                             <div
                                 key={targetId}
                                 className={`bg-white rounded-3xl border border-slate-200/80 flex flex-col justify-between shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden group ${
-                                    !isActive ? 'opacity-65 saturate-[0.5]' : ''
+                                    isDeleted ? 'opacity-60 saturate-[0.3] border-dashed border-slate-300' : (!isActive ? 'opacity-75 saturate-[0.6]' : '')
                                 }`}
                             >
                                 <div>
@@ -233,10 +254,17 @@ export default function SubscriptionPlans() {
                                             {plan.mealsPerDay} {plan.mealsPerDay === 1 ? 'Meal' : 'Meals'} / Day
                                         </span>
 
-                                        {/* Plan ID Tag */}
-                                        <span className="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-[9px] font-mono font-bold px-2.5 py-0.5 rounded-lg uppercase border border-white/10">
-                                            ID: {plan.planId || plan._id?.substring(0, 8)}
-                                        </span>
+                                        {/* Plan ID Tag & Archive Status */}
+                                        <div className="absolute top-3 left-3 flex items-center gap-2">
+                                            <span className="bg-black/50 backdrop-blur-md text-white text-[9px] font-mono font-bold px-2.5 py-0.5 rounded-lg uppercase border border-white/10">
+                                                ID: {plan.planId || plan._id?.substring(0, 8)}
+                                            </span>
+                                            {isDeleted && (
+                                                <span className="bg-rose-600/90 backdrop-blur-md text-white text-[9px] font-black px-2 py-0.5 rounded-lg uppercase border border-rose-400 flex items-center gap-1 shadow-sm">
+                                                    <Archive size={10} /> Archived
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {/* Inner Details */}
@@ -314,39 +342,41 @@ export default function SubscriptionPlans() {
                                     <div className="flex items-center gap-2">
                                         <button
                                             onClick={() => openEditModal(plan)}
-                                            disabled={isProcessing}
-                                            className="p-2 border border-slate-200 text-slate-400 hover:text-[#3D3F96] hover:bg-[#3D3F96]/10 rounded-xl transition-all cursor-pointer disabled:opacity-50"
-                                            title="Edit Plan"
+                                            disabled={isProcessing || isDeleted}
+                                            className="p-2 border border-slate-200 text-slate-400 hover:text-[#3D3F96] hover:bg-[#3D3F96]/10 rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                            title={isDeleted ? "Cannot edit archived plan" : "Edit Plan"}
                                         >
                                             <Edit size={14} strokeWidth={2.2} />
                                         </button>
                                         
                                         <button
                                             onClick={() => handleDeletePlan(targetId)}
-                                            disabled={isProcessing}
-                                            className="p-2 border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer disabled:opacity-50"
-                                            title="Delete Plan"
+                                            disabled={isProcessing || isDeleted}
+                                            className="p-2 border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                            title={isDeleted ? "Plan already archived" : "Delete Plan"}
                                         >
                                             <Trash2 size={14} strokeWidth={2.2} />
                                         </button>
                                     </div>
 
-                                    {/* Toggle Active / Inactive Button */}
+                                    {/* Toggle Active / Inactive / Archived Status */}
                                     <button
-                                        onClick={() => handleToggleStatus(targetId)}
-                                        disabled={isProcessing}
-                                        className={`flex items-center gap-1.5 text-[10px] font-bold border px-3 py-1.5 rounded-full transition-all duration-300 cursor-pointer disabled:opacity-50 ${
-                                            isActive
-                                                ? "text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100"
-                                                : "text-slate-500 border-slate-200 bg-slate-100 hover:bg-slate-200"
-                                        }`}
+                                        onClick={() => !isDeleted && handleToggleStatus(targetId)}
+                                        disabled={isProcessing || isDeleted}
+                                        className={`flex items-center gap-1.5 text-[10px] font-bold border px-3 py-1.5 rounded-full transition-all duration-300 ${
+                                            isDeleted
+                                                ? "text-rose-700 border-rose-200 bg-rose-50 cursor-not-allowed"
+                                                : isActive
+                                                ? "text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100 cursor-pointer"
+                                                : "text-slate-500 border-slate-200 bg-slate-100 hover:bg-slate-200 cursor-pointer"
+                                        } disabled:opacity-75`}
                                     >
                                         {isProcessing ? (
                                             <Loader2 size={10} className="animate-spin" />
                                         ) : (
-                                            <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
+                                            <span className={`w-1.5 h-1.5 rounded-full ${isDeleted ? "bg-rose-500" : isActive ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
                                         )}
-                                        <span>{isActive ? 'Active' : 'Inactive'}</span>
+                                        <span>{isDeleted ? 'Archived' : isActive ? 'Active' : 'Inactive'}</span>
                                     </button>
                                 </div>
 

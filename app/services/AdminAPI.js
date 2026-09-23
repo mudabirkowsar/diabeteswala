@@ -598,7 +598,7 @@ const AdminAPI = {
     getTiffinPlansList: async () => {
         const response = await authApi.get('/admin/food/tiffin/plans/get');
         return response.data;
-    },
+    }, 
 
     getTiffinPlanDetails: async (id) => {
         const response = await authApi.get(`/admin/food/tiffin/plans/get/${id}`);

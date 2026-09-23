@@ -22,7 +22,8 @@ import {
     IndianRupee,
     Info,
     Calendar,
-    SlidersHorizontal
+    SlidersHorizontal,
+    AlertCircle
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -41,10 +42,6 @@ export default function VendorTiffinInventory() {
     const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'ACTIVE' | 'INACTIVE'
     const [cycleFilter, setCycleFilter] = useState('ALL'); // 'ALL' | 'Monthly Cycle' | 'Weekly Cycle'
 
-    // --- Custom Pricing Local State Map { [planId]: number } ---
-    const [customPricing, setCustomPricing] = useState({});
-    const [hasUnsavedPriceChanges, setHasUnsavedPriceChanges] = useState(false);
-
     // --- Detail Preview Modal State ---
     const [previewPlan, setPreviewPlan] = useState(null);
     const [previewActiveTab, setPreviewActiveTab] = useState('breakfast');
@@ -57,16 +54,6 @@ export default function VendorTiffinInventory() {
             if (response && response.success) {
                 const planList = response.data || [];
                 setPlans(planList);
-
-                // Initialize custom pricing state map
-                const priceMap = {};
-                planList.forEach(p => {
-                    if (p.customPrice) {
-                        priceMap[p._id] = p.customPrice;
-                    }
-                });
-                setCustomPricing(priceMap);
-                setHasUnsavedPriceChanges(false);
             } else {
                 toast.error("Unable to load master tiffin plans.");
             }
@@ -84,6 +71,14 @@ export default function VendorTiffinInventory() {
 
     // --- 2. Instant Single Plan Toggle ---
     const handleInstantToggle = async (planId) => {
+        const targetPlan = plans.find(p => p._id === planId || p.planId === planId);
+        
+        // Block activation if Admin has soft-deleted/discontinued this plan
+        if (targetPlan?.isDeletedByAdmin) {
+            toast.error("This Subscription Plan has been discontinued by Admin and cannot be activated.");
+            return;
+        }
+
         setActionLoadingId(planId);
         try {
             const response = await FoodVendorAPI.toggleVendorTiffinPlan(planId);
@@ -103,40 +98,22 @@ export default function VendorTiffinInventory() {
         }
     };
 
-    // --- 3. Handle Custom Price Input Change ---
-    const handleCustomPriceChange = (planId, val) => {
-        const numericVal = val === '' ? '' : Math.max(0, parseFloat(val) || 0);
-        setCustomPricing(prev => ({
-            ...prev,
-            [planId]: numericVal
-        }));
-        setHasUnsavedPriceChanges(true);
-    };
-
-    // --- 4. Unified Sync (Multi-Select & Custom Prices) ---
+    // --- 3. Unified Sync (Multi-Select Active Plans) ---
     const handleUnifiedSync = async () => {
         setSyncing(true);
         try {
-            // Selected active plan IDs
-            const activePlanIds = plans.filter(p => p.isAvailable).map(p => p._id);
-
-            // Clean custom pricing payload (only include plans that have a valid custom price)
-            const cleanPricing = {};
-            Object.entries(customPricing).forEach(([planId, price]) => {
-                if (price !== '' && price > 0) {
-                    cleanPricing[planId] = Number(price);
-                }
-            });
+            // Selected active plan IDs (strictly excluding any discontinued plans)
+            const activePlanIds = plans
+                .filter(p => p.isAvailable && !p.isDeletedByAdmin)
+                .map(p => p._id);
 
             const syncPayload = {
-                selectedPlanIds: activePlanIds,
-                customPricing: cleanPricing
+                selectedPlanIds: activePlanIds
             };
 
             const response = await FoodVendorAPI.syncVendorTiffinPlans(syncPayload);
             if (response && response.success) {
                 toast.success(response.message || "Tiffin menu synchronized successfully!");
-                setHasUnsavedPriceChanges(false);
                 fetchMasterPlans();
             }
         } catch (err) {
@@ -155,10 +132,12 @@ export default function VendorTiffinInventory() {
                 plan.planId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 plan.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
+            const isPlanActive = plan.isAvailable && !plan.isDeletedByAdmin;
+
             const matchesStatus =
                 statusFilter === 'ALL' ||
-                (statusFilter === 'ACTIVE' && plan.isAvailable) ||
-                (statusFilter === 'INACTIVE' && !plan.isAvailable);
+                (statusFilter === 'ACTIVE' && isPlanActive) ||
+                (statusFilter === 'INACTIVE' && !isPlanActive);
 
             const matchesCycle =
                 cycleFilter === 'ALL' || plan.planCycle === cycleFilter;
@@ -168,7 +147,7 @@ export default function VendorTiffinInventory() {
     }, [plans, searchQuery, statusFilter, cycleFilter]);
 
     // Summary counters
-    const activeCount = plans.filter(p => p.isAvailable).length;
+    const activeCount = plans.filter(p => p.isAvailable && !p.isDeletedByAdmin).length;
     const totalCount = plans.length;
 
     return (
@@ -191,7 +170,7 @@ export default function VendorTiffinInventory() {
                             </span>
                         </div>
                         <p className="text-xs text-slate-500 font-bold mt-1 max-w-2xl">
-                            Activate daily breakfast, lunch, and dinner subscription packages for your kitchen storefront and adjust local pricing overrides.
+                            Activate daily breakfast, lunch, and dinner subscription packages for your kitchen storefront.
                         </p>
                     </div>
                 </div>
@@ -210,14 +189,10 @@ export default function VendorTiffinInventory() {
                     <button
                         onClick={handleUnifiedSync}
                         disabled={syncing || loading}
-                        className={`px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-lg ${
-                            hasUnsavedPriceChanges
-                                ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-950/20 animate-pulse'
-                                : 'bg-[#3d3f96] hover:bg-[#2d2f75] text-white shadow-indigo-950/20'
-                        } disabled:opacity-50`}
+                        className="px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-lg bg-[#3d3f96] hover:bg-[#2d2f75] text-white shadow-indigo-950/20 disabled:opacity-50"
                     >
                         {syncing ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-                        <span>{hasUnsavedPriceChanges ? 'Save Price Overrides' : 'Synchronize Menu'}</span>
+                        <span>Synchronize Menu</span>
                     </button>
                 </div>
             </div>
@@ -319,20 +294,21 @@ export default function VendorTiffinInventory() {
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {filteredPlans.map((plan) => {
                         const isProcessing = actionLoadingId === plan._id;
-                        const isAvailable = plan.isAvailable === true;
+                        const isDiscontinued = plan.isDeletedByAdmin === true;
+                        const isAvailable = plan.isAvailable === true && !isDiscontinued;
 
                         const breakfastDishes = plan.slotDishes?.breakfast || [];
                         const lunchDishes = plan.slotDishes?.lunch || [];
                         const dinnerDishes = plan.slotDishes?.dinner || [];
                         const totalDishes = breakfastDishes.length + lunchDishes.length + dinnerDishes.length;
 
-                        const currentCustomPrice = customPricing[plan._id] ?? (plan.customPrice || '');
-
                         return (
                             <div
                                 key={plan._id}
                                 className={`bg-white rounded-3xl border transition-all duration-300 flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-md ${
-                                    isAvailable
+                                    isDiscontinued
+                                        ? 'border-rose-200 bg-rose-50/20 opacity-75'
+                                        : isAvailable
                                         ? 'border-indigo-200/90 ring-2 ring-indigo-50/50'
                                         : 'border-slate-200 opacity-80'
                                 }`}
@@ -342,28 +318,45 @@ export default function VendorTiffinInventory() {
                                     
                                     {/* Top Status & Plan ID Row */}
                                     <div className="flex items-center justify-between gap-2">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 flex-wrap">
                                             <span className="font-mono text-[10px] font-bold text-slate-400 bg-slate-100 px-2.5 py-0.5 rounded-lg uppercase">
                                                 {plan.planId || plan._id.substring(0, 8)}
                                             </span>
                                             <span className="text-[10px] font-extrabold text-[#3d3f96] bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-lg uppercase">
                                                 {plan.planCycle}
                                             </span>
+                                            {isDiscontinued && (
+                                                <span className="text-[10px] font-black uppercase text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                                                    <AlertCircle size={10} />
+                                                    {plan.adminStatusText || "Discontinued by Admin"}
+                                                </span>
+                                            )}
                                         </div>
 
                                         {/* Instant Toggle Switch */}
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
-                                                disabled={isProcessing}
+                                                disabled={isProcessing || isDiscontinued}
                                                 onClick={() => handleInstantToggle(plan._id)}
-                                                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 ${
-                                                    isAvailable ? 'bg-[#00B574]' : 'bg-slate-300'
+                                                className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                                    isDiscontinued
+                                                        ? 'bg-slate-200 opacity-50 cursor-not-allowed'
+                                                        : isAvailable
+                                                        ? 'bg-[#00B574] cursor-pointer'
+                                                        : 'bg-slate-300 cursor-pointer'
                                                 }`}
+                                                title={
+                                                    isDiscontinued
+                                                        ? "Discontinued by Admin"
+                                                        : isAvailable
+                                                        ? "Set Inactive"
+                                                        : "Set Active"
+                                                }
                                             >
                                                 <span
                                                     className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                                                        isAvailable ? 'translate-x-5' : 'translate-x-0'
+                                                        !isDiscontinued && isAvailable ? 'translate-x-5' : 'translate-x-0'
                                                     }`}
                                                 />
                                             </button>
@@ -411,26 +404,10 @@ export default function VendorTiffinInventory() {
                                         </div>
                                     </div>
 
-                                    {/* Base Price vs Custom Kitchen Price */}
-                                    <div className="bg-slate-50/80 border border-slate-100 p-3.5 rounded-2xl space-y-2">
-                                        <div className="flex justify-between items-center text-xs font-bold">
-                                            <span className="text-slate-400">Master Base Price:</span>
-                                            <span className="font-mono font-bold text-slate-700">₹{plan.price}</span>
-                                        </div>
-
-                                        <div className="flex justify-between items-center gap-2 pt-1 border-t border-slate-200/60">
-                                            <label className="text-[11px] font-extrabold text-slate-700 flex items-center gap-1">
-                                                <IndianRupee size={12} className="text-emerald-600" /> Kitchen Custom Price:
-                                            </label>
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                placeholder={`₹${plan.price}`}
-                                                value={currentCustomPrice}
-                                                onChange={(e) => handleCustomPriceChange(plan._id, e.target.value)}
-                                                className="w-24 px-2.5 py-1 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-right text-slate-800 focus:outline-none focus:border-[#3d3f96]"
-                                            />
-                                        </div>
+                                    {/* Master Base Price Display */}
+                                    <div className="bg-slate-50/80 border border-slate-100 p-3.5 rounded-2xl flex items-center justify-between">
+                                        <span className="text-xs font-bold text-slate-500">Subscription Price:</span>
+                                        <span className="font-mono font-black text-sm text-slate-900">₹{plan.price}</span>
                                     </div>
 
                                 </div>
@@ -468,10 +445,17 @@ export default function VendorTiffinInventory() {
                         {/* Modal Header */}
                         <div className="flex items-center justify-between border-b border-slate-100 pb-4 pr-10">
                             <div>
-                                <span className="text-[10px] font-black uppercase text-[#3d3f96] tracking-wider">
-                                    {previewPlan.planId} • {previewPlan.planCycle}
-                                </span>
-                                <h3 className="text-lg font-black text-slate-900 tracking-tight">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-black uppercase text-[#3d3f96] tracking-wider">
+                                        {previewPlan.planId} • {previewPlan.planCycle}
+                                    </span>
+                                    {previewPlan.isDeletedByAdmin && (
+                                        <span className="text-[10px] font-black uppercase text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-lg">
+                                            {previewPlan.adminStatusText || "Discontinued by Admin"}
+                                        </span>
+                                    )}
+                                </div>
+                                <h3 className="text-lg font-black text-slate-900 tracking-tight mt-0.5">
                                     {previewPlan.name}
                                 </h3>
                             </div>
@@ -488,7 +472,6 @@ export default function VendorTiffinInventory() {
                         <div className="flex bg-slate-100 p-1 rounded-2xl gap-1 shrink-0">
                             {['breakfast', 'lunch', 'dinner'].map((slotKey) => {
                                 const list = previewPlan.slotDishes?.[slotKey] || [];
-                                const isPermitted = previewPlan.permittedSlots?.some(s => s.toLowerCase() === slotKey);
                                 const isActive = previewActiveTab === slotKey;
 
                                 return (
