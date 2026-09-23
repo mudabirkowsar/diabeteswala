@@ -7,6 +7,8 @@ import PrecisionHealthMatrix from './components/PrecisionHealthMatrix'
 import ScrollSaladBowl from './components/ScrollSaladBowl'
 import KineticScrollBanner from './components/KineticScrollBanner'
 import CustomTiffinStory from '../components/CustomTiffinStory'
+import SmoothieStory from '../components/SmoothieStory'
+import TiffinStory2 from './components/TiffinStory2'
 
 function page() {
   return (
@@ -19,6 +21,8 @@ function page() {
       <CustomTiffinStory />
       {/* <ScrollSaladBowl /> */}
       <KineticScrollBanner />
+      <SmoothieStory />
+      {/* <TiffinStory2 />   */}
     </>
   )
 }
