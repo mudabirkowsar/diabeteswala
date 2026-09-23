@@ -21,7 +21,12 @@ import {
   Sparkles,
   Image as ImageIcon,
   Archive,
-  AlertCircle
+  AlertCircle,
+  Users,
+  UserCheck,
+  ShieldCheck,
+  Flame,
+  Tag
 } from 'lucide-react';
 
 export default function HealthyPlansPage() {
@@ -115,7 +120,7 @@ export default function HealthyPlansPage() {
     }
   };
 
-  // Soft Delete Handler with clear administrative feedback
+  // Soft Delete Handler
   const handleDeletePlan = async (id, title, planId) => {
     const confirmArchival = window.confirm(
       `Soft Delete / Archive Healthy Plan:\n"${title}" (${planId || id})\n\n` +
@@ -144,7 +149,6 @@ export default function HealthyPlansPage() {
 
   const handleOpenEditPlan = async (plan) => {
     try {
-      // Get full populated details before editing
       const res = await AdminAPI.getHealthyPlanById(plan._id);
       setSelectedPlanToEdit(res?.data || plan);
       setIsPlanModalOpen(true);
@@ -161,42 +165,39 @@ export default function HealthyPlansPage() {
       {/* Header */}
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Healthy Diet Plans</h1>
+          <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">Healthy Diet Plans</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Manage target categories, day-wise meal subscriptions, and diet programs
+            Manage target categories, day-wise meal subscriptions, and live active subscribers
           </p>
         </div>
 
-        {/* Top Right Buttons */}
+        {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-3">
-          {/* View Categories */}
           <button
             onClick={() => setIsViewModalOpen(true)}
-            className="inline-flex items-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition cursor-pointer"
+            className="inline-flex items-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2.5 rounded-xl font-bold text-sm shadow-xs transition cursor-pointer"
           >
             <Eye size={18} className="text-[#3d3f96]" />
             <span>View Categories</span>
           </button>
 
-          {/* Create Category */}
           <button
             onClick={() => {
               setSelectedCategoryToEdit(null);
               setIsCategoryModalOpen(true);
             }}
-            className="inline-flex items-center gap-2 bg-white border border-[#3d3f96]/30 text-[#3d3f96] hover:bg-[#3d3f96]/5 px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition cursor-pointer"
+            className="inline-flex items-center gap-2 bg-white border border-[#3d3f96]/30 text-[#3d3f96] hover:bg-[#3d3f96]/5 px-4 py-2.5 rounded-xl font-bold text-sm shadow-xs transition cursor-pointer"
           >
             <FolderPlus size={18} />
             <span>Create Category</span>
           </button>
 
-          {/* Create Plan */}
           <button
             onClick={() => {
               setSelectedPlanToEdit(null);
               setIsPlanModalOpen(true);
             }}
-            className="inline-flex items-center gap-2 bg-[#3d3f96] hover:bg-[#343680] text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition cursor-pointer"
+            className="inline-flex items-center gap-2 bg-[#3d3f96] hover:bg-[#343680] text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-[#3d3f96]/20 transition cursor-pointer"
           >
             <PlusCircle size={18} />
             <span>Create Plan</span>
@@ -207,7 +208,7 @@ export default function HealthyPlansPage() {
       {/* Main Content Area */}
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Filters Section */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+        <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
             {/* Search */}
             <div className="relative">
@@ -220,15 +221,15 @@ export default function HealthyPlansPage() {
                 placeholder="Search plans..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#3d3f96] outline-none"
+                className="w-full pl-9 pr-3 py-2.5 text-xs rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#3d3f96] outline-none"
               />
             </div>
 
-            {/* Main Category Filter */}
+            {/* Main Category */}
             <select
               value={filters.mainCategory}
               onChange={(e) => handleFilterChange('mainCategory', e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#3d3f96] outline-none bg-white cursor-pointer"
+              className="w-full px-3 py-2.5 text-xs rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#3d3f96] outline-none bg-white font-medium cursor-pointer"
             >
               <option value="">All Categories</option>
               {categories.map((cat) => (
@@ -238,12 +239,12 @@ export default function HealthyPlansPage() {
               ))}
             </select>
 
-            {/* SubCategory Filter */}
+            {/* SubCategory */}
             <select
               value={filters.subCategory}
               disabled={!filters.mainCategory}
               onChange={(e) => handleFilterChange('subCategory', e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#3d3f96] outline-none bg-white disabled:bg-gray-100 cursor-pointer"
+              className="w-full px-3 py-2.5 text-xs rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#3d3f96] outline-none bg-white disabled:bg-gray-100 font-medium cursor-pointer"
             >
               <option value="">All Subcategories</option>
               {selectedCategoryObj?.subCategories?.map((sub) => (
@@ -257,7 +258,7 @@ export default function HealthyPlansPage() {
             <select
               value={filters.programType}
               onChange={(e) => handleFilterChange('programType', e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#3d3f96] outline-none bg-white cursor-pointer"
+              className="w-full px-3 py-2.5 text-xs rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#3d3f96] outline-none bg-white font-medium cursor-pointer"
             >
               <option value="">All Program Types</option>
               <option value="Full Program">Full Program</option>
@@ -269,7 +270,7 @@ export default function HealthyPlansPage() {
             <select
               value={filters.daysCount}
               onChange={(e) => handleFilterChange('daysCount', e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#3d3f96] outline-none bg-white cursor-pointer"
+              className="w-full px-3 py-2.5 text-xs rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#3d3f96] outline-none bg-white font-medium cursor-pointer"
             >
               <option value="">All Durations</option>
               <option value="3">3 Days</option>
@@ -285,12 +286,12 @@ export default function HealthyPlansPage() {
         {loading ? (
           <div className="py-24 flex flex-col items-center justify-center text-gray-400">
             <Loader2 className="animate-spin text-[#3d3f96] mb-2" size={32} />
-            <span className="text-sm font-medium">Loading healthy diet plans...</span>
+            <span className="text-sm font-bold">Loading healthy diet plans...</span>
           </div>
         ) : plans.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
+          <div className="bg-white rounded-3xl border border-gray-200 p-12 text-center shadow-xs">
             <Utensils size={36} className="text-gray-300 mx-auto mb-3" />
-            <p className="text-base font-bold text-gray-700">No Healthy Plans Found</p>
+            <p className="text-base font-bold text-gray-800">No Healthy Plans Found</p>
             <p className="text-xs text-gray-400 mt-1">
               Click on &quot;Create Plan&quot; to configure your first day-wise plan.
             </p>
@@ -300,26 +301,29 @@ export default function HealthyPlansPage() {
             {plans.map((plan) => {
               const bannerSrc = getFullImageUrl(plan.bannerImage);
               const isSoftDeleted = !!plan.isDeleted;
+              const activeSubs = plan.activeSubscribersCount ?? 0;
+              const totalSubs = plan.totalSubscribersCount ?? 0;
 
               return (
                 <div
                   key={plan._id}
-                  className={`bg-white border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between group ${isSoftDeleted
+                  className={`bg-white border rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group ${
+                    isSoftDeleted
                       ? 'border-rose-200 bg-rose-50/20 opacity-80'
-                      : 'border-gray-200'
-                    }`}
+                      : 'border-gray-200 hover:border-[#3d3f96]/30'
+                  }`}
                 >
                   <div>
                     {/* Banner Image Preview */}
                     <div
                       onClick={() => handleOpenPlanDetails(plan._id)}
-                      className="relative h-44 w-full bg-gray-100 overflow-hidden cursor-pointer"
+                      className="relative h-48 w-full bg-gray-900 overflow-hidden cursor-pointer"
                     >
                       {bannerSrc ? (
                         <img
                           src={bannerSrc}
                           alt={plan.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
                           onError={(e) => {
                             e.target.onerror = null;
                             e.target.src =
@@ -333,122 +337,169 @@ export default function HealthyPlansPage() {
                         </div>
                       )}
 
-                      {/* Top Category Badge */}
-                      <div className="absolute top-3 left-3 flex gap-1 flex-wrap">
-                        <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-[#3d3f96] text-white shadow-sm">
+                      {/* Gradient Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/30" />
+
+                      {/* Top Badges */}
+                      <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap">
+                        <span className="px-2.5 py-1 text-[10px] font-black rounded-lg bg-[#3d3f96] text-white shadow-sm uppercase tracking-wider">
                           {plan.mainCategory} • {plan.subCategory}
                         </span>
                       </div>
 
-                      {/* Top Right Badges: Popular / Soft-Deleted */}
+                      {/* Top Right Badges: Popular / Recommended / Archived */}
                       <div className="absolute top-3 right-3 flex gap-1 flex-wrap">
                         {isSoftDeleted ? (
-                          <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-rose-600 text-white flex items-center gap-1 shadow-sm">
-                            <Archive size={10} /> Archived
+                          <span className="px-2.5 py-1 text-[10px] font-black rounded-lg bg-rose-600 text-white flex items-center gap-1 shadow-sm uppercase">
+                            <Archive size={11} /> Archived
                           </span>
                         ) : (
-                          plan.isPopular && (
-                            <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500 text-white flex items-center gap-1 shadow-sm">
-                              <Sparkles size={10} /> Popular
-                            </span>
-                          )
+                          <>
+                            {plan.isPopular && (
+                              <span className="px-2.5 py-1 text-[10px] font-black rounded-lg bg-amber-500 text-white flex items-center gap-1 shadow-sm uppercase">
+                                <Sparkles size={11} /> Popular
+                              </span>
+                            )}
+                            {plan.isRecommended && (
+                              <span className="px-2.5 py-1 text-[10px] font-black rounded-lg bg-emerald-600 text-white flex items-center gap-1 shadow-sm uppercase">
+                                <ShieldCheck size={11} /> Recommended
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      {/* Floating Bottom Subscriber Tag on Image */}
+                      <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white text-xs">
+                        <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg font-bold">
+                          <Users size={13} className="text-[#3d3f96]" />
+                          <span className="text-emerald-400">{activeSubs} Active</span>
+                          <span className="text-slate-300 font-normal">({totalSubs} Total)</span>
+                        </div>
+
+                        {plan.nutritionalHighlights?.caloriesAvgPerDay && (
+                          <span className="flex items-center gap-1 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg text-[11px] font-bold text-orange-400">
+                            <Flame size={12} className="fill-orange-400" />
+                            {plan.nutritionalHighlights.caloriesAvgPerDay} kcal
+                          </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Body Info */}
-                    <div className="p-5 space-y-3">
+                    {/* Card Body Info */}
+                    <div className="p-5 space-y-3.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-[#3d3f96] bg-[#3d3f96]/10 px-2.5 py-0.5 rounded-full">
+                        <span className="text-xs font-black text-[#3d3f96] bg-[#3d3f96]/10 px-2.5 py-0.5 rounded-md">
                           {plan.planId || 'HLP-Plan'}
                         </span>
-                        <span className="text-xs text-gray-500 flex items-center gap-1 font-medium">
+                        <span className="text-xs text-gray-500 flex items-center gap-1 font-bold">
                           <Calendar size={13} /> {plan.daysCount} Days ({plan.programType})
                         </span>
                       </div>
 
-                      <h3
-                        onClick={() => handleOpenPlanDetails(plan._id)}
-                        className="font-bold text-gray-900 text-base leading-snug line-clamp-1 cursor-pointer hover:text-[#3d3f96] transition"
-                      >
-                        {plan.title}
-                      </h3>
-                      <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
-                        {plan.description}
-                      </p>
+                      <div>
+                        <h3
+                          onClick={() => handleOpenPlanDetails(plan._id)}
+                          className="font-black text-gray-900 text-base leading-snug line-clamp-1 cursor-pointer hover:text-[#3d3f96] transition"
+                        >
+                          {plan.title}
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed font-medium">
+                          {plan.tagline || plan.description}
+                        </p>
+                      </div>
+
+                      {/* Subscriber Live Status Bar */}
+                      <div className="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-xl border border-slate-100 text-xs">
+                        <span className="text-slate-600 font-bold flex items-center gap-1.5">
+                          <UserCheck size={14} className="text-[#3d3f96]" /> Subscriptions
+                        </span>
+                        <div className="flex items-center gap-1.5 font-bold">
+                          <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md text-[11px]">
+                            {activeSubs} Active
+                          </span>
+                          <span className="text-slate-400 font-medium text-[11px]">
+                            / {totalSubs} Total
+                          </span>
+                        </div>
+                      </div>
 
                       {/* Pricing Section */}
                       <div className="flex items-baseline justify-between pt-2 border-t border-gray-100">
                         <div>
-                          <span className="text-[11px] text-gray-400">Total Price</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-base font-bold text-gray-900">
+                          <span className="text-[10px] uppercase font-bold text-gray-400">Total Price</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-base font-black text-gray-900">
                               ₹{plan.pricing?.discountTotalPrice || plan.pricing?.totalPrice}
                             </span>
-                            {plan.pricing?.discountTotalPrice && (
-                              <span className="text-xs text-gray-400 line-through">
+                            {plan.pricing?.discountTotalPrice && plan.pricing?.totalPrice > plan.pricing?.discountTotalPrice && (
+                              <span className="text-xs text-gray-400 line-through font-semibold">
                                 ₹{plan.pricing?.totalPrice}
                               </span>
                             )}
                           </div>
                         </div>
+
                         <div className="text-right">
-                          <span className="text-[11px] text-gray-400">Per Meal</span>
-                          <p className="text-xs font-bold text-emerald-600">
+                          <span className="text-[10px] uppercase font-bold text-gray-400">Per Meal</span>
+                          <p className="text-xs font-black text-[#3d3f96]">
                             ₹{plan.pricing?.discountPricePerMeal || plan.pricing?.pricePerMeal}
                           </p>
+                          {plan.pricing?.savingsAmount > 0 && (
+                            <span className="text-[10px] font-bold text-emerald-600">
+                              Save ₹{plan.pricing.savingsAmount}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
                   </div>
 
                   {/* Card Footer Actions */}
-                  <div className="px-5 py-3 bg-gray-50/70 border-t border-gray-100 flex items-center justify-between">
+                  <div className="px-5 py-3.5 bg-gray-50/80 border-t border-gray-100 flex items-center justify-between">
                     {/* Status Toggle Button / Archived Label */}
                     {isSoftDeleted ? (
-                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 flex items-center gap-1">
-                        <AlertCircle size={12} /> Archived (Soft-Deleted)
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-rose-100 text-rose-700 flex items-center gap-1">
+                        <AlertCircle size={12} /> Archived
                       </span>
                     ) : (
                       <button
                         onClick={() => handleToggleStatus(plan._id, isSoftDeleted)}
-                        className={`text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 transition cursor-pointer ${plan.isActive
-                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                        className={`text-xs font-bold px-3 py-1 rounded-xl flex items-center gap-1.5 transition cursor-pointer shadow-2xs ${
+                          plan.isActive
+                            ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
                             : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                          }`}
+                        }`}
                       >
-                        {plan.isActive ? <CheckCircle size={12} /> : <XCircle size={12} />}
+                        {plan.isActive ? <CheckCircle size={13} /> : <XCircle size={13} />}
                         {plan.isActive ? 'Active' : 'Inactive'}
                       </button>
                     )}
 
-                    {/* Action icons */}
-                    <div className="flex items-center gap-1">
-                      {/* View Details Button */}
+                    {/* Action Icons */}
+                    <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => handleOpenPlanDetails(plan._id)}
-                        className="p-1.5 text-gray-400 hover:text-[#3d3f96] rounded-lg hover:bg-gray-100 transition cursor-pointer"
+                        className="p-2 text-gray-500 hover:text-[#3d3f96] rounded-xl hover:bg-white transition cursor-pointer border border-transparent hover:border-gray-200 shadow-2xs"
                         title="View Full Details"
                       >
                         <Eye size={16} />
                       </button>
 
-                      {/* Edit Button */}
                       {!isSoftDeleted && (
                         <button
                           onClick={() => handleOpenEditPlan(plan)}
-                          className="p-1.5 text-gray-400 hover:text-[#3d3f96] rounded-lg hover:bg-gray-100 transition cursor-pointer"
+                          className="p-2 text-gray-500 hover:text-[#3d3f96] rounded-xl hover:bg-white transition cursor-pointer border border-transparent hover:border-gray-200 shadow-2xs"
                           title="Edit Plan"
                         >
                           <Edit size={16} />
                         </button>
                       )}
 
-                      {/* Soft Delete / Archive Button */}
                       {!isSoftDeleted && (
                         <button
                           onClick={() => handleDeletePlan(plan._id, plan.title, plan.planId)}
-                          className="p-1.5 text-gray-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition cursor-pointer"
+                          className="p-2 text-gray-500 hover:text-rose-600 rounded-xl hover:bg-rose-50 transition cursor-pointer border border-transparent hover:border-rose-200 shadow-2xs"
                           title="Soft Delete / Archive Plan"
                         >
                           <Trash2 size={16} />

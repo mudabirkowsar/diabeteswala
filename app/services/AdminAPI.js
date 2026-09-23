@@ -195,6 +195,27 @@ const AdminAPI = {
         return response.data;
     },
 
+    // //Manage health plans
+    // /**
+    //  * 1.1 Get All Healthy Plans with Dynamic Subscriber Counts
+    //  * @param {Object} params - Query filters { mainCategory, subCategory, programType, daysCount, search, page, limit }
+    //  * @example AdminAPI.getAllHealthyPlans({ mainCategory: 'Women', subCategory: 'PCOD / PCOS Care', page: 1, limit: 20 })
+    //  */
+    // getAllHealthyPlansAdmin: async (params = {}) => {
+    //     const response = await authApi.get('/admin/food/plan-orders/healthy-plans', { params });
+    //     return response.data;
+    // },
+
+    // /**
+    //  * 1.2 Get Single Healthy Plan Details with Subscribed Users List
+    //  * @param {string} id - Healthy Plan MongoDB _id (e.g. "6aab921903d5cec8e2745d3e") or planId (e.g. "HLP-102")
+    //  * @example AdminAPI.getHealthyPlanDetailsWithSubscribers('6aab921903d5cec8e2745d3e')
+    //  */
+    // getHealthyPlanDetailsWithSubscribersAdmin: async (id) => {
+    //     const response = await authApi.get(`/admin/food/plan-orders/healthy-plans/${id}`);
+    //     return response.data;
+    // },
+
     // ===================================================
     // --- ADMIN PEAK ORDER CHARGES APIS -----------------
     // ===================================================
@@ -361,6 +382,36 @@ const AdminAPI = {
 
     getFoodCategories: async () => {
         const response = await publicApi.get('/admin/food/category/get');
+        return response.data;
+    },
+    /**
+     * 1. Get Approved Food Outlets List (Dashboard Table View)
+     * @param {Object} params - Query filters { search, city, page, limit }
+     * @example AdminAPI.getApprovedOutlets({ search: 'Zomato', city: 'Mohali', page: 1, limit: 10 })
+     */
+    getApprovedOutlets: async (params = {}) => {
+        const response = await authApi.get('/admin/food/vendor-orders/outlets', { params });
+        return response.data;
+    },
+
+    /**
+     * 2. Get Outlet Order History (Modal Popup View)
+     * @param {string} vendorId - Food Outlet MongoDB _id (e.g. "6a82ba25c689686cbbec7ea3")
+     * @param {Object} params - Query filters { status, search, page, limit }
+     * @example AdminAPI.getOutletOrderHistory('6a82ba25c689686cbbec7ea3', { status: 'Delivered', page: 1, limit: 50 })
+     */
+    getOutletOrderHistory: async (vendorId, params = {}) => {
+        const response = await authApi.get(`/admin/food/vendor-orders/${vendorId}/orders`, { params });
+        return response.data;
+    },
+
+    /**
+     * Get All Cancelled Food Orders (Across All Booking Types)
+     * @param {Object} params - Query filters { bookingType, foodId, search, page, limit }
+     * @example AdminAPI.getCancelledOrders({ bookingType: 'Healthy Plan', search: 'maintenance', page: 1, limit: 20 })
+     */
+    getCancelledFoodVendorOrders: async (params = {}) => {
+        const response = await authApi.get('/admin/food/vendor-orders/cancelled-orders', { params });
         return response.data;
     },
     // ===================================================

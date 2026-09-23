@@ -9,6 +9,7 @@ import {
     Loader2, 
     Utensils, 
     Users, 
+    UserCheck,
     Inbox, 
     RotateCcw,
     Coffee,
@@ -99,10 +100,8 @@ export default function SubscriptionPlans() {
                 const isHardDelete = response.data?.isPermanentlyDeleted || response.deletionType?.includes("Permanent");
 
                 if (isHardDelete) {
-                    // Case 1: Permanently removed from database
                     setPlans(prev => prev.filter(p => p._id !== planId && p.planId !== planId));
                 } else {
-                    // Case 2: Soft deleted / Archived in database
                     setPlans(prev => prev.map(p => 
                         (p._id === planId || p.planId === planId)
                             ? { 
@@ -165,7 +164,7 @@ export default function SubscriptionPlans() {
                         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Subscription Plans</h1>
                     </div>
                     <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1 pl-12">
-                        Configure customizable daily breakfast, lunch, and dinner tiffin subscription tiers.
+                        Configure customizable daily breakfast, lunch, and dinner tiffin subscription tiers & track subscriber base.
                     </p>
                 </div>
 
@@ -219,13 +218,25 @@ export default function SubscriptionPlans() {
                         const isDeleted = Boolean(plan.isDeleted);
                         const isActive = plan.isActive !== false && !isDeleted;
                         
-                        // Extract first valid dish image as banner
-                        const firstDish = plan.dishPool?.[0] || plan.slotDishes?.breakfast?.[0]?.itemId || plan.slotDishes?.lunch?.[0]?.itemId;
-                        const bannerImg = (firstDish && typeof firstDish === 'object' && firstDish.imageUrl)
-                            ? getMediaUrl(firstDish.imageUrl)
-                            : DEFAULT_BANNER;
+                        // Extract subscriber counts safely from response
+                        const activeSubscribers = plan.activeSubscribersCount ?? plan.activeSubscribers ?? 0;
+                        const totalSubscribers = plan.totalSubscribersCount ?? activeSubscribers ?? 0;
 
-                        // Total count of configured slot items
+                        // Deep image extractor supporting both nested populated itemId and dishPool objects
+                        const rawImage = 
+                            plan.dishPool?.[0]?.imageUrl || 
+                            plan.slotDishes?.breakfast?.[0]?.itemId?.imageUrl || 
+                            plan.slotDishes?.breakfast?.[0]?.imageUrl ||
+                            plan.slotDishes?.lunch?.[0]?.itemId?.imageUrl || 
+                            plan.slotDishes?.lunch?.[0]?.imageUrl ||
+                            plan.slotDishes?.dinner?.[0]?.itemId?.imageUrl ||
+                            plan.slotDishes?.dinner?.[0]?.imageUrl ||
+                            plan.bannerImage ||
+                            plan.imageUrl;
+
+                        const bannerImg = rawImage ? getMediaUrl(rawImage) : DEFAULT_BANNER;
+
+                        // Count mapped slot dishes
                         const breakfastCount = plan.slotDishes?.breakfast?.length || 0;
                         const lunchCount = plan.slotDishes?.lunch?.length || 0;
                         const dinnerCount = plan.slotDishes?.dinner?.length || 0;
@@ -240,27 +251,34 @@ export default function SubscriptionPlans() {
                             >
                                 <div>
                                     {/* Photo Banner */}
-                                    <div className="relative h-44 w-full overflow-hidden bg-slate-100 border-b border-slate-100">
+                                    <div className="relative h-48 w-full overflow-hidden bg-slate-900 border-b border-slate-100">
                                         <img 
                                             src={bannerImg} 
                                             alt={plan.name} 
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90" 
                                             onError={(e) => { e.target.src = DEFAULT_BANNER; }}
                                         />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/20" />
                                         
                                         {/* Meals count tag */}
-                                        <span className="absolute bottom-3 left-4 bg-[#3D3F96] text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-xl shadow-sm border border-white/10">
+                                        <span className="absolute bottom-3 left-4 bg-[#3D3F96] text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-xl shadow-md border border-white/10">
                                             {plan.mealsPerDay} {plan.mealsPerDay === 1 ? 'Meal' : 'Meals'} / Day
                                         </span>
 
+                                        {/* Floating Live Subscriber Pill on Banner */}
+                                        <div className="absolute bottom-3 right-4 bg-black/60 backdrop-blur-md border border-white/15 px-2.5 py-1 rounded-xl text-white text-[10px] font-bold flex items-center gap-1.5 shadow-sm">
+                                            <Users size={12} className="text-[#3D3F96]" />
+                                            <span className="text-emerald-400 font-extrabold">{activeSubscribers} Active</span>
+                                            <span className="text-slate-300">({totalSubscribers} Total)</span>
+                                        </div>
+
                                         {/* Plan ID Tag & Archive Status */}
                                         <div className="absolute top-3 left-3 flex items-center gap-2">
-                                            <span className="bg-black/50 backdrop-blur-md text-white text-[9px] font-mono font-bold px-2.5 py-0.5 rounded-lg uppercase border border-white/10">
+                                            <span className="bg-black/60 backdrop-blur-md text-white text-[9px] font-mono font-bold px-2.5 py-1 rounded-lg uppercase border border-white/15">
                                                 ID: {plan.planId || plan._id?.substring(0, 8)}
                                             </span>
                                             {isDeleted && (
-                                                <span className="bg-rose-600/90 backdrop-blur-md text-white text-[9px] font-black px-2 py-0.5 rounded-lg uppercase border border-rose-400 flex items-center gap-1 shadow-sm">
+                                                <span className="bg-rose-600/95 backdrop-blur-md text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase border border-rose-400 flex items-center gap-1 shadow-sm">
                                                     <Archive size={10} /> Archived
                                                 </span>
                                             )}
@@ -270,10 +288,10 @@ export default function SubscriptionPlans() {
                                     {/* Inner Details */}
                                     <div className="p-6 space-y-4">
                                         <div className="space-y-1">
-                                            <h3 className="font-extrabold text-slate-900 text-base leading-snug group-hover:text-[#3D3F96] transition-colors">
+                                            <h3 className="font-black text-slate-900 text-lg leading-snug group-hover:text-[#3D3F96] transition-colors line-clamp-1">
                                                 {plan.name}
                                             </h3>
-                                            <span className="inline-block text-[10px] font-extrabold text-emerald-600 uppercase tracking-widest leading-none">
+                                            <span className="inline-block text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
                                                 {plan.planCycle || 'Monthly Cycle'}
                                             </span>
                                         </div>
@@ -282,9 +300,9 @@ export default function SubscriptionPlans() {
                                             {plan.description}
                                         </p>
 
-                                        {/* Allowed Slots Breakdown */}
+                                        {/* Permitted Meal Slots Breakdown */}
                                         <div className="space-y-1.5 pt-1">
-                                            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
                                                 Permitted Meal Slots:
                                             </span>
                                             <div className="flex gap-1.5 flex-wrap">
@@ -297,10 +315,10 @@ export default function SubscriptionPlans() {
                                                     return (
                                                         <span 
                                                             key={name} 
-                                                            className={`px-2.5 py-1 rounded-xl text-[10px] font-extrabold border flex items-center gap-1.5 transition-colors ${
+                                                            className={`px-2.5 py-1 rounded-xl text-[10px] font-black border flex items-center gap-1.5 transition-colors ${
                                                                 isAllowed
                                                                     ? 'bg-indigo-50 border-indigo-100 text-[#3D3F96]'
-                                                                    : 'bg-slate-100 border-slate-100 text-slate-400 line-through opacity-60'
+                                                                    : 'bg-slate-100 border-slate-100 text-slate-400 line-through opacity-50'
                                                             }`}
                                                         >
                                                             <Icon size={11} />
@@ -311,39 +329,44 @@ export default function SubscriptionPlans() {
                                             </div>
                                         </div>
 
-                                        {/* Stats and pricing details */}
-                                        <div className="grid grid-cols-2 gap-4 py-3 border-y border-slate-100 text-xs font-bold bg-slate-50/60 p-3 rounded-2xl">
+                                        {/* Pricing & Subscriber Metrics Matrix */}
+                                        <div className="grid grid-cols-2 gap-3 py-3 border-y border-slate-100 text-xs font-bold bg-slate-50/70 p-3.5 rounded-2xl">
                                             <div>
-                                                <span className="text-slate-400 block uppercase text-[10px]">Price</span>
-                                                <span className="text-slate-900 text-base font-mono font-black">₹{plan.price}</span>
+                                                <span className="text-slate-400 block uppercase text-[10px] font-black tracking-wider">Price</span>
+                                                <span className="text-slate-900 text-lg font-mono font-black">₹{plan.price}</span>
                                             </div>
                                             <div>
-                                                <span className="text-slate-400 block uppercase text-[10px]">Subscribers</span>
-                                                <span className="text-[#3D3F96] text-base font-black flex items-center gap-1">
-                                                    <Users size={14} /> {plan.activeSubscribers || 0}
-                                                </span>
+                                                <span className="text-slate-400 block uppercase text-[10px] font-black tracking-wider">Subscribers</span>
+                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                    <span className="text-emerald-700 font-black text-sm bg-emerald-100 px-2 py-0.5 rounded-md">
+                                                        {activeSubscribers} Active
+                                                    </span>
+                                                    <span className="text-slate-400 text-xs font-semibold">
+                                                        / {totalSubscribers} Total
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
 
-                                        {/* Total configured items indicator */}
-                                        <div className="space-y-1">
-                                            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block flex items-center gap-1">
-                                                <Utensils size={10} /> Configured Dishes Pool:
+                                        {/* Configured Slot Items Pool Indicator */}
+                                        <div className="flex items-center justify-between text-xs pt-1">
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                                <Utensils size={11} className="text-[#3D3F96]" /> Configured Dishes:
                                             </span>
-                                            <p className="text-xs font-bold text-slate-700">
-                                                {totalConfiguredDishes > 0 ? `${totalConfiguredDishes} slot items mapped` : 'No slot items mapped'}
-                                            </p>
+                                            <span className="font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md text-[11px]">
+                                                {totalConfiguredDishes > 0 ? `${totalConfiguredDishes} slot items mapped` : '0 items mapped'}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Actions Footer */}
-                                <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex justify-between items-center">
+                                <div className="px-6 py-4 bg-slate-50/60 border-t border-slate-100 flex justify-between items-center">
                                     <div className="flex items-center gap-2">
                                         <button
                                             onClick={() => openEditModal(plan)}
                                             disabled={isProcessing || isDeleted}
-                                            className="p-2 border border-slate-200 text-slate-400 hover:text-[#3D3F96] hover:bg-[#3D3F96]/10 rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                            className="p-2 border border-slate-200 text-slate-500 hover:text-[#3D3F96] hover:bg-[#3D3F96]/10 rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                                             title={isDeleted ? "Cannot edit archived plan" : "Edit Plan"}
                                         >
                                             <Edit size={14} strokeWidth={2.2} />
@@ -352,7 +375,7 @@ export default function SubscriptionPlans() {
                                         <button
                                             onClick={() => handleDeletePlan(targetId)}
                                             disabled={isProcessing || isDeleted}
-                                            className="p-2 border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                            className="p-2 border border-slate-200 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                                             title={isDeleted ? "Plan already archived" : "Delete Plan"}
                                         >
                                             <Trash2 size={14} strokeWidth={2.2} />
@@ -363,18 +386,18 @@ export default function SubscriptionPlans() {
                                     <button
                                         onClick={() => !isDeleted && handleToggleStatus(targetId)}
                                         disabled={isProcessing || isDeleted}
-                                        className={`flex items-center gap-1.5 text-[10px] font-bold border px-3 py-1.5 rounded-full transition-all duration-300 ${
+                                        className={`flex items-center gap-1.5 text-[11px] font-black border px-3 py-1.5 rounded-full transition-all duration-300 ${
                                             isDeleted
                                                 ? "text-rose-700 border-rose-200 bg-rose-50 cursor-not-allowed"
                                                 : isActive
-                                                ? "text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100 cursor-pointer"
+                                                ? "text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100 cursor-pointer shadow-2xs"
                                                 : "text-slate-500 border-slate-200 bg-slate-100 hover:bg-slate-200 cursor-pointer"
                                         } disabled:opacity-75`}
                                     >
                                         {isProcessing ? (
-                                            <Loader2 size={10} className="animate-spin" />
+                                            <Loader2 size={11} className="animate-spin" />
                                         ) : (
-                                            <span className={`w-1.5 h-1.5 rounded-full ${isDeleted ? "bg-rose-500" : isActive ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
+                                            <span className={`w-2 h-2 rounded-full ${isDeleted ? "bg-rose-500" : isActive ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
                                         )}
                                         <span>{isDeleted ? 'Archived' : isActive ? 'Active' : 'Inactive'}</span>
                                     </button>
