@@ -384,36 +384,27 @@ const AdminAPI = {
         const response = await publicApi.get('/admin/food/category/get');
         return response.data;
     },
-    /**
-     * 1. Get Approved Food Outlets List (Dashboard Table View)
-     * @param {Object} params - Query filters { search, city, page, limit }
-     * @example AdminAPI.getApprovedOutlets({ search: 'Zomato', city: 'Mohali', page: 1, limit: 10 })
-     */
+
     getApprovedOutlets: async (params = {}) => {
         const response = await authApi.get('/admin/food/vendor-orders/outlets', { params });
         return response.data;
     },
 
-    /**
-     * 2. Get Outlet Order History (Modal Popup View)
-     * @param {string} vendorId - Food Outlet MongoDB _id (e.g. "6a82ba25c689686cbbec7ea3")
-     * @param {Object} params - Query filters { status, search, page, limit }
-     * @example AdminAPI.getOutletOrderHistory('6a82ba25c689686cbbec7ea3', { status: 'Delivered', page: 1, limit: 50 })
-     */
     getOutletOrderHistory: async (vendorId, params = {}) => {
         const response = await authApi.get(`/admin/food/vendor-orders/${vendorId}/orders`, { params });
         return response.data;
     },
 
-    /**
-     * Get All Cancelled Food Orders (Across All Booking Types)
-     * @param {Object} params - Query filters { bookingType, foodId, search, page, limit }
-     * @example AdminAPI.getCancelledOrders({ bookingType: 'Healthy Plan', search: 'maintenance', page: 1, limit: 20 })
-     */
     getCancelledFoodVendorOrders: async (params = {}) => {
         const response = await authApi.get('/admin/food/vendor-orders/cancelled-orders', { params });
         return response.data;
     },
+
+    createSpecialUserCoupon: async (couponData) => {
+        const response = await authApi.post('/provider/coupons/admin/special-user', couponData);
+        return response.data;
+    },
+    
     // ===================================================
     // --- FOOD ITEMS & MENU MANAGEMENT APIS -------------
     // ===================================================

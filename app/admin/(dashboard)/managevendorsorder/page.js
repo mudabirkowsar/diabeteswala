@@ -41,12 +41,12 @@ export default function ManageVendorOrdersPage() {
 
     // All Vendor Categories in one clean configuration
     const vendorCategories = [
-        { id: "lab", label: "Lab Diagnostics", count: 4, icon: FlaskConical },
-        { id: "pharmacy", label: "Pharmacies", count: 4, icon: Pill },
-        { id: "food", label: "Food Outlets", count: 4, icon: UtensilsCrossed },
-        { id: "ambulance", label: "Ambulance", count: 2, icon: Truck },
-        { id: "homecare", label: "Home Care", count: 3, icon: HeartHandshake },
-        { id: "devices", label: "Equipment", count: 2, icon: Activity }
+        { id: "lab", label: "Lab Diagnostics", icon: FlaskConical },
+        { id: "pharmacy", label: "Pharmacies", icon: Pill },
+        { id: "food", label: "Food Outlets", icon: UtensilsCrossed },
+        { id: "ambulance", label: "Ambulance", icon: Truck },
+        { id: "homecare", label: "Home Care", icon: HeartHandshake },
+        { id: "devices", label: "Equipment", icon: Activity }
     ];
 
     const activeCategoryData = vendorCategories.find((cat) => cat.id === activeTab);
