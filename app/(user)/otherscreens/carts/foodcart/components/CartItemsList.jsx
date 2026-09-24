@@ -12,7 +12,7 @@ export default function CartItemsList({
     placeholderImage
 }) {
     const renderDietBadge = (type) => {
-        const isVeg = type === 'Veg';
+        const isVeg = type === 'Veg' || type === 'Vegan';
         const isEgg = type === 'Egg';
         const isNonVeg = type === 'Non Veg';
 
@@ -39,7 +39,8 @@ export default function CartItemsList({
             <div className="divide-y divide-slate-100 space-y-4">
                 {items.map((item) => {
                     const dish = item.itemId || {};
-                    const dishImage = getMediaUrl(dish.imageUrl) || placeholderImage;
+                    const rawImagePath = dish.imageUrl || (Array.isArray(dish.images) && dish.images.length > 0 ? dish.images[0] : null);
+                    const dishImage = getMediaUrl(rawImagePath) || placeholderImage;
                     const isUpdating = updatingId === dish._id;
 
                     return (
