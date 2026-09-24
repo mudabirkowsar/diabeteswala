@@ -404,7 +404,7 @@ const AdminAPI = {
         const response = await authApi.post('/provider/coupons/admin/special-user', couponData);
         return response.data;
     },
-    
+
     // ===================================================
     // --- FOOD ITEMS & MENU MANAGEMENT APIS -------------
     // ===================================================
@@ -502,6 +502,46 @@ const AdminAPI = {
 
     getSingleComboDetails: async (id) => {
         const response = await publicApi.get(`/admin/food/manage/combo/get/${id}`);
+        return response.data;
+    },
+
+    //Manage Smoothies 
+
+    addDrink: async (formData) => {
+        const response = await authApi.post('/admin/food/drinks/add', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    getAllDrinks: async (params = {}) => {
+        const response = await authApi.get('/admin/food/drinks/get', { params });
+        return response.data;
+    },
+
+    getDrinkById: async (id) => {
+        const response = await authApi.get(`/admin/food/drinks/get/${id}`);
+        return response.data;
+    },
+
+    updateDrink: async (id, formData) => {
+        const response = await authApi.put(`/admin/food/drinks/update/${id}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    toggleDrinkStatus: async (id) => {
+        const response = await authApi.patch(`/admin/food/drinks/toggle-status/${id}`);
+        return response.data;
+    },
+
+    deleteDrink: async (id) => {
+        const response = await authApi.delete(`/admin/food/drinks/delete/${id}`);
         return response.data;
     },
 
@@ -640,7 +680,7 @@ const AdminAPI = {
     getTiffinPlansList: async () => {
         const response = await authApi.get('/admin/food/tiffin/plans/get');
         return response.data;
-    }, 
+    },
 
     getTiffinPlanDetails: async (id) => {
         const response = await authApi.get(`/admin/food/tiffin/plans/get/${id}`);

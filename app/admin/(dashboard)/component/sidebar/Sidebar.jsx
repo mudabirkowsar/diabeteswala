@@ -321,6 +321,10 @@ export default function Sidebar({ sidebarOpen }) {
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/managecategory") ? theme.primary : "#D1D5DB" }} /> Manage Category
                                 </Link>
 
+                                <Link href="/admin/food/managesmoothies" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/managesmoothies") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/managesmoothies") ? theme.primary : "#D1D5DB" }} /> Manage Smoothies
+                                </Link>
+
                                 <Link href="/admin/food/manageaddons" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/food/manageaddons") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/food/manageaddons") ? theme.primary : "#D1D5DB" }} /> Manage Add On's
                                 </Link>

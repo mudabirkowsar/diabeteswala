@@ -122,23 +122,17 @@ const FoodAPI = {
     // --- VENDOR TIFFIN PLANS INVENTORY APIS ------------
     // ===================================================
 
-    // --- 1. Get Master Tiffin Plans Checklist (Vendor Inventory View) ---
     getVendorMasterTiffinPlans: async () => {
-        // Returns the list of admin-created tiffin plans with vendor-specific available statuses
         const response = await authApi.get('/provider/food/inventory/master-plans');
         return response.data;
     },
 
-    // --- 2. Unified Sync Tiffin Plans (Multi-Select Sync API) ---
     syncVendorTiffinPlans: async (syncPayload) => {
-        // syncPayload: { selectedPlanIds: ["6a..."], customPricing: { "6a...": 1850 } }
         const response = await authApi.post('/provider/food/inventory/sync-plans', syncPayload);
         return response.data;
     },
 
-    // --- 3. Instant Single Tiffin Plan Toggle Switch (One-Click Toggle) ---
     toggleVendorTiffinPlan: async (planId) => {
-        // planId: Target Tiffin Plan Mongoose Object ID (_id) (e.g. "6a8ed141f9ce2083c5626f11")
         const response = await authApi.patch(`/provider/food/inventory/toggle-plan/${planId}`);
         return response.data;
     },
@@ -147,24 +141,17 @@ const FoodAPI = {
     // --- VENDOR FOOD ORDERS & KITCHEN CONSOLE APIS ----
     // ===================================================
 
-    // --- 1. Fetch Kitchen Orders (Filtered, Searched & Paginated) ---
     getKitchenOrders: async (params) => {
-        // params (optional): { status, bookingType, search, page, limit }
         const response = await authApi.get('/provider/food/orders/my-orders', { params });
         return response.data;
     },
 
-    // --- 2. Get Single Kitchen Order Full Details By ID ---
     getKitchenOrderDetail: async (id) => {
-        // id: Order Mongoose Object ID (_id) or custom bookingId (e.g. "ORD-FD-281415")
         const response = await authApi.get(`/provider/food/orders/${id}`);
         return response.data;
     },
 
-    // --- 3. Update Order Fulfillment Status (Kitchen State Machine) ---
     updateKitchenOrderStatus: async (id, statusPayload) => {
-        // id: Order Mongoose Object ID (_id) or custom bookingId
-        // statusPayload: { status: 'Preparing' | 'Ready' | 'Ready for Delivery' | 'Cancelled', cancelReason }
         const response = await authApi.patch(`/provider/food/orders/${id}/status`, statusPayload);
         return response.data;
     },
@@ -172,44 +159,31 @@ const FoodAPI = {
     // --- VENDOR TIFFIN & CUSTOM REQUESTS APIS ---------
     // ===================================================
 
-    // --- 1. Get All Standard Tiffin Subscriptions (Lightweight Card List) ---
     getVendorStandardSubscriptions: async (params) => {
-        // params (optional): { status, billingCycle, search, page, limit }
         const response = await authApi.get('/provider/food/tiffin/subscriptions', { params });
         return response.data;
     },
 
-    // --- 2. Get Single Standard Subscription Full Details By ID ---
     getVendorStandardSubscriptionDetails: async (id) => {
-        // id: Document Object ID (_id) or custom bookingId (e.g. "SUB-FD-582910")
         const response = await authApi.get(`/provider/food/tiffin/subscriptions/${id}`);
         return response.data;
     },
 
-    // --- 3. Get All Custom Tiffin Requests (Lightweight Card List) ---
     getVendorCustomRequests: async (params) => {
-        // params (optional): { status, search, page, limit }
         const response = await authApi.get('/provider/food/tiffin/custom-requests', { params });
         return response.data;
     },
 
-    // --- 4. Get Single Custom Tiffin Full Details By ID ---
     getVendorCustomRequestDetails: async (id) => {
-        // id: Document Object ID (_id) or custom bookingId (e.g. "CTM-FD-849201")
         const response = await authApi.get(`/provider/food/tiffin/custom-requests/${id}`);
         return response.data;
     },
 
-    // --- 5. Accept or Reject Custom Tiffin Request (With Reason) ---
     processVendorCustomRequest: async (id, actionPayload) => {
-        // id: Document Object ID (_id) or custom bookingId
-        // actionPayload: { action: 'Accept' | 'Reject', rejectReason: "Mandatory description if rejecting" }
         const response = await authApi.patch(`/provider/food/tiffin/custom-requests/${id}/action`, actionPayload);
         return response.data;
     },
     cancelSubscriptionTiffin: async (id, actionPayload) => {
-        // id: Document Object ID (_id) or custom bookingId
-        // actionPayload: { action: 'Accept' | 'Reject', rejectReason: "Mandatory description if rejecting" }
         const response = await authApi.patch(`provider/food/tiffin/subscriptions/${id}/action`, actionPayload);
         return response.data;
     },
@@ -218,13 +192,6 @@ const FoodAPI = {
     // HEALTHY PLANS INVENTORY (VENDOR/KITCHEN)
     // ==========================================
 
-    /**
-     * 1. Get Master Healthy Plans Checklist (Vendor Menu Selection)
-     * Fetch all active master plans created by Admin to check availability & custom pricing.
-     * @param {Object} [params] - Query filters
-     * @param {string} [params.mainCategory] - e.g. "Men" or "Women"
-     * @param {string} [params.subCategory] - e.g. "Keto Flex" or "PCOD / PCOS Care"
-     */
     getMasterHealthyPlans: async (params = {}) => {
         const response = await authApi.get('/provider/food/inventory/master-healthy-plans', {
             params,
@@ -232,30 +199,11 @@ const FoodAPI = {
         return response.data;
     },
 
-    /**
-     * 2. Sync / Multi-Select Healthy Plans (Bulk Save & Pricing)
-     * Select multiple plans to activate & set optional custom selling prices.
-     * @param {Object} payload
-     * @param {string[]} payload.selectedPlanIds - Array of Healthy Plan ObjectIDs
-     * @param {Object} [payload.customPricing] - Map of planId to custom price overrides
-     * Example payload:
-     * {
-     *   selectedPlanIds: ["6aab921903d5cec8e2745d3e"],
-     *   customPricing: {
-     *     "6aab921903d5cec8e2745d3e": { customPrice: 2800, customDiscountPrice: 2100 }
-     *   }
-     * }
-     */
     syncHealthyPlans: async (payload) => {
         const response = await authApi.post('/provider/food/inventory/sync-healthy-plans', payload);
         return response.data;
     },
 
-    /**
-     * 3. Instant Single Plan Availability Switch (Toggle)
-     * Instantly toggle a single healthy plan between Active (true) and Inactive (false).
-     * @param {string} healthyPlanId - MongoDB _id or planId (e.g., "HLP-102")
-     */
     toggleHealthyPlanAvailability: async (healthyPlanId) => {
         const response = await authApi.patch(
             `/provider/food/inventory/toggle-healthy-plan/${healthyPlanId}`
@@ -263,14 +211,6 @@ const FoodAPI = {
         return response.data;
     },
 
-    /**
-     * 4. Get Vendor Healthy Plans (Inventory List)
-     * Fetch the filtered list of vendor's active and inactive healthy plans.
-     * @param {Object} [params] - Query filters
-     * @param {boolean|string} [params.isAvailable] - Filter by status (true / false)
-     * @param {string} [params.mainCategory] - Filter by Main Category ("Men" / "Women")
-     * @param {string} [params.subCategory] - Filter by Subcategory ("Keto Flex", etc.)
-     */
     getVendorHealthyPlans: async (params = {}) => {
         const response = await authApi.get('/provider/food/inventory/healthy-plans', {
             params,
@@ -278,11 +218,6 @@ const FoodAPI = {
         return response.data;
     },
 
-    /**
-     * 5. Get Single Vendor Healthy Plan Full Details
-     * Fetch complete day-wise schedule, meal breakdown, ingredients, and custom pricing.
-     * @param {string} id - Plan MongoDB _id or planId (e.g., "6aab9219..." or "HLP-102")
-     */
     getSingleVendorHealthyPlan: async (id) => {
         const response = await authApi.get(`/provider/food/inventory/healthy-plans/${id}`);
         return response.data;
@@ -299,11 +234,7 @@ const FoodAPI = {
         const response = await authApi.get(`/provider/food/healthy-plans/orders/${id}`);
         return response.data;
     },
-    /**
-         * Cancel Healthy Diet Plan Order (Emergency with Reason)
-         * @param {string} id - MongoDB _id or bookingId (e.g. "HLP-ORD-781920")
-         * @param {string} cancelReason - Reason for cancellation
-         */
+
     cancelUserHealthPlan: async (id, cancelReason) => {
         const response = await authApi.patch(`/provider/food/healthy-plans/orders/${id}/cancel`, {
             cancelReason
