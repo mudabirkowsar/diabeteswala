@@ -490,8 +490,8 @@ const UserAPI = {
         return response.data;
     },
 
-    getDrinkDetails: async (id, coords = {}) => {
-        const response = await authApi.get(`/api/food/drinks/details/${id}`, { params: coords });
+    getDrinkDetails: async (id) => {
+        const response = await authApi.get(`/api/food/drinks/details/${id}`);
         return response.data;
     },
 
