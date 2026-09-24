@@ -48,10 +48,11 @@ export default function FoodVendorLayout({ children }) {
         { name: 'Bank Details', href: '/vendors/food/dashboard/bankdetails', icon: Landmark },
         { name: 'Wallet & Earnings', href: '/vendors/food/dashboard/earnings', icon: Wallet },
         { name: 'Manage Food', href: '/vendors/food/dashboard/manage-food', icon: Utensils },
+        { name: 'Manage Smoothie', href: '/vendors/food/dashboard/managesmoothie', icon: Utensils },
         { name: 'Manage Combo', href: '/vendors/food/dashboard/combo-bundles', icon: Utensils },
         { name: 'Manage Tiffin', href: '/vendors/food/dashboard/managetiffin', icon: Utensils },
         { name: 'Manage Health Plans', href: '/vendors/food/dashboard/managehealthplans', icon: Utensils },
-        
+
       ]
     },
     {

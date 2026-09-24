@@ -242,6 +242,38 @@ const FoodAPI = {
         return response.data;
     },
 
+    //Manage Smoothies 
+
+    // 1. Get Master Catalog Checklist
+    getMasterDrinksCatalog: async (params = {}) => {
+        const response = await authApi.get('/provider/food/drinks/master-catalog', { params });
+        return response.data;
+    },
+
+    // 2. Sync / Multi-Select Drinks
+    syncDrinksMenu: async (selectedDrinkIds) => {
+        const response = await authApi.post('/provider/food/drinks/sync', { selectedDrinkIds });
+        return response.data;
+    },
+
+    // 3. Toggle Single Drink Availability
+    toggleDrinkAvailability: async (drinkId) => {
+        const response = await authApi.patch(`/provider/food/drinks/toggle/${drinkId}`);
+        return response.data;
+    },
+
+    // 4. Get Vendor's Own Drinks Inventory
+    getMyDrinks: async (params = {}) => {
+        const response = await authApi.get('/provider/food/drinks/my-drinks', { params });
+        return response.data;
+    },
+
+    // 5. Get Single Drink Details with Ingredients
+    getDrinkDetails: async (drinkId) => {
+        const response = await authApi.get(`/provider/food/drinks/${drinkId}`);
+        return response.data;
+    },
+
 
 };
 

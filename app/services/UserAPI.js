@@ -445,66 +445,30 @@ const UserAPI = {
     // Base URL Path: /api/foodpage
     // ==========================================
 
-    // --- 1. Get Nearest Geolocated Healthy Plans (Storefront List & Filter) ---
     getNearestHealthyPlans: async (coordinatesPayload, filters = {}) => {
-        /**
-         * coordinatesPayload (Body - Required): 
-         *   { lat: 30.6983, lng: 76.6857 }
-         * 
-         * filters (Query Params - Optional): 
-         *   { 
-         *     mainCategory: "Men" | "Women", 
-         *     subCategory: "Keto Flex" | "PCOD / PCOS Care", 
-         *     programType: "Full Program" | "Breakfast & Lunch", 
-         *     daysCount: 5 | 7, 
-         *     search: "Keto", 
-         *     page: 1, 
-         *     limit: 20 
-         *   }
-         */
         const response = await authApi.post('/api/foodpage/healthy-plans', coordinatesPayload, {
             params: filters
         });
         return response.data;
     },
 
-    // --- 2. Get Single Healthy Plan Full Details (Day-Wise Schedule & Ingredients Breakdown) ---
     getSingleHealthyPlanDetails: async (planId, coordinates = {}) => {
-        /**
-         * planId (Path Param - Required): 
-         *   MongoDB _id (e.g., "6aab921903d5cec8e2745d3e")
-         * 
-         * coordinates (Query Params - Optional): 
-         *   { lat: 30.6983, lng: 76.6857 }
-         */
         const response = await authApi.get(`/api/foodpage/healthy-plans/${planId}`, {
             params: coordinates
         });
         return response.data;
     },
 
-    /**
-     * 1. Calculate / Preview Healthy Plan Bill
-     * @param {Object} payload - { healthyPlanId, foodId, startAtThisDate, purposeOfBuying, userNote, deliveryTimes, couponCode, userLat, userLng, address }
-     */
     calculateBill: async (payload) => {
         const response = await authApi.post('/api/food/healthy-plans/calculate', payload);
         return response.data;
     },
 
-    /**
-     * 2. Subscribe / Buy Healthy Plan (COD & Online Razorpay Order)
-     * @param {Object} payload - { healthyPlanId, startAtThisDate, paymentMethod ('COD'|'Online'), purposeOfBuying, userNote, deliveryTimes, couponCode, userLat, userLng, address }
-     */
     subscribePlan: async (payload) => {
         const response = await authApi.post('/api/food/healthy-plans/subscribe', payload);
         return response.data;
     },
 
-    /**
-     * 3. Verify Razorpay Payment (Direct Plan Activation)
-     * @param {Object} paymentData - { bookingId, razorpayOrderId, razorpayPaymentId, razorpaySignature }
-     */
     verifyPayment: async (paymentData) => {
         const response = await authApi.post('/api/food/healthy-plans/verify-payment', paymentData);
         return response.data;
@@ -517,6 +481,17 @@ const UserAPI = {
 
     getMyFoodHealthPlanDetails: async (orderId) => {
         const response = await authApi.get(`/api/food/healthy-plans/my-plan/${orderId}`);
+        return response.data;
+    },
+
+    //Manage Smoothies 
+    getNearestDrinks: async (location, params = {}) => {
+        const response = await authApi.post('/api/food/drinks/nearest', location, { params });
+        return response.data;
+    },
+
+    getDrinkDetails: async (id, coords = {}) => {
+        const response = await authApi.get(`/api/food/drinks/details/${id}`, { params: coords });
         return response.data;
     },
 
@@ -590,14 +565,12 @@ const UserAPI = {
 
     // --- 1. Search & Filter Independent Doctors (Listing) ---
     getIndependentDoctors: async (searchPayload) => {
-        // searchPayload: { search, speciality, city, consultationType, userLat, userLng }
         const response = await publicApi.post('/user/doctors/list', searchPayload);
         return response.data;
     },
 
     // --- 2. Get Independent Doctor Profile Details ---
     getIndependentDoctorDetails: async (id) => {
-        // id: Doctor unique ObjectID (_id)
         const response = await publicApi.get(`/user/doctors/details/${id}`);
         return response.data;
     },
@@ -608,8 +581,6 @@ const UserAPI = {
 
     // --- 1. Get Doctor Available Slots by Date ---
     getDoctorAvailableSlots: async (doctorId, params) => {
-        // doctorId: Doctor unique ObjectID (_id) (e.g. "6aa273f1a14515a448ac2dca")
-        // params: { date: "YYYY-MM-DD" } (e.g. { date: "2026-09-14" })
         const response = await authApi.get(`/user/doctors/slots/${doctorId}`, { params });
         return response.data;
     },
@@ -620,28 +591,24 @@ const UserAPI = {
 
     // --- 1. Get Applicable Coupons for Doctor ---
     getDoctorCoupons: async (doctorId) => {
-        // doctorId: Doctor unique ObjectID (_id) (e.g. "6aa78493d7a1fa839c5ac7b0")
         const response = await authApi.get(`/user/doctors/coupons/${doctorId}`);
         return response.data;
     },
 
     // --- 2. Validate & Apply Coupon Code ---
     validateDoctorCoupon: async (couponPayload) => {
-        // couponPayload: { couponCode: "DOCDR20", subtotal: 800, doctorId: "6aa78493d7a1fa839c5ac7b0" }
         const response = await authApi.post('/user/doctors/validate-coupon', couponPayload);
         return response.data;
     },
 
     // --- 3. Get Checkout Summary & Bill Preview ---
     getDoctorCheckoutSummary: async (summaryPayload) => {
-        // summaryPayload: { doctorId, consultationType: 'Clinic Visit'|'Video Consult'|'Home Visit', appointmentDate, timeSlot, couponCode, distance, address, patients, specialServices }
         const response = await authApi.post('/user/doctors/checkout-summary', summaryPayload);
         return response.data;
     },
 
     // --- 4. Book Appointment (Create Order & Book) ---
     bookDoctorAppointment: async (bookingPayload) => {
-        // bookingPayload: JSON object or FormData instance (if uploading patient medicalReport file)
         const response = await authApi.post('/user/doctors/book', bookingPayload, {
             headers: {
                 'Content-Type': 'multipart/form-data',
@@ -652,7 +619,6 @@ const UserAPI = {
 
     // --- 5. Verify Razorpay Payment & Confirm Booking ---
     verifyDoctorPayment: async (paymentPayload) => {
-        // paymentPayload: { appointmentId, razorpayOrderId, razorpayPaymentId, razorpaySignature }
         const response = await authApi.post('/user/doctors/verify-payment', paymentPayload);
         return response.data;
     },
@@ -673,16 +639,12 @@ const UserAPI = {
 
     // --- 1. Cancel Doctor Appointment (Patient-Side) ---
     cancelUserDoctorAppointment: async (appointmentId, cancelPayload) => {
-        // appointmentId: Appointment unique ObjectID (_id) (e.g. "6aa8ee4f3bc4a40491d5b8ca")
-        // cancelPayload: { reason: "Personal emergency, will reschedule later.", isPermanent: false }
-        // (Set isPermanent to false for Reschedule-Ready mode; true triggers permanent refund calculation)
         const response = await authApi.patch(`/user/doctors/cancel/${appointmentId}`, cancelPayload);
         return response.data;
     },
 
     // --- 2. Reschedule Doctor Appointment ---
     rescheduleUserDoctorAppointment: async (reschedulePayload) => {
-        // reschedulePayload: { appointmentId: "6aa8ee4f3bc4a40491d5b8ca", newDate: "YYYY-MM-DD", newTimeSlot: "04:00 PM" }
         const response = await authApi.post('/user/doctors/reschedule', reschedulePayload);
         return response.data;
     },

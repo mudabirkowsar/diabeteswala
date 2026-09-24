@@ -12,6 +12,7 @@ import MarqueeStrip from './components/MarqueeStrip';
 import GenderPrograms from './components/GenderPrograms';
 import HomeOfferingsShowcase from './components/HomeOfferingsShowcase';
 import CustomTiffinStory from './components/CustomTiffinStory';
+import NearestSmoothies from '../homePageComponents/commonComponents/NearestSmoothies';
 
 export default function FoodStorefront() {
 
@@ -21,7 +22,8 @@ export default function FoodStorefront() {
       <MarqueeStrip />
       {/* <HomeOfferingsShowcase /> */}
       <NearestMeal />
-      <CustomTiffinStory />
+      {/* <CustomTiffinStory /> */}
+      <NearestSmoothies />
       {/* <HowToCustomize /> */}
       <GetNearComboOffers />
       <FoodByDisease />
