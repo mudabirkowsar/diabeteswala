@@ -330,7 +330,7 @@ export default function ClinicDeskBookingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-linear-to-b from-[#f4f7fc] to-[#eef2f9] flex flex-col items-center justify-center p-6 text-center select-none">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center select-none">
         <div className="relative flex items-center justify-center">
           <div className="w-16 h-16 rounded-full border-4 border-indigo-100 border-t-[#3d3f96] border-r-rose-500 animate-spin" />
           <Building2 size={24} className="absolute text-[#3d3f96]" />

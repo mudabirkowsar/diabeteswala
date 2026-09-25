@@ -326,6 +326,46 @@ const ClinicAPI = {
         return response.data;
     },
 
+    // 1. Add Clinic Pharmacy
+    addPharmacy: async (formData) => {
+        const response = await authApi.post('/api/clinic/pharmacy/add', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
+
+    // 2. Get Clinic's Pharmacies List
+    getMyPharmacies: async () => {
+        const response = await authApi.get('/api/clinic/pharmacy/my-pharmacies');
+        return response.data;
+    },
+
+    // 3. Get Pharmacy Full Details
+    getPharmacyDetails: async (id) => {
+        const response = await authApi.get(`/api/clinic/pharmacy/details/${id}`);
+        return response.data;
+    },
+
+    // 4. Update Pharmacy Details
+    updatePharmacy: async (id, formData) => {
+        const response = await authApi.put(`/api/clinic/pharmacy/update/${id}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
+
+    // 5. Toggle Status (Active / Inactive)
+    togglePharmacyStatus: async (id) => {
+        const response = await authApi.patch(`/api/clinic/pharmacy/toggle-status/${id}`);
+        return response.data;
+    },
+
+    // 6. Delete Pharmacy
+    deletePharmacy: async (id) => {
+        const response = await authApi.delete(`/api/clinic/pharmacy/delete/${id}`);
+        return response.data;
+    },
+
 }
 
 export default ClinicAPI;
