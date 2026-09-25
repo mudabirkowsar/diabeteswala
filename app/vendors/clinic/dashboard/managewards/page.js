@@ -1,16 +1,16 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  FaBed, 
-  FaPlus, 
-  FaArrowLeft, 
-  FaPencilAlt, 
-  FaTrashAlt, 
-  FaSave, 
-  FaCheckCircle, 
-  FaSpinner, 
-  FaTimes, 
+import {
+  FaBed,
+  FaPlus,
+  FaArrowLeft,
+  FaPencilAlt,
+  FaTrashAlt,
+  FaSave,
+  FaCheckCircle,
+  FaSpinner,
+  FaTimes,
   FaRupeeSign,
   FaExclamationTriangle,
   FaLayerGroup,
@@ -43,8 +43,8 @@ export default function ClinicWardsSimplePage() {
   const [createForm, setCreateForm] = useState({
     name: '',
     type: 'Daycare',
-    totalBeds: 4,
-    pricePerDay: 600
+    totalBeds: '',
+    pricePerDay: ''
   });
   const [creating, setCreating] = useState(false);
 
@@ -113,8 +113,8 @@ export default function ClinicWardsSimplePage() {
     try {
       setLoadingBeds(true);
       const res = await ClinicAPI.getClinicWardBeds(wardId);
-      if (res?.success) {
-        setBeds(res.data || []);
+      if (res.data) {
+        setBeds(res.data.beds || []);
       }
     } catch (err) {
       console.error("Failed to fetch beds:", err);
@@ -253,7 +253,7 @@ export default function ClinicWardsSimplePage() {
   const filteredWards = useMemo(() => {
     return wards.filter(ward => {
       const matchesSearch = ward.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            ward.type.toLowerCase().includes(searchTerm.toLowerCase());
+        ward.type.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesType = typeFilter === 'All' || ward.type === typeFilter;
       return matchesSearch && matchesType;
     });
@@ -267,14 +267,13 @@ export default function ClinicWardsSimplePage() {
 
   return (
     <div className="space-y-6 select-none max-w-7xl mx-auto font-sans text-slate-800">
-      
+
       {/* Toast Alert Notification */}
       {toast && (
-        <div className={`fixed top-6 right-6 z-[999999] px-4 py-3 rounded-lg text-white text-xs font-semibold shadow-xl border flex items-center gap-2.5 transition-all animate-bounce ${
-          toast.type === 'error' 
-            ? 'bg-red-600 border-red-700' 
-            : 'bg-[#3D3F96] border-indigo-900'
-        }`}>
+        <div className={`fixed top-6 right-6 z-[999999] px-4 py-3 rounded-lg text-white text-xs font-semibold shadow-xl border flex items-center gap-2.5 transition-all animate-bounce ${toast.type === 'error'
+          ? 'bg-red-600 border-red-700'
+          : 'bg-[#3D3F96] border-indigo-900'
+          }`}>
           {toast.type === 'error' ? <FaExclamationTriangle className="text-white" /> : <FaCheckCircle className="text-emerald-300" />}
           <span>{toast.message}</span>
         </div>
@@ -285,7 +284,7 @@ export default function ClinicWardsSimplePage() {
       {/* ========================================================= */}
       {!selectedWard && (
         <div className="space-y-6">
-          
+
           {/* Header Banner */}
           <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -300,7 +299,7 @@ export default function ClinicWardsSimplePage() {
               </p>
             </div>
 
-            <button 
+            <button
               onClick={() => setShowAddModal(true)}
               className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#3D3F96] hover:bg-[#2C2E75] active:scale-95 text-white text-xs font-bold shadow-sm transition-all"
             >
@@ -357,11 +356,10 @@ export default function ClinicWardsSimplePage() {
                 <button
                   key={type}
                   onClick={() => setTypeFilter(type)}
-                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all ${
-                    typeFilter === type
-                      ? 'bg-[#3D3F96] text-white'
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all ${typeFilter === type
+                    ? 'bg-[#3D3F96] text-white'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                    }`}
                 >
                   {type}
                 </button>
@@ -385,7 +383,7 @@ export default function ClinicWardsSimplePage() {
                 const isHighOccupancy = rate >= 75;
 
                 return (
-                  <div 
+                  <div
                     key={ward._id}
                     onClick={() => handleSelectWard(ward)}
                     className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md hover:border-[#3D3F96]/50 cursor-pointer transition-all flex flex-col justify-between group relative overflow-hidden"
@@ -400,7 +398,7 @@ export default function ClinicWardsSimplePage() {
                         <span className="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-[#3D3F96] border border-indigo-100">
                           {ward.type}
                         </span>
-                        
+
                         <div className="text-right">
                           <span className="text-xs font-black text-slate-800 flex items-center justify-end">
                             <FaRupeeSign size={10} className="text-slate-400" />{ward.pricePerDay}
@@ -459,8 +457,8 @@ export default function ClinicWardsSimplePage() {
               </div>
               <h4 className="text-sm font-black text-slate-700">No Wards Found</h4>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                {searchTerm || typeFilter !== 'All' 
-                  ? "No wards match your search or category filter." 
+                {searchTerm || typeFilter !== 'All'
+                  ? "No wards match your search or category filter."
                   : "Click '+ Add New Ward' to register your first clinical unit."}
               </p>
             </div>
@@ -473,10 +471,10 @@ export default function ClinicWardsSimplePage() {
       {/* ========================================================= */}
       {selectedWard && (
         <div className="space-y-6">
-          
+
           {/* Breadcrumb / Top Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
-            <button 
+            <button
               onClick={() => setSelectedWard(null)}
               className="flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-[#3D3F96] transition-colors"
             >
@@ -512,9 +510,9 @@ export default function ClinicWardsSimplePage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Ward Name</label>
-                    <input 
-                      type="text" 
-                      value={wardEditForm.name} 
+                    <input
+                      type="text"
+                      value={wardEditForm.name}
                       onChange={(e) => setWardEditForm(p => ({ ...p, name: e.target.value }))}
                       className="w-full px-3 py-2 rounded-lg border border-slate-200 font-bold text-xs outline-none focus:border-[#3D3F96] bg-slate-50 focus:bg-white transition-all"
                     />
@@ -522,7 +520,7 @@ export default function ClinicWardsSimplePage() {
 
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Classification</label>
-                    <select 
+                    <select
                       value={wardEditForm.type}
                       onChange={(e) => setWardEditForm(p => ({ ...p, type: e.target.value }))}
                       className="w-full px-3 py-2 rounded-lg border border-slate-200 font-bold text-xs outline-none focus:border-[#3D3F96] bg-slate-50 focus:bg-white transition-all"
@@ -533,9 +531,9 @@ export default function ClinicWardsSimplePage() {
 
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Daily Bed Rate (₹)</label>
-                    <input 
-                      type="number" 
-                      value={wardEditForm.pricePerDay} 
+                    <input
+                      type="number"
+                      value={wardEditForm.pricePerDay}
                       onChange={(e) => setWardEditForm(p => ({ ...p, pricePerDay: e.target.value }))}
                       className="w-full px-3 py-2 rounded-lg border border-slate-200 font-bold text-xs outline-none focus:border-[#3D3F96] bg-slate-50 focus:bg-white transition-all"
                     />
@@ -573,11 +571,11 @@ export default function ClinicWardsSimplePage() {
                 {/* Quick Add Beds Action Bar */}
                 <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200 self-start lg:self-auto">
                   <span className="text-[11px] font-bold text-slate-500 pl-2">Generate Beds:</span>
-                  <input 
-                    type="number" 
-                    min="1" 
-                    max="20" 
-                    value={newBedCount} 
+                  <input
+                    type="number"
+                    min="1"
+                    max="20"
+                    value={newBedCount}
                     onChange={(e) => setNewBedCount(e.target.value)}
                     className="w-12 px-2 py-1 rounded-md border border-slate-200 text-center text-xs font-bold outline-none bg-white focus:border-[#3D3F96]"
                   />
@@ -595,7 +593,7 @@ export default function ClinicWardsSimplePage() {
 
           {/* Beds Grid & Status Controls */}
           <div className="space-y-4">
-            
+
             {/* Filter Pill Tabs */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-2">
               <h3 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
@@ -607,11 +605,10 @@ export default function ClinicWardsSimplePage() {
                   <button
                     key={st}
                     onClick={() => setBedStatusFilter(st)}
-                    className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap ${
-                      bedStatusFilter === st
-                        ? st === 'Occupied' ? 'bg-red-500 text-white' : 'bg-[#3D3F96] text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
+                    className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap ${bedStatusFilter === st
+                      ? st === 'Occupied' ? 'bg-red-500 text-white' : 'bg-[#3D3F96] text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
                   >
                     {st} {st !== 'All' && `(${beds.filter(b => b.status === st).length})`}
                   </button>
@@ -632,17 +629,16 @@ export default function ClinicWardsSimplePage() {
                   const isReserved = bed.status === 'Reserved';
 
                   return (
-                    <div 
+                    <div
                       key={bed._id}
-                      className={`p-3.5 rounded-xl border bg-white shadow-sm flex flex-col justify-between space-y-3 transition-all ${
-                        isOccupied 
-                          ? 'border-red-200 bg-gradient-to-b from-white to-red-50/20' 
-                          : isMaintenance 
-                          ? 'border-amber-200 bg-amber-50/10' 
-                          : isReserved 
-                          ? 'border-indigo-200 bg-indigo-50/10' 
-                          : 'border-emerald-200 bg-emerald-50/10'
-                      }`}
+                      className={`p-3.5 rounded-xl border bg-white shadow-sm flex flex-col justify-between space-y-3 transition-all ${isOccupied
+                        ? 'border-red-200 bg-gradient-to-b from-white to-red-50/20'
+                        : isMaintenance
+                          ? 'border-amber-200 bg-amber-50/10'
+                          : isReserved
+                            ? 'border-indigo-200 bg-indigo-50/10'
+                            : 'border-emerald-200 bg-emerald-50/10'
+                        }`}
                     >
                       {/* Bed Top Info */}
                       <div className="flex items-center justify-between">
@@ -676,13 +672,12 @@ export default function ClinicWardsSimplePage() {
                         <select
                           value={bed.status}
                           onChange={(e) => handleBedStatusChange(bed._id, e.target.value)}
-                          className={`w-full py-1 px-2 rounded-md text-[10px] font-black uppercase tracking-wider border outline-none cursor-pointer transition-all ${
-                            isMaintenance 
-                              ? 'bg-amber-50 text-amber-800 border-amber-300' 
-                              : isReserved 
-                              ? 'bg-indigo-50 text-[#3D3F96] border-indigo-200' 
+                          className={`w-full py-1 px-2 rounded-md text-[10px] font-black uppercase tracking-wider border outline-none cursor-pointer transition-all ${isMaintenance
+                            ? 'bg-amber-50 text-amber-800 border-amber-300'
+                            : isReserved
+                              ? 'bg-indigo-50 text-[#3D3F96] border-indigo-200'
                               : 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                          }`}
+                            }`}
                         >
                           <option value="Available">Available</option>
                           <option value="Maintenance">Maintenance</option>
@@ -710,8 +705,8 @@ export default function ClinicWardsSimplePage() {
       {showAddModal && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
           <div className="bg-white rounded-xl w-full max-w-md p-6 shadow-2xl border border-slate-200 relative animate-in fade-in zoom-in-95 duration-150">
-            
-            <button 
+
+            <button
               onClick={() => setShowAddModal(false)}
               className="absolute right-4 top-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
             >
@@ -731,12 +726,12 @@ export default function ClinicWardsSimplePage() {
             <form onSubmit={handleCreateWard} className="space-y-4 text-xs font-semibold">
               <div>
                 <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Ward Name *</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Critical Observation Unit" 
-                  value={createForm.name} 
+                <input
+                  type="text"
+                  placeholder="e.g. Critical Observation Unit"
+                  value={createForm.name}
                   onChange={(e) => setCreateForm(p => ({ ...p, name: e.target.value }))}
-                  required 
+                  required
                   className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white text-xs font-bold text-slate-800 outline-none focus:border-[#3D3F96] transition-all"
                 />
               </div>
@@ -744,8 +739,8 @@ export default function ClinicWardsSimplePage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Classification</label>
-                  <select 
-                    value={createForm.type} 
+                  <select
+                    value={createForm.type}
                     onChange={(e) => setCreateForm(p => ({ ...p, type: e.target.value }))}
                     className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white text-xs font-bold text-slate-800 outline-none focus:border-[#3D3F96] transition-all"
                   >
@@ -755,11 +750,11 @@ export default function ClinicWardsSimplePage() {
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Initial Beds</label>
-                  <input 
-                    type="number" 
-                    min="1" 
-                    max="50" 
-                    value={createForm.totalBeds} 
+                  <input
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={createForm.totalBeds}
                     onChange={(e) => setCreateForm(p => ({ ...p, totalBeds: e.target.value }))}
                     className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white text-xs font-bold text-slate-800 outline-none focus:border-[#3D3F96] transition-all"
                   />
@@ -768,10 +763,10 @@ export default function ClinicWardsSimplePage() {
 
               <div>
                 <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Daily Bed Rate (₹)</label>
-                <input 
-                  type="number" 
-                  min="0" 
-                  value={createForm.pricePerDay} 
+                <input
+                  type="number"
+                  min="0"
+                  value={createForm.pricePerDay}
                   onChange={(e) => setCreateForm(p => ({ ...p, pricePerDay: e.target.value }))}
                   className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white text-xs font-bold text-slate-800 outline-none focus:border-[#3D3F96] transition-all"
                 />

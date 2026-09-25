@@ -14,7 +14,7 @@ const ClinicTopbar = ({ heading, toggleSidebar }) => {
 
     // Dynamic Clinic Vendor details based on your screenshot
     const clinicData = {
-        name: "Diabetic Pharmacy",
+        name: "Diabetes Pharmacy",
         email: "diabeticpharmacy@yopmail.com",
         role: "Pharmacy Vendor",
         initial: "D"
@@ -24,7 +24,7 @@ const ClinicTopbar = ({ heading, toggleSidebar }) => {
         // Clear clinic token from localStorage
         localStorage.removeItem('pharmacyToken');
         // Redirect to login page or any other action
-        window.location.href = '/authFiles/login'; // Adjust the path as needed
+        window.location.href = '/authFiles/login';
     }
 
     useEffect(() => {
@@ -63,7 +63,7 @@ const ClinicTopbar = ({ heading, toggleSidebar }) => {
                     <div className="hidden lg:block">
                         <h2 className="text-lg font-black text-gray-800 leading-none">{heading}</h2>
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-1">
-                            Clinic Suite / {heading}
+                            Pharmacy / {heading}
                         </p>
                     </div>
                 </div>
