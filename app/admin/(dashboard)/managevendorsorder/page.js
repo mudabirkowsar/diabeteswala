@@ -17,6 +17,7 @@ import {
 import LabVendorOrders from "./components/LabVendorOrders";
 import PharmacyVendorOrders from "./components/PharmacyVendorOrders";
 import FoodVendorOrders from "./components/FoodVendorOrders";
+import IndependentDoctor from "./components/IndependentDoctor";
 
 // Fallback View for remaining categories
 function GenericVendorOrdersFallback({ title, icon: Icon }) {
@@ -44,9 +45,7 @@ export default function ManageVendorOrdersPage() {
         { id: "lab", label: "Lab Diagnostics", icon: FlaskConical },
         { id: "pharmacy", label: "Pharmacies", icon: Pill },
         { id: "food", label: "Food Outlets", icon: UtensilsCrossed },
-        { id: "ambulance", label: "Ambulance", icon: Truck },
-        { id: "homecare", label: "Home Care", icon: HeartHandshake },
-        { id: "devices", label: "Equipment", icon: Activity }
+        { id: "independentdoctor", label: "Independent Doctor", icon: Activity }
     ];
 
     const activeCategoryData = vendorCategories.find((cat) => cat.id === activeTab);
@@ -107,9 +106,10 @@ export default function ManageVendorOrdersPage() {
                     {activeTab === "lab" && <LabVendorOrders />}
                     {activeTab === "pharmacy" && <PharmacyVendorOrders />}
                     {activeTab === "food" && <FoodVendorOrders />}
+                    {activeTab === "independentdoctor" && <IndependentDoctor />}
 
                     {/* Graceful Fallback for new unconfigured tabs */}
-                    {!["lab", "pharmacy", "food"].includes(activeTab) && (
+                    {!["lab", "pharmacy", "food", "independentdoctor"].includes(activeTab) && (
                         <GenericVendorOrdersFallback
                             title={activeCategoryData?.label}
                             icon={activeCategoryData?.icon || Building2}

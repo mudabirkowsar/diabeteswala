@@ -804,6 +804,22 @@ const AdminAPI = {
         return response.data;
     },
 
+    // --- 1. Get Approved Independent Doctors with Appointment Counts (Screen 1) ---
+    getApprovedDoctorsWithAppointments: async (params) => {
+        // params (optional): { page: 1, limit: 10, search: '', speciality: '', city: '' }
+        const response = await authApi.get('/api/admin/doctor-appointments/doctors', { params });
+        return response.data;
+    },
+
+    // --- 2. Get Specific Doctor's Appointments (Screen 2 / Modal) ---
+    getDoctorAppointmentsById: async (doctorId, params) => {
+        // doctorId: Doctor unique ObjectID (_id)
+        // params (optional): { page: 1, limit: 50, status: '', consultationType: '', search: '' }
+        const response = await authApi.get(`/api/admin/doctor-appointments/${doctorId}/appointments`, { params });
+        return response.data;
+    },
+    
+
 }
 
 export default AdminAPI;
