@@ -818,6 +818,12 @@ const AdminAPI = {
         const response = await authApi.get(`/api/admin/doctor-appointments/${doctorId}/appointments`, { params });
         return response.data;
     },
+    // --- 3. Get Cancelled Doctor Appointments List ---
+    getCancelledDoctorAppointments: async (params) => {
+        // params (optional): { page: 1, limit: 20, doctorId: '', search: '' }
+        const response = await authApi.get('/api/admin/doctor-appointments/cancelled-appointments', { params });
+        return response.data;
+    },
     
 
 }
