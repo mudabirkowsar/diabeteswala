@@ -12,7 +12,12 @@ import {
     FaTrophy,
     FaHandHoldingMedical,
     FaClock,
-    FaFileMedical, FaAmbulance
+    FaFileMedical, FaAmbulance,
+    FaHospital,
+    FaBuilding,
+    FaTicketAlt,
+    FaBox,
+    FaCreativeCommons
 } from "react-icons/fa";
 import Image from "next/image";
 
@@ -34,13 +39,14 @@ export default function ClinicSidebar({ sidebarOpen }) {
         { name: "Revenue", route: "/vendors/clinic/dashboard/revenue", icon: FaRupeeSign },
         // { name: "Manage Bank Details", route: "/vendors/clinic/dashboard/managebank", icon: FaUniversity },
         { name: "Appointments", route: "/vendors/clinic/dashboard/appointments", icon: FaCalendarCheck },
-        { name: "Create Appointment", route: "/vendors/clinic/dashboard/createappointment", icon: FaUserMd },
+        { name: "Create Appointment", route: "/vendors/clinic/dashboard/createappointment", icon: FaCreativeCommons },
         // { name: "Add New Doctor", route: "/vendors/clinic/dashboard/addDoctors", icon: FaUserMd },
         { name: "Clinic Doctors", route: "/vendors/clinic/dashboard/clinicdoctor", icon: FaUserMd },
         { name: "Manage Ambulances", route: "/vendors/clinic/dashboard/manageambulances", icon: FaAmbulance },
-        { name: "Manage Pharmacies", route: "/vendors/clinic/dashboard/managepharmacies", icon: FaAmbulance },
-        { name: "Manage Wards", route: "/vendors/clinic/dashboard/managewards", icon: FaUserMd },
-        { name: "Manage Coupons", route: "/vendors/clinic/dashboard/managecoupons", icon: FaUserMd },
+        { name: "Manage Pharmacy", route: "/vendors/clinic/dashboard/managepharmacies", icon: FaBuilding },
+        { name: "Manage Lab", route: "/vendors/clinic/dashboard/managelabs", icon: FaHospital },
+        { name: "Manage Wards", route: "/vendors/clinic/dashboard/managewards", icon: FaBox },
+        { name: "Manage Coupons", route: "/vendors/clinic/dashboard/managecoupons", icon: FaTicketAlt },
         // { name: "Achievements", route: "/vendors/clinic/dashboard/achievements", icon: FaTrophy },
         // { name: "Services", route: "/vendors/clinic/dashboard/services", icon: FaHandHoldingMedical },
         { name: "Clinic Timings", route: "/vendors/clinic/dashboard/clinictiming", icon: FaClock },

@@ -366,6 +366,45 @@ const ClinicAPI = {
         return response.data;
     },
 
+    //Add Lab 
+    addClinicLab: async (formData) => {
+        const response = await authApi.post('/api/clinic/lab/add', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    getMyClinicLabs: async () => {
+        const response = await authApi.get('/api/clinic/lab/my-labs');
+        return response.data;
+    },
+
+    getClinicLabDetails: async (id) => {
+        const response = await authApi.get(`/api/clinic/lab/details/${id}`);
+        return response.data;
+    },
+
+    updateClinicLab: async (id, formData) => {
+        const response = await authApi.put(`/api/clinic/lab/update/${id}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    toggleClinicLabStatus: async (id) => {
+        const response = await authApi.patch(`/api/clinic/lab/toggle-status/${id}`);
+        return response.data;
+    },
+
+    deleteClinicLab: async (id) => {
+        const response = await authApi.delete(`/api/clinic/lab/delete/${id}`);
+        return response.data;
+    },
+
 }
 
 export default ClinicAPI;
