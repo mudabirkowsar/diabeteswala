@@ -1,14 +1,25 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Stethoscope, Building2, CalendarCheck, Activity } from 'lucide-react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Stethoscope, Building2, CalendarCheck } from 'lucide-react';
 
-// Dynamically imported appointment panels from your local components directory
+// Dynamically imported appointment panels
 import DoctorAppointments from './components/DoctorAppointments';
 import ClinicalAppointments from './components/ClinicalAppointments';
 
-export default function AppointmentsDashboardPage() {
-  const [activeTab, setActiveTab] = useState('doctor'); // Default selected tab is 'doctor'
+function AppointmentsDashboardContent() {
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get('tab'); // Read '?tab=clinic' or '?tab=doctor'
+
+  const [activeTab, setActiveTab] = useState('doctor');
+
+  // Sync state if URL query param is present
+  useEffect(() => {
+    if (requestedTab === 'clinic' || requestedTab === 'doctor') {
+      setActiveTab(requestedTab);
+    }
+  }, [requestedTab]);
 
   const tabs = [
     {
@@ -36,7 +47,9 @@ export default function AppointmentsDashboardPage() {
               <CalendarCheck size={24} />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Appointments &amp; Bookings</h1>
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                Appointments &amp; Bookings
+              </h1>
               <p className="text-xs text-slate-500 font-bold mt-0.5">
                 Track, monitor, and manage your specialist doctor consultations, video calls, and clinic facility admissions.
               </p>
@@ -52,10 +65,11 @@ export default function AppointmentsDashboardPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer border flex items-center gap-2 ${isSelected
+                className={`px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer border flex items-center gap-2 ${
+                  isSelected
                     ? 'bg-red-50/60 text-red-600 border-red-200/60 font-black shadow-sm'
                     : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100 hover:border-slate-200'
-                  }`}
+                }`}
               >
                 {tab.icon}
                 <span>{tab.name}</span>
@@ -71,5 +85,14 @@ export default function AppointmentsDashboardPage() {
 
       </div>
     </main>
+  );
+}
+
+// Wrapped in Suspense as required by Next.js when using useSearchParams
+export default function AppointmentsDashboardPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-sm font-bold text-slate-500">Loading appointments...</div>}>
+      <AppointmentsDashboardContent />
+    </Suspense>
   );
 }

@@ -456,7 +456,8 @@ export default function CustomTiffinBuilderPage() {
                 subscribing={subscribing}
                 onConfirmOrder={handleConfirmOrder}
                 confirmedOrder={confirmedOrder}
-                onViewOrderDetails={() => router.push('/otherscreens/tiffinorders')}
+                // For Custom Tiffin
+                onViewOrderDetails={() => router.push('/otherscreens/tiffinorders?tab=custom')}
                 dailySchedule={dailySchedule}
                 getDayOfWeekName={getDayOfWeekName}
                 loaderData={loaderData}

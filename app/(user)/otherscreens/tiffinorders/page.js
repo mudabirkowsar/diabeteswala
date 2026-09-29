@@ -1,15 +1,26 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Calendar, Utensils, ChefHat, HeartPulse, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Calendar, Utensils, ChefHat, HeartPulse } from 'lucide-react';
 
 // Import your components from the ./components folder
 import SubscriptionTiffin from './components/Tiffin';
 import CustomTiffin from './components/CustomTiffin';
 import HealthPlans from './components/HealthPlans';
 
-export default function TiffinPage() {
+function TiffinPageContent() {
+    const searchParams = useSearchParams();
+    const tabParam = searchParams.get('tab'); // Reads '?tab=custom' etc.
+
     const [activeTab, setActiveTab] = useState('subscription'); // 'subscription' | 'custom' | 'health-plans'
+
+    // Automatically switch tab when URL query changes
+    useEffect(() => {
+        if (tabParam === 'custom' || tabParam === 'subscription' || tabParam === 'health-plans') {
+            setActiveTab(tabParam);
+        }
+    }, [tabParam]);
 
     return (
         <div className="min-h-screen bg-[#f8fbff] py-8 px-4 sm:px-6 lg:px-10 max-w-[1600px] mx-auto space-y-8 antialiased select-none text-left">
@@ -115,5 +126,13 @@ export default function TiffinPage() {
             </div>
 
         </div>
+    );
+}
+
+export default function TiffinPage() {
+    return (
+        <Suspense fallback={<div className="p-8 text-center text-sm font-bold text-slate-500">Loading meals...</div>}>
+            <TiffinPageContent />
+        </Suspense>
     );
 }

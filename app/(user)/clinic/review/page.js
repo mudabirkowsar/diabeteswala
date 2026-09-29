@@ -356,7 +356,9 @@ export default function ClinicReviewPage() {
             if (paymentMethod === 'COD' || orderResponse.isOnlinePayment === false) {
                 showNotification?.(orderResponse.message || "Clinic appointment confirmed successfully via Cash on Delivery!", "success");
                 sessionStorage.removeItem("activeClinicBooking");
-                router.push('/otherscreens/myappointments');
+
+                // 👉 Pass ?tab=clinic in the URL:
+                router.push('/otherscreens/myappointments?tab=clinic');
                 return;
             }
 
@@ -504,13 +506,12 @@ export default function ClinicReviewPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-black uppercase px-3.5 py-1.5 rounded-2xl border flex items-center gap-1.5 shadow-2xs ${
-                            bookingType === 'EMERGENCY'
+                        <span className={`text-[10px] font-black uppercase px-3.5 py-1.5 rounded-2xl border flex items-center gap-1.5 shadow-2xs ${bookingType === 'EMERGENCY'
                                 ? 'bg-rose-50 text-rose-700 border-rose-200'
                                 : bookingType === 'IPD'
                                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                     : 'bg-indigo-50 text-[#3d3f96] border-indigo-100'
-                        }`}>
+                            }`}>
                             <span className="w-1.5 h-1.5 rounded-full bg-current" />
                             <span>{bookingType} Package</span>
                         </span>
@@ -576,9 +577,8 @@ export default function ClinicReviewPage() {
 
                                 <div>
                                     <span className="text-[10px] font-bold text-slate-400 uppercase block">Health Insurance</span>
-                                    <span className={`font-bold flex items-center gap-1 mt-0.5 ${
-                                        patient?.hasInsurance ? "text-emerald-700" : "text-slate-500"
-                                    }`}>
+                                    <span className={`font-bold flex items-center gap-1 mt-0.5 ${patient?.hasInsurance ? "text-emerald-700" : "text-slate-500"
+                                        }`}>
                                         <ShieldCheck size={13} className={patient?.hasInsurance ? "text-emerald-600" : "text-slate-400"} />
                                         {patient?.hasInsurance ? `Linked (${patient.insuranceNo || 'Active'})` : "Self-Pay / Not Linked"}
                                     </span>
@@ -1036,11 +1036,10 @@ export default function ClinicReviewPage() {
                                 {/* Option 1: Online Razorpay */}
                                 <div
                                     onClick={() => setPaymentMethod('Online')}
-                                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                                        paymentMethod === 'Online'
+                                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${paymentMethod === 'Online'
                                             ? 'border-[#3d3f96] bg-indigo-50/50 ring-2 ring-[#3d3f96]/15 shadow-xs'
                                             : 'border-slate-200/80 bg-white hover:border-slate-300'
-                                    }`}
+                                        }`}
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className="pt-0.5 shrink-0">
@@ -1071,11 +1070,10 @@ export default function ClinicReviewPage() {
                                 {isCodAvailable ? (
                                     <div
                                         onClick={() => setPaymentMethod('COD')}
-                                        className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                                            paymentMethod === 'COD'
+                                        className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${paymentMethod === 'COD'
                                                 ? 'border-emerald-600 bg-emerald-50/50 ring-2 ring-emerald-600/15 shadow-xs'
                                                 : 'border-slate-200/80 bg-white hover:border-slate-300'
-                                        }`}
+                                            }`}
                                     >
                                         <div className="flex items-center gap-3">
                                             <div className="pt-0.5 shrink-0">
@@ -1210,11 +1208,10 @@ export default function ClinicReviewPage() {
                                 type="button"
                                 disabled={processingPayment || calculatingBill}
                                 onClick={handleConfirmPayment}
-                                className={`w-full py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 hover:scale-[1.01] active:scale-98 shadow-xl ${
-                                    paymentMethod === 'COD'
+                                className={`w-full py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 hover:scale-[1.01] active:scale-98 shadow-xl ${paymentMethod === 'COD'
                                         ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-950/20'
                                         : 'bg-[#3d3f96] hover:bg-[#2d2f75] text-white shadow-indigo-950/20'
-                                }`}
+                                    }`}
                             >
                                 {processingPayment ? (
                                     <Loader2 size={18} className="animate-spin text-white" />
