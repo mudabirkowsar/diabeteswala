@@ -649,5 +649,22 @@ const UserAPI = {
         return response.data;
     },
 
+    //Ambulance
+
+    // --- 1. Search Nearest Ambulances (Live GPS Discovery) ---
+    getNearestAmbulances: async (data) => {
+        // data: { lat: 30.7046, lng: 76.7179, search: '', city: 'Mohali', vehicleType: 'Advance Life Support', hasNurse: true, hasDoctor: false, type: 'all', page: 1, limit: 10 }
+        const response = await publicApi.post('/api/user/ambulance/nearest', data);
+        return response.data;
+    },
+
+    // --- 2. Get Single Ambulance Details ---
+    getAmbulanceDetails: async (id, params) => {
+        // id: Ambulance unique ObjectID (_id)
+        // params (optional): { lat: 30.7046, lng: 76.7179 }
+        const response = await publicApi.get(`/api/user/ambulance/details/${id}`, { params });
+        return response.data;
+    },
+
 }
 export default UserAPI;

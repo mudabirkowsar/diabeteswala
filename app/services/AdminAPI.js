@@ -845,6 +845,35 @@ const AdminAPI = {
         const response = await authApi.get('/api/admin/doctor-appointments/cancelled-appointments', { params });
         return response.data;
     },
+
+    // --- 1. Get Independent Ambulances List ---
+    getIndependentAmbulancesList: async (params) => {
+        // params (optional): { page: 1, limit: 10, status: '', search: '', city: '', state: '' }
+        const response = await authApi.get('/api/admin/approval/ambulance/lists', { params });
+        return response.data;
+    },
+
+    // --- 2. Get Single Ambulance Details by ID ---
+    getAmbulanceDetailsById: async (id) => {
+        // id: Ambulance unique ObjectID (_id)
+        const response = await authApi.get(`/api/admin/approval/ambulance/lists/${id}`);
+        return response.data;
+    },
+
+    // --- 3. Approve Independent Ambulance ---
+    approveIndependentAmbulance: async (id) => {
+        // id: Ambulance unique ObjectID (_id)
+        const response = await authApi.patch(`/api/admin/approval/ambulances/approve/${id}`);
+        return response.data;
+    },
+
+    // --- 4. Reject Independent Ambulance ---
+    rejectIndependentAmbulance: async (id, data) => {
+        // id: Ambulance unique ObjectID (_id)
+        // data: { reason: "Driving license document is blurred and RC file is expired." }
+        const response = await authApi.patch(`/api/admin/approval/ambulances/reject/${id}`, data);
+        return response.data;
+    },
     
 
 }
