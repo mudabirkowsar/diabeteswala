@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   FlaskConical,
   PlusCircle,
@@ -20,21 +20,22 @@ import {
   ShieldCheck,
   MapPin,
   Star
-} from 'lucide-react';
+} from "lucide-react";
 
-import ClinicAPI from '../../../../services/ClinicAPI'; // Adjust path if needed
-import AddClinicLab from './components/AddClinicLab';
-import ViewClinicLab from './components/ViewClinicLab';
+import ClinicAPI from "../../../../services/ClinicAPI"; // Adjust path if needed
+import AddClinicLab from "./components/AddClinicLab";
+import ViewClinicLab from "./components/ViewClinicLab";
+import SetTiming from "./components/SetTiming";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://192.168.1.7:5002';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.7:5002";
 
 const getImageUrl = (path) => {
-  if (!path) return 'https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&q=80&w=200';
-  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('blob:') || path.startsWith('data:')) {
+  if (!path) return "https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&q=80&w=200";
+  if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("blob:") || path.startsWith("data:")) {
     return path;
   }
-  const cleanBase = BACKEND_URL.replace(/\/+$/, '');
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const cleanBase = BACKEND_URL.replace(/\/+$/, "");
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
   return `${cleanBase}${cleanPath}`;
 };
 
@@ -43,9 +44,10 @@ export default function ClinicLabsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showTimingModal, setShowTimingModal] = useState(false);
   const [selectedLabId, setSelectedLabId] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -87,8 +89,8 @@ export default function ClinicLabsPage() {
     try {
       const res = await ClinicAPI.toggleClinicLabStatus(labId);
       if (res?.success) {
-        setLabs(prev =>
-          prev.map(l => (l._id === labId ? { ...l, isActive: res.isActive } : l))
+        setLabs((prev) =>
+          prev.map((l) => (l._id === labId ? { ...l, isActive: res.isActive } : l))
         );
         showToast(res.message || "Lab status updated successfully.");
       }
@@ -106,7 +108,7 @@ export default function ClinicLabsPage() {
     try {
       const res = await ClinicAPI.deleteClinicLab(lab._id);
       if (res?.success) {
-        setLabs(prev => prev.filter(l => l._id !== lab._id));
+        setLabs((prev) => prev.filter((l) => l._id !== lab._id));
         showToast(`Lab "${lab.name}" deleted successfully.`);
       }
     } catch (err) {
@@ -116,13 +118,13 @@ export default function ClinicLabsPage() {
   };
 
   const handleLabAdded = (newLab) => {
-    setLabs(prev => [newLab, ...prev]);
+    setLabs((prev) => [newLab, ...prev]);
     showToast(`Lab "${newLab.name}" registered and submitted for approval!`);
   };
 
   const handleLabUpdated = (updatedLab, message) => {
-    setLabs(prev =>
-      prev.map(l => (l._id === (updatedLab._id || selectedLabId) ? { ...l, ...updatedLab } : l))
+    setLabs((prev) =>
+      prev.map((l) => (l._id === (updatedLab._id || selectedLabId) ? { ...l, ...updatedLab } : l))
     );
     showToast(message || "Lab profile updated successfully!");
   };
@@ -133,7 +135,7 @@ export default function ClinicLabsPage() {
   };
 
   // Search filtering
-  const filteredLabs = labs.filter(lab => {
+  const filteredLabs = labs.filter((lab) => {
     const q = searchTerm.toLowerCase();
     const nameMatch = lab.name?.toLowerCase().includes(q);
     const phoneMatch = lab.phone?.includes(q);
@@ -149,7 +151,6 @@ export default function ClinicLabsPage() {
 
   return (
     <div className="space-y-8 select-none">
-
       {/* Toast Alert */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-[999999] px-5 py-3 rounded-2xl bg-[#3D3F96] text-white text-xs font-bold shadow-2xl border border-white/20 flex items-center gap-2 animate-in fade-in slide-in-from-top-3">
@@ -161,21 +162,35 @@ export default function ClinicLabsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
         <div>
           <h2 className="text-2xl font-black text-slate-800">Clinic Diagnostic Labs</h2>
-          <p className="text-xs text-slate-400 mt-1">Manage diagnostic testing centers, NABL accreditations, home sample pickups, and operations.</p>
+          <p className="text-xs text-slate-400 mt-1">
+            Manage diagnostic testing centers, slot availability, accreditations, and daily bookings.
+          </p>
         </div>
 
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#3D3F96] hover:bg-[#2C2E75] text-white text-xs font-bold tracking-wide transition-all shadow-lg shadow-indigo-950/10 self-start sm:self-auto"
-        >
-          <PlusCircle size={16} /> Add Lab
-        </button>
+        {/* Action Buttons: Set Timings + Add Lab */}
+        <div className="flex items-center gap-2.5 flex-wrap self-start sm:self-auto">
+          <button
+            onClick={() => setShowTimingModal(true)}
+            className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold tracking-wide transition-all shadow-md cursor-pointer"
+          >
+            <Clock size={16} /> Set Timings & Slots
+          </button>
+
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#3D3F96] hover:bg-[#2C2E75] text-white text-xs font-bold tracking-wide transition-all shadow-lg shadow-indigo-950/10 cursor-pointer"
+          >
+            <PlusCircle size={16} /> Add Lab
+          </button>
+        </div>
       </div>
 
       {/* Registry Count & Search Filter */}
       <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <span className="text-[10px] uppercase font-black text-slate-400 tracking-wider">Diagnostic Registry</span>
+          <span className="text-[10px] uppercase font-black text-slate-400 tracking-wider">
+            Diagnostic Registry
+          </span>
           <h4 className="text-xl font-black text-slate-800 mt-1">Laboratory Directory</h4>
         </div>
 
@@ -186,7 +201,10 @@ export default function ClinicLabsPage() {
               type="text"
               placeholder="Search by lab name, phone, city..."
               value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
               className="pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none focus:border-[#3D3F96] w-64 transition-all"
             />
           </div>
@@ -201,7 +219,9 @@ export default function ClinicLabsPage() {
       {error && (
         <div className="p-4 rounded-2xl bg-rose-50 border border-rose-100 flex items-center gap-3 text-rose-700 text-xs font-semibold">
           <AlertCircle size={18} className="shrink-0" /> {error}
-          <button onClick={fetchLabs} className="underline font-bold ml-auto">Retry</button>
+          <button onClick={fetchLabs} className="underline font-bold ml-auto cursor-pointer">
+            Retry
+          </button>
         </div>
       )}
 
@@ -242,7 +262,8 @@ export default function ClinicLabsPage() {
                         alt={lab.name}
                         onError={(e) => {
                           e.target.onerror = null;
-                          e.target.src = 'https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&q=80&w=200';
+                          e.target.src =
+                            "https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&q=80&w=200";
                         }}
                         className="w-11 h-11 rounded-xl object-cover border border-slate-100 shadow-sm"
                       />
@@ -255,7 +276,7 @@ export default function ClinicLabsPage() {
                           {lab.rating || 5.0}
                         </span>
                         <span>•</span>
-                        <span>{lab.documents?.nablNumber || 'Standard Lab'}</span>
+                        <span>{lab.documents?.nablNumber || "Standard Lab"}</span>
                       </div>
                     </td>
                     <td className="p-4">
@@ -263,14 +284,14 @@ export default function ClinicLabsPage() {
                         <Phone size={11} className="text-slate-400" /> {lab.phone}
                       </div>
                       <div className="text-[11px] text-slate-400 flex items-center gap-1">
-                        <Mail size={11} className="text-slate-400" /> {lab.email || '-'}
+                        <Mail size={11} className="text-slate-400" /> {lab.email || "-"}
                       </div>
                     </td>
                     <td className="p-4">
                       <div className="text-xs font-bold text-slate-700 flex items-center gap-1">
-                        <MapPin size={11} className="text-slate-400" /> {lab.city || 'N/A'}, {lab.state || ''}
+                        <MapPin size={11} className="text-slate-400" /> {lab.city || "N/A"}, {lab.state || ""}
                       </div>
-                      <div className="text-[11px] text-slate-400 truncate max-w-[140px]">{lab.address || '-'}</div>
+                      <div className="text-[11px] text-slate-400 truncate max-w-[140px]">{lab.address || "-"}</div>
                     </td>
                     <td className="p-4 text-center">
                       <div className="flex items-center justify-center gap-1.5">
@@ -294,47 +315,55 @@ export default function ClinicLabsPage() {
                             <Clock size={13} />
                           </span>
                         )}
-                        {!lab.isHomeCollectionAvailable && !lab.isRapidServiceAvailable && !lab.isInsuranceAccepted && !lab.is24x7 && (
-                          <span className="text-[10px] text-slate-400 font-semibold">Standard</span>
-                        )}
+                        {!lab.isHomeCollectionAvailable &&
+                          !lab.isRapidServiceAvailable &&
+                          !lab.isInsuranceAccepted &&
+                          !lab.is24x7 && (
+                            <span className="text-[10px] text-slate-400 font-semibold">Standard</span>
+                          )}
                       </div>
                     </td>
                     <td className="p-4 text-center">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        lab.profileStatus === 'Approved'
-                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                          : lab.profileStatus === 'Rejected'
-                          ? 'bg-rose-50 text-rose-600 border border-rose-200'
-                          : 'bg-amber-50 text-amber-600 border border-amber-200'
-                      }`}>
-                        {lab.profileStatus || 'Pending'}
+                      <span
+                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          lab.profileStatus === "Approved"
+                            ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                            : lab.profileStatus === "Rejected"
+                            ? "bg-rose-50 text-rose-600 border border-rose-200"
+                            : "bg-amber-50 text-amber-600 border border-amber-200"
+                        }`}
+                      >
+                        {lab.profileStatus || "Pending"}
                       </span>
                     </td>
                     <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
                       <button
                         type="button"
                         onClick={(e) => handleToggleStatus(e, lab._id)}
-                        className={`text-[11px] font-bold px-3 py-1 rounded-xl transition-all border ${
+                        className={`text-[11px] font-bold px-3 py-1 rounded-xl transition-all border cursor-pointer ${
                           lab.isActive
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                            : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                            : "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200"
                         }`}
                       >
-                        {lab.isActive ? 'Active' : 'Inactive'}
+                        {lab.isActive ? "Active" : "Inactive"}
                       </button>
                     </td>
                     <td className="p-4 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleRowClick(lab._id); }}
-                          className="p-2 rounded-xl border border-slate-100 bg-white hover:bg-indigo-50 text-slate-400 hover:text-[#3D3F96] transition-all"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRowClick(lab._id);
+                          }}
+                          className="p-2 rounded-xl border border-slate-100 bg-white hover:bg-indigo-50 text-slate-400 hover:text-[#3D3F96] transition-all cursor-pointer"
                           title="View / Edit Lab Details"
                         >
                           <Eye size={14} />
                         </button>
                         <button
                           onClick={(e) => handleDelete(e, lab)}
-                          className="p-2 rounded-xl border border-slate-100 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-500 transition-all"
+                          className="p-2 rounded-xl border border-slate-100 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-500 transition-all cursor-pointer"
                           title="Delete Lab"
                         >
                           <Trash2 size={14} />
@@ -359,14 +388,18 @@ export default function ClinicLabsPage() {
         {totalPages > 1 && (
           <div className="p-5 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
             <span className="text-xs font-medium text-slate-400">
-              Showing <strong className="text-slate-700">{indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredLabs.length)}</strong> of <strong className="text-slate-700">{filteredLabs.length}</strong>
+              Showing{" "}
+              <strong className="text-slate-700">
+                {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredLabs.length)}
+              </strong>{" "}
+              of <strong className="text-slate-700">{filteredLabs.length}</strong>
             </span>
 
             <div className="flex items-center gap-2">
               <button
                 disabled={currentPage === 1}
-                onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-                className="p-2 rounded-xl border border-slate-100 bg-white disabled:opacity-40 hover:bg-slate-50"
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                className="p-2 rounded-xl border border-slate-100 bg-white disabled:opacity-40 hover:bg-slate-50 cursor-pointer"
               >
                 <ChevronLeft size={14} />
               </button>
@@ -375,8 +408,10 @@ export default function ClinicLabsPage() {
                 <button
                   key={i}
                   onClick={() => setCurrentPage(i + 1)}
-                  className={`px-3 py-1 rounded-xl text-xs font-bold ${
-                    currentPage === i + 1 ? 'bg-[#3D3F96] text-white' : 'bg-white border border-slate-100 text-slate-600'
+                  className={`px-3 py-1 rounded-xl text-xs font-bold cursor-pointer ${
+                    currentPage === i + 1
+                      ? "bg-[#3D3F96] text-white"
+                      : "bg-white border border-slate-100 text-slate-600"
                   }`}
                 >
                   {i + 1}
@@ -385,8 +420,8 @@ export default function ClinicLabsPage() {
 
               <button
                 disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-                className="p-2 rounded-xl border border-slate-100 bg-white disabled:opacity-40 hover:bg-slate-50"
+                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                className="p-2 rounded-xl border border-slate-100 bg-white disabled:opacity-40 hover:bg-slate-50 cursor-pointer"
               >
                 <ChevronRight size={14} />
               </button>
@@ -395,7 +430,7 @@ export default function ClinicLabsPage() {
         )}
       </div>
 
-      {/* --- ADD MODAL --- */}
+      {/* --- ADD LAB MODAL --- */}
       {showAddModal && (
         <AddClinicLab
           onClose={() => setShowAddModal(false)}
@@ -403,15 +438,26 @@ export default function ClinicLabsPage() {
         />
       )}
 
-      {/* --- VIEW & EDIT MODAL --- */}
+      {/* --- VIEW & EDIT LAB MODAL --- */}
       {showViewModal && selectedLabId && (
         <ViewClinicLab
           labId={selectedLabId}
-          onClose={() => { setShowViewModal(false); setSelectedLabId(null); }}
+          onClose={() => {
+            setShowViewModal(false);
+            setSelectedLabId(null);
+          }}
           onLabUpdated={handleLabUpdated}
         />
       )}
 
+      {/* --- SET TIMINGS & SLOTS MODAL --- */}
+      {showTimingModal && (
+        <SetTiming
+          isOpen={showTimingModal}
+          onClose={() => setShowTimingModal(false)}
+          onToast={showToast}
+        />
+      )}
     </div>
   );
 }

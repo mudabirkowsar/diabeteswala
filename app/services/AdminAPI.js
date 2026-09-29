@@ -194,6 +194,27 @@ const AdminAPI = {
         const response = await authApi.patch(`/api/admin/approval/ambulance/reject/${id}`, payload);
         return response.data;
     },
+    // --- 1. Get Approved Clinics with Appointment Counts (Screen 1) ---
+    getApprovedClinicsWithAppointments: async (params) => {
+        // params (optional): { page: 1, limit: 10, search: '', city: '' }
+        const response = await authApi.get('/api/admin/clinic-appointments/clinics', { params });
+        return response.data;
+    },
+
+    // --- 2. Get Specific Clinic Appointments (Screen 2 / Modal) ---
+    getClinicAppointmentsById: async (clinicId, params) => {
+        // clinicId: Clinic unique ObjectID (_id)
+        // params (optional): { page: 1, limit: 50, status: '', bookingType: '', search: '' }
+        const response = await authApi.get(`/api/admin/clinic-appointments/${clinicId}/appointments`, { params });
+        return response.data;
+    },
+
+    // --- 3. Get Cancelled Clinic Appointments List (Screen 3) ---
+    getCancelledClinicAppointments: async (params) => {
+        // params (optional): { page: 1, limit: 20, clinicId: '', search: '' }
+        const response = await authApi.get('/api/admin/clinic-appointments/cancelled-appointments', { params });
+        return response.data;
+    },
 
     // //Manage health plans
     // /**

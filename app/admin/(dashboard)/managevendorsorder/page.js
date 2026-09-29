@@ -18,6 +18,7 @@ import LabVendorOrders from "./components/LabVendorOrders";
 import PharmacyVendorOrders from "./components/PharmacyVendorOrders";
 import FoodVendorOrders from "./components/FoodVendorOrders";
 import IndependentDoctor from "./components/IndependentDoctor";
+import ClinicVendorOrders from "./components/ClinicVendorOrders";
 
 // Fallback View for remaining categories
 function GenericVendorOrdersFallback({ title, icon: Icon }) {
@@ -45,7 +46,8 @@ export default function ManageVendorOrdersPage() {
         { id: "lab", label: "Lab Diagnostics", icon: FlaskConical },
         { id: "pharmacy", label: "Pharmacies", icon: Pill },
         { id: "food", label: "Food Outlets", icon: UtensilsCrossed },
-        { id: "independentdoctor", label: "Independent Doctor", icon: Activity }
+        { id: "independentdoctor", label: "Independent Doctor", icon: Activity },
+        { id: "clinicorders", label: "Clinic Orders", icon: Activity }
     ];
 
     const activeCategoryData = vendorCategories.find((cat) => cat.id === activeTab);
@@ -65,8 +67,8 @@ export default function ManageVendorOrdersPage() {
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
                                     className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 focus:outline-none ${isActive
-                                            ? "bg-[#3D3F96] text-white shadow-md shadow-[#3D3F96]/20 font-black"
-                                            : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900"
+                                        ? "bg-[#3D3F96] text-white shadow-md shadow-[#3D3F96]/20 font-black"
+                                        : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900"
                                         }`}
                                 >
                                     <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-white" : "text-slate-500"}`} />
@@ -75,8 +77,8 @@ export default function ManageVendorOrdersPage() {
                                     {/* Compact Count Badge */}
                                     <span
                                         className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-md ${isActive
-                                                ? "bg-white/20 text-white"
-                                                : "bg-slate-200/80 text-slate-500"
+                                            ? "bg-white/20 text-white"
+                                            : "bg-slate-200/80 text-slate-500"
                                             }`}
                                     >
                                         {tab.count}
@@ -107,9 +109,10 @@ export default function ManageVendorOrdersPage() {
                     {activeTab === "pharmacy" && <PharmacyVendorOrders />}
                     {activeTab === "food" && <FoodVendorOrders />}
                     {activeTab === "independentdoctor" && <IndependentDoctor />}
+                    {activeTab === "clinicorders" && <ClinicVendorOrders />}
 
                     {/* Graceful Fallback for new unconfigured tabs */}
-                    {!["lab", "pharmacy", "food", "independentdoctor"].includes(activeTab) && (
+                    {!["lab", "pharmacy", "food", "independentdoctor", "clinicorders"].includes(activeTab) && (
                         <GenericVendorOrdersFallback
                             title={activeCategoryData?.label}
                             icon={activeCategoryData?.icon || Building2}

@@ -405,6 +405,33 @@ const ClinicAPI = {
         return response.data;
     },
 
+    // --- 1. Get Clinic Lab Timings & Slots ---
+    getClinicLabTimingsAndSlots: async () => {
+        const response = await authApi.get('/api/clinic/timings/lab');
+        return response.data;
+    },
+
+    // --- 2. Update Clinic Lab Timings & Slots ---
+    updateClinicLabTimingsAndSlots: async (data) => {
+        // data: { is24x7: false, openingTime: "08:00 AM", closeTime: "08:00 PM", holiday: "Sunday", startTime: "08:00", endTime: "20:00", slotDuration: 30, maxClientsPerSlot: 2, morningSlots: true, afternoonSlots: true, eveningSlots: false, offDays: ["Sunday"], blockedDates: ["2026-10-02"], premiumSlots: [{ time: "08:00", extraFee: 100 }] }
+        const response = await authApi.put('/api/clinic/timings/lab', data);
+        return response.data;
+    },
+
+    // --- 3. Block / Hide Clinic Lab Slot ---
+    blockClinicLabSlot: async (data) => {
+        // data: { time: "10:30" }
+        const response = await authApi.post('/api/clinic/timings/lab/block-slot', data);
+        return response.data;
+    },
+
+    // --- 4. Unblock / Show Clinic Lab Slot ---
+    unblockClinicLabSlot: async (data) => {
+        // data: { time: "10:30" }
+        const response = await authApi.post('/api/clinic/timings/lab/unblock-slot', data);
+        return response.data;
+    },
+
 }
 
 export default ClinicAPI;
