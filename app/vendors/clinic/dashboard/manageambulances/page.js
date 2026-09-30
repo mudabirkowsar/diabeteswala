@@ -29,17 +29,19 @@ import {
     Radio,
     Stethoscope,
     HeartPulse,
+    Calendar,
     ChevronLeft,
     ChevronRight
 } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
 
-// Import API Services (adjust path as per your folder structure)
+// Import API Services
 import ClinicAPI from '../../../../services/ClinicAPI';
 
-// Import Add/Edit & View Modal Components
+// Import Add/Edit, View & Create Slots Modal Components
 import AddAmbulance from './components/AddAmbulance';
 import ViewAmbulance from './components/ViewAmbulance';
+import CreateSlots from './components/CreateSlots';
 
 export default function ClinicAmbulancesPage() {
     const [ambulances, setAmbulances] = useState([]);
@@ -53,6 +55,10 @@ export default function ClinicAmbulancesPage() {
     const [selectedAmbulance, setSelectedAmbulance] = useState(null); // For edit
     const [viewAmbulanceData, setViewAmbulanceData] = useState(null); // For view modal
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+
+    // Slots Modal State
+    const [slotAmbulance, setSlotAmbulance] = useState(null);
+    const [isSlotModalOpen, setIsSlotModalOpen] = useState(false);
 
     const [togglingId, setTogglingId] = useState(null);
     const [deletingId, setDeletingId] = useState(null);
@@ -137,6 +143,13 @@ export default function ClinicAmbulancesPage() {
         setIsViewModalOpen(true);
     };
 
+    // --- 5. Open Slots Configuration Modal ---
+    const handleOpenSlotsModal = (ambulance, e) => {
+        if (e) e.stopPropagation();
+        setSlotAmbulance(ambulance);
+        setIsSlotModalOpen(true);
+    };
+
     // --- Filter Logic ---
     const filteredAmbulances = ambulances.filter((item) => {
         const matchesSearch =
@@ -199,7 +212,7 @@ export default function ClinicAmbulancesPage() {
                             </span>
                         </div>
                         <p className="text-xs text-slate-500 font-bold mt-1">
-                            Manage medical transport fleet, assign on-board doctors & nurses, configure dynamic fares, and monitor live emergency status.
+                            Manage medical transport fleet, configure dynamic transit slots & emergency shifts, assign on-board doctors & nurses, and monitor live status.
                         </p>
                     </div>
                 </div>
@@ -315,7 +328,7 @@ export default function ClinicAmbulancesPage() {
                 </div>
             </div>
 
-            {/* --- AMBULANCES TABLE LEDGER (CHANGE 1: TABLE FORMAT) --- */}
+            {/* --- AMBULANCES TABLE LEDGER --- */}
             {loading ? (
                 <div className="py-28 bg-white rounded-3xl border border-slate-200 shadow-xs flex flex-col items-center justify-center space-y-3">
                     <Loader2 className="animate-spin text-red-600" size={36} />
@@ -337,7 +350,6 @@ export default function ClinicAmbulancesPage() {
                                 <tr className="border-b border-slate-100 text-slate-400 uppercase font-black bg-slate-50/70 tracking-wider">
                                     <th className="py-4.5 px-6">Vehicle Plate & Type</th>
                                     <th className="py-4.5 px-6">Driver & Contact</th>
-                                    <th className="py-4.5 px-6">Fare Structure</th>
                                     <th className="py-4.5 px-6">Emergency & Driver Status</th>
                                     <th className="py-4.5 px-6">Verification</th>
                                     <th className="py-4.5 px-6 text-right">Actions</th>
@@ -346,9 +358,6 @@ export default function ClinicAmbulancesPage() {
                             <tbody className="divide-y divide-slate-100 text-slate-700 font-semibold">
                                 {filteredAmbulances.map((amb) => {
                                     const pricing = amb.pricing || {};
-                                    const supportStaff = amb.supportStaff || {};
-                                    const hasNurse = supportStaff.nurse?.available;
-                                    const hasDoctor = supportStaff.doctor?.available;
 
                                     return (
                                         <tr
@@ -386,19 +395,7 @@ export default function ClinicAmbulancesPage() {
                                                 </span>
                                             </td>
 
-                                            {/* 4. Fare Structure */}
-                                            <td className="py-4.5 px-6">
-                                                <div className="text-xs space-y-0.5 font-bold">
-                                                    <span className="text-slate-900 block">
-                                                        ₹{pricing.singleRidePrice || 400} <span className="text-[10px] text-slate-400 font-semibold">(One-Way)</span>
-                                                    </span>
-                                                    <span className="text-slate-600 block text-[11px]">
-                                                        ₹{pricing.doubleRidePrice || 700} <span className="text-[10px] text-slate-400 font-semibold">(Round)</span> • ₹{pricing.pricePerKM || 12}/km
-                                                    </span>
-                                                </div>
-                                            </td>
-
-                                            {/* 5. Emergency & Online Status */}
+                                            {/* 4. Emergency & Online Status */}
                                             <td className="py-4.5 px-6" onClick={(e) => e.stopPropagation()}>
                                                 <div className="space-y-2">
                                                     <button
@@ -424,15 +421,25 @@ export default function ClinicAmbulancesPage() {
                                                 </div>
                                             </td>
 
-                                            {/* 6. Admin Approval Status */}
+                                            {/* 5. Admin Approval Status */}
                                             <td className="py-4.5 px-6">
                                                 {renderStatusBadge(amb.profileStatus)}
                                             </td>
 
-                                            {/* 7. Row Actions */}
+                                            {/* 6. Row Actions */}
                                             <td className="py-4.5 px-6 text-right" onClick={(e) => e.stopPropagation()}>
                                                 <div className="flex items-center justify-end gap-1.5">
-                                                    {/* CHANGE 2: VIEW DETAILS BUTTON */}
+                                                    {/* SLOTS & AVAILABILITY BUTTON */}
+                                                    <button
+                                                        onClick={(e) => handleOpenSlotsModal(amb, e)}
+                                                        className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 rounded-xl font-bold text-[11px] transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                                                        title="Configure Slots & Transit Schedule"
+                                                    >
+                                                        <Calendar size={13} className="text-amber-600" />
+                                                        <span>Slots</span>
+                                                    </button>
+
+                                                    {/* VIEW DETAILS BUTTON */}
                                                     <button
                                                         onClick={() => handleOpenViewModal(amb)}
                                                         className="p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl transition cursor-pointer"
@@ -441,6 +448,7 @@ export default function ClinicAmbulancesPage() {
                                                         <Eye size={14} />
                                                     </button>
 
+                                                    {/* EDIT BUTTON */}
                                                     <button
                                                         onClick={() => {
                                                             setSelectedAmbulance(amb);
@@ -452,6 +460,7 @@ export default function ClinicAmbulancesPage() {
                                                         <Edit3 size={14} />
                                                     </button>
 
+                                                    {/* DELETE BUTTON */}
                                                     <button
                                                         onClick={(e) => handleDelete(amb._id, amb.vehicleNumber, e)}
                                                         disabled={deletingId === amb._id}
@@ -488,7 +497,7 @@ export default function ClinicAmbulancesPage() {
                 />
             )}
 
-            {/* --- VIEW AMBULANCE MODAL (CHANGE 2) --- */}
+            {/* --- VIEW AMBULANCE MODAL --- */}
             {isViewModalOpen && (
                 <ViewAmbulance
                     isOpen={isViewModalOpen}
@@ -504,6 +513,18 @@ export default function ClinicAmbulancesPage() {
                     }}
                     onToggleEmergency={handleToggleEmergency}
                     togglingId={togglingId}
+                />
+            )}
+
+            {/* --- CREATE / MANAGE SLOTS MODAL --- */}
+            {isSlotModalOpen && (
+                <CreateSlots
+                    isOpen={isSlotModalOpen}
+                    onClose={() => {
+                        setIsSlotModalOpen(false);
+                        setSlotAmbulance(null);
+                    }}
+                    ambulance={slotAmbulance}
                 />
             )}
 

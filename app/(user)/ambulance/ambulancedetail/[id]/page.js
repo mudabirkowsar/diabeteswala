@@ -106,8 +106,8 @@ export default function AmbulanceDetailPage() {
   const calculateTotalFare = () => {
     if (!ambulance) return 0;
     const baseFare = selectedRideType === 'single'
-      ? (ambulance.pricing?.singleRidePrice || 400)
-      : (ambulance.pricing?.doubleRidePrice || 700);
+      ? (ambulance.pricing?.singleRidePrice)
+      : (ambulance.pricing?.doubleRidePrice);
 
     let addonTotal = 0;
     if (includeNurse && ambulance.supportStaff?.nurse?.available) {

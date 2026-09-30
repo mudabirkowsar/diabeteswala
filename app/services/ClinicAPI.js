@@ -432,6 +432,34 @@ const ClinicAPI = {
         return response.data;
     },
 
+    // --- 1. Get Clinic Ambulance Time Slots ---
+    getClinicAmbulanceSlots: async (params) => {
+        // params (optional): { ambulanceId: '6a9e4316063d78a2c13991c2', date: '2026-09-30' }
+        const response = await authApi.get('/api/clinic/ambulance-slots', { params });
+        return response.data;
+    },
+
+    // --- 2. Set / Update Clinic Ambulance Slots ---
+    updateClinicAmbulanceSlots: async (data) => {
+        // data: { ambulanceId: "6a9e4316063d78a2c13991c2", startTime: "08:00", endTime: "20:00", slotDuration: 120, availableForEmergency: true, offDays: ["Sunday"], blockedDates: ["2026-10-02"], premiumSlots: [{ time: "08:00", extraFee: 100 }] }
+        const response = await authApi.put('/api/clinic/ambulance-slots/update', data);
+        return response.data;
+    },
+
+    // --- 3. Block / Hide Clinic Ambulance Slot ---
+    blockClinicAmbulanceSlot: async (data) => {
+        // data: { ambulanceId: "6a9e4316063d78a2c13991c2", time: "10:00" }
+        const response = await authApi.post('/api/clinic/ambulance-slots/block-slot', data);
+        return response.data;
+    },
+
+    // --- 4. Unblock / Show Clinic Ambulance Slot ---
+    unblockClinicAmbulanceSlot: async (data) => {
+        // data: { ambulanceId: "6a9e4316063d78a2c13991c2", time: "10:00" }
+        const response = await authApi.post('/api/clinic/ambulance-slots/unblock-slot', data);
+        return response.data;
+    },
+
 }
 
 export default ClinicAPI;
