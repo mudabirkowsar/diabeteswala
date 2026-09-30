@@ -874,6 +874,49 @@ const AdminAPI = {
         const response = await authApi.patch(`/api/admin/approval/ambulances/reject/${id}`, data);
         return response.data;
     },
+
+    // --- 1. Create Ambulance Facility / Support Staff ---
+    createAmbulanceFacility: async (data) => {
+        // data: { name: "Oxygen Cylinder", description: "High-capacity medical oxygen cylinder", defaultPrice: 300, applicableFor: "all" }
+        const response = await authApi.post('/admin/ambulance-facilities/create', data);
+        return response.data;
+    },
+
+    // --- 2. Get All Ambulance Facilities (List / Dropdown) ---
+    getAmbulanceFacilitiesList: async (params) => {
+        // params (optional): { applicableFor: 'all', isActive: true, search: 'oxygen' }
+        const response = await authApi.get('/admin/ambulance-facilities/list', { params });
+        return response.data;
+    },
+
+    // --- 3. Get Single Ambulance Facility Details ---
+    getAmbulanceFacilityDetailsById: async (id) => {
+        // id: Facility unique ObjectID (_id)
+        const response = await authApi.get(`/admin/ambulance-facilities/details/${id}`);
+        return response.data;
+    },
+
+    // --- 4. Update Ambulance Facility ---
+    updateAmbulanceFacility: async (id, data) => {
+        // id: Facility unique ObjectID (_id)
+        // data: { name: "Nurse (Emergency Specialist)", description: "Certified critical care paramedic nurse", defaultPrice: 500, applicableFor: "all", isActive: true }
+        const response = await authApi.put(`/admin/ambulance-facilities/update/${id}`, data);
+        return response.data;
+    },
+
+    // --- 5. Toggle Ambulance Facility Active/Inactive Status ---
+    toggleAmbulanceFacilityStatus: async (id) => {
+        // id: Facility unique ObjectID (_id)
+        const response = await authApi.patch(`/admin/ambulance-facilities/toggle-status/${id}`);
+        return response.data;
+    },
+
+    // --- 6. Delete Ambulance Facility ---
+    deleteAmbulanceFacility: async (id) => {
+        // id: Facility unique ObjectID (_id)
+        const response = await authApi.delete(`/admin/ambulance-facilities/delete/${id}`);
+        return response.data;
+    },
     
 
 }

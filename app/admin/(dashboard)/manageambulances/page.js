@@ -5,12 +5,15 @@ import {
     Truck,
     Activity,
     ShieldAlert,
-    Sparkles
+    Sparkles,
+    Settings2,
+    HeartPulse
 } from 'lucide-react';
 
-// Import sub-components from local ./components folder
+// Import sub-components
 import AmbulanceVendor from './components/AmbulanceVendor';
 import ClinicalAmbulances from './components/ClinicalAmbulances';
+import AddSupportingStaff from './components/AddSupportingStaff';
 
 const AMBULANCE_TABS = [
     {
@@ -32,6 +35,9 @@ const AMBULANCE_TABS = [
 export default function AmbulanceManagementPage() {
     // Active Tab State (Default: 'vendor')
     const [activeTab, setActiveTab] = useState('vendor');
+
+    // Facilities & Support Staff Master Modal State
+    const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
 
     // Retrieve active component dynamically
     const ActiveComponent = AMBULANCE_TABS.find((tab) => tab.id === activeTab)?.component || AmbulanceVendor;
@@ -62,38 +68,53 @@ export default function AmbulanceManagementPage() {
                     </div>
                 </div>
 
-                {/* Segmented NavTabs Bar */}
-                <div className="flex items-center bg-slate-100/80 p-1.5 rounded-2xl gap-1.5 border border-slate-200/80 shadow-inner overflow-x-auto max-w-full [&::-webkit-scrollbar]:hidden">
-                    {AMBULANCE_TABS.map((tab) => {
-                        const TabIcon = tab.icon;
-                        const isActive = activeTab === tab.id;
+                {/* Actions & Segmented NavTabs Bar */}
+                <div className="flex items-center gap-3 flex-wrap">
 
-                        return (
-                            <button
-                                key={tab.id}
-                                type="button"
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 flex items-center gap-2.5 shrink-0 border cursor-pointer ${isActive
-                                    ? 'bg-red-50/60 text-red-600 border-red-200/60 shadow-sm shadow-red-100/50 scale-[1.01]'
-                                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-white/55'
-                                    }`}
-                            >
-                                <TabIcon
-                                    size={15}
-                                    className={isActive ? 'text-red-600' : 'text-slate-400'}
-                                    strokeWidth={isActive ? 2.5 : 2}
-                                />
-                                <span>{tab.label}</span>
+                    {/* Manage Supporting Staff & Equipment Master Button */}
+                    <button
+                        type="button"
+                        onClick={() => setIsStaffModalOpen(true)}
+                        className="px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-black uppercase tracking-wider rounded-2xl shadow-xs transition flex items-center gap-2 cursor-pointer active:scale-95 shrink-0"
+                    >
+                        <HeartPulse size={15} className="text-indigo-600" />
+                        <span>Manage Facilities & Staff</span>
+                    </button>
 
-                                <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md uppercase hidden sm:inline-block border ${isActive
-                                    ? 'bg-red-100/80 border-red-200/60 text-red-600'
-                                    : 'bg-slate-200 border-transparent text-slate-500'
-                                    }`}>
-                                    {tab.badge}
-                                </span>
-                            </button>
-                        );
-                    })}
+                    {/* Segmented NavTabs Bar */}
+                    <div className="flex items-center bg-slate-100/80 p-1.5 rounded-2xl gap-1.5 border border-slate-200/80 shadow-inner overflow-x-auto max-w-full [&::-webkit-scrollbar]:hidden">
+                        {AMBULANCE_TABS.map((tab) => {
+                            const TabIcon = tab.icon;
+                            const isActive = activeTab === tab.id;
+
+                            return (
+                                <button
+                                    key={tab.id}
+                                    type="button"
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 flex items-center gap-2.5 shrink-0 border cursor-pointer ${isActive
+                                        ? 'bg-red-50/60 text-red-600 border-red-200/60 shadow-sm shadow-red-100/50 scale-[1.01]'
+                                        : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-white/55'
+                                        }`}
+                                >
+                                    <TabIcon
+                                        size={15}
+                                        className={isActive ? 'text-red-600' : 'text-slate-400'}
+                                        strokeWidth={isActive ? 2.5 : 2}
+                                    />
+                                    <span>{tab.label}</span>
+
+                                    <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md uppercase hidden sm:inline-block border ${isActive
+                                        ? 'bg-red-100/80 border-red-200/60 text-red-600'
+                                        : 'bg-slate-200 border-transparent text-slate-500'
+                                        }`}>
+                                        {tab.badge}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+
                 </div>
 
             </div>
@@ -104,6 +125,12 @@ export default function AmbulanceManagementPage() {
                     <ActiveComponent />
                 </div>
             </div>
+
+            {/* --- SUPPORTING STAFF & FACILITIES MASTER MODAL --- */}
+            <AddSupportingStaff
+                isOpen={isStaffModalOpen}
+                onClose={() => setIsStaffModalOpen(false)}
+            />
 
         </div>
     );

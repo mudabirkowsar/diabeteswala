@@ -247,8 +247,8 @@ export default function CreateSlots({ isOpen, onClose, ambulance }) {
                         type="button"
                         onClick={() => setActiveTab('config')}
                         className={`px-4 py-2.5 text-xs font-black uppercase tracking-wider rounded-t-xl transition border-b-2 cursor-pointer flex items-center gap-2 ${activeTab === 'config'
-                                ? 'border-red-600 text-red-600 bg-white shadow-xs'
-                                : 'border-transparent text-slate-500 hover:text-slate-800'
+                            ? 'border-red-600 text-red-600 bg-white shadow-xs'
+                            : 'border-transparent text-slate-500 hover:text-slate-800'
                             }`}
                     >
                         <Clock size={15} />
@@ -259,8 +259,8 @@ export default function CreateSlots({ isOpen, onClose, ambulance }) {
                         type="button"
                         onClick={() => setActiveTab('live-slots')}
                         className={`px-4 py-2.5 text-xs font-black uppercase tracking-wider rounded-t-xl transition border-b-2 cursor-pointer flex items-center gap-2 ${activeTab === 'live-slots'
-                                ? 'border-red-600 text-red-600 bg-white shadow-xs'
-                                : 'border-transparent text-slate-500 hover:text-slate-800'
+                            ? 'border-red-600 text-red-600 bg-white shadow-xs'
+                            : 'border-transparent text-slate-500 hover:text-slate-800'
                             }`}
                     >
                         <Calendar size={15} />
@@ -363,8 +363,8 @@ export default function CreateSlots({ isOpen, onClose, ambulance }) {
                                                 type="button"
                                                 onClick={() => toggleOffDay(day)}
                                                 className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer border flex items-center gap-1.5 ${isSelected
-                                                        ? 'bg-rose-500 text-white border-rose-600 shadow-xs'
-                                                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                                                    ? 'bg-rose-500 text-white border-rose-600 shadow-xs'
+                                                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
                                                     }`}
                                             >
                                                 {isSelected && <Check size={12} strokeWidth={3} />}
@@ -566,8 +566,8 @@ export default function CreateSlots({ isOpen, onClose, ambulance }) {
                                                 key={slot.slotTime}
                                                 onClick={() => !isBusy && handleToggleSlotBlock(slot)}
                                                 className={`p-4 rounded-2xl border transition-all cursor-pointer select-none flex flex-col justify-between gap-3 ${isAvailable
-                                                        ? 'bg-emerald-50/40 hover:bg-emerald-50 border-emerald-200/80 hover:border-emerald-300'
-                                                        : 'bg-rose-50/40 hover:bg-rose-50 border-rose-200/80 hover:border-rose-300 opacity-80'
+                                                    ? 'bg-emerald-50/40 hover:bg-emerald-50 border-emerald-200/80 hover:border-emerald-300'
+                                                    : 'bg-rose-50/40 hover:bg-rose-50 border-rose-200/80 hover:border-rose-300 opacity-80'
                                                     }`}
                                             >
                                                 <div className="flex items-center justify-between">
@@ -576,8 +576,8 @@ export default function CreateSlots({ isOpen, onClose, ambulance }) {
                                                     </span>
 
                                                     <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${isAvailable
-                                                            ? 'bg-emerald-100 text-emerald-800'
-                                                            : 'bg-rose-100 text-rose-800'
+                                                        ? 'bg-emerald-100 text-emerald-800'
+                                                        : 'bg-rose-100 text-rose-800'
                                                         }`}>
                                                         {isAvailable ? <CheckCircle2 size={10} /> : <Ban size={10} />}
                                                         {isAvailable ? 'Available' : 'Blocked / Hidden'}
@@ -597,8 +597,8 @@ export default function CreateSlots({ isOpen, onClose, ambulance }) {
                                                     type="button"
                                                     disabled={isBusy}
                                                     className={`w-full py-2 rounded-xl text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer ${isAvailable
-                                                            ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs'
-                                                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                                                        ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs'
+                                                        : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
                                                         }`}
                                                 >
                                                     {isBusy ? (
