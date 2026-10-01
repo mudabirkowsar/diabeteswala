@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     X,
     Ambulance,
@@ -14,10 +14,13 @@ import {
     MapPin,
     HeartPulse,
     Stethoscope,
+    Wind,
+    Activity,
     Loader2,
     Check,
-    CheckSquare,
-    Square
+    AlertCircle,
+    Layers,
+    Sparkles
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -28,8 +31,15 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
     const isEdit = Boolean(editData);
 
     const [loading, setLoading] = useState(false);
+    const [facilitiesLoading, setFacilitiesLoading] = useState(true);
 
-    // Form State
+    // Master Catalog Facilities fetched from API
+    const [masterFacilities, setMasterFacilities] = useState([]);
+
+    // Dynamic Facilities & Staff State: { [facilityId]: { available: boolean, price: number, name: string } }
+    const [selectedFacilities, setSelectedFacilities] = useState({});
+
+    // Main Form State
     const [formData, setFormData] = useState({
         name: '',
         phone: '',
@@ -37,10 +47,6 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
         password: '',
         vehicleNumber: '',
         vehicleType: 'Advance Life Support',
-        hasNurse: true,
-        nursePrice: 300,
-        hasDoctor: true,
-        doctorPrice: 700,
         singleRidePrice: 400,
         doubleRidePrice: 700,
         baseDistance: 5,
@@ -67,10 +73,93 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
         ambulancePermit: null
     });
 
-    // Populate data in edit mode
+    // --- 1. Fetch Dynamic Master Facilities ---
+    const fetchFacilities = useCallback(async () => {
+        setFacilitiesLoading(true);
+        try {
+            const response = await ClinicAPI.getAmbulanceFacilitiesList({
+                applicableFor: 'all',
+                isActive: true
+            });
+
+            if (response && response.success && Array.isArray(response.data) && response.data.length > 0) {
+                setMasterFacilities(response.data);
+
+                // Initialize facility state with defaults
+                const initialFacilities = {};
+                response.data.forEach((facility) => {
+                    const normName = (facility.name || '').toLowerCase();
+                    let isAvailable = true;
+                    let initialPrice = facility.defaultPrice || 0;
+
+                    // Populate existing values if editing
+                    if (editData && editData.supportStaff) {
+                        if (Array.isArray(editData.supportStaff)) {
+                            const matched = editData.supportStaff.find(
+                                (s) => s.facilityId === facility._id || (s.name && s.name.toLowerCase() === normName)
+                            );
+                            if (matched) {
+                                isAvailable = Boolean(matched.available);
+                                initialPrice = matched.price !== undefined ? matched.price : facility.defaultPrice;
+                            }
+                        } else if (typeof editData.supportStaff === 'object') {
+                            if (normName.includes('nurse') && editData.supportStaff.nurse) {
+                                isAvailable = Boolean(editData.supportStaff.nurse.available);
+                                initialPrice = editData.supportStaff.nurse.price ?? facility.defaultPrice;
+                            } else if (normName.includes('doctor') && editData.supportStaff.doctor) {
+                                isAvailable = Boolean(editData.supportStaff.doctor.available);
+                                initialPrice = editData.supportStaff.doctor.price ?? facility.defaultPrice;
+                            }
+                        }
+                    }
+
+                    initialFacilities[facility._id] = {
+                        facilityId: facility._id,
+                        name: facility.name || 'Medical Facility',
+                        available: isAvailable,
+                        price: initialPrice
+                    };
+                });
+
+                setSelectedFacilities(initialFacilities);
+            } else {
+                // Fallback standard facilities if master catalogue is empty
+                const fallbackList = [
+                    { _id: 'nurse_default', name: 'Nurse', description: 'On-board registered paramedic nurse', defaultPrice: 300 },
+                    { _id: 'doctor_default', name: 'Doctor', description: 'On-board emergency MBBS doctor', defaultPrice: 700 }
+                ];
+                setMasterFacilities(fallbackList);
+                setSelectedFacilities({
+                    nurse_default: { facilityId: 'nurse_default', name: 'Nurse', available: true, price: 300 },
+                    doctor_default: { facilityId: 'doctor_default', name: 'Doctor', available: true, price: 700 }
+                });
+            }
+        } catch (err) {
+            console.error('Error loading master facilities:', err);
+            // Fallback list to prevent blocking
+            const fallbackList = [
+                { _id: 'nurse_default', name: 'Nurse', description: 'On-board registered paramedic nurse', defaultPrice: 300 },
+                { _id: 'doctor_default', name: 'Doctor', description: 'On-board emergency MBBS doctor', defaultPrice: 700 }
+            ];
+            setMasterFacilities(fallbackList);
+            setSelectedFacilities({
+                nurse_default: { facilityId: 'nurse_default', name: 'Nurse', available: true, price: 300 },
+                doctor_default: { facilityId: 'doctor_default', name: 'Doctor', available: true, price: 700 }
+            });
+        } finally {
+            setFacilitiesLoading(false);
+        }
+    }, [editData]);
+
+    useEffect(() => {
+        if (isOpen) {
+            fetchFacilities();
+        }
+    }, [isOpen, fetchFacilities]);
+
+    // --- 2. Populate Standard Form Data on Edit Mode ---
     useEffect(() => {
         if (editData) {
-            const supportStaff = editData.supportStaff || {};
             setFormData({
                 name: editData.name || '',
                 phone: editData.phone || '',
@@ -78,10 +167,6 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
                 password: '', // Blank on edit
                 vehicleNumber: editData.vehicleNumber || '',
                 vehicleType: editData.vehicleType || 'Advance Life Support',
-                hasNurse: supportStaff.nurse ? Boolean(supportStaff.nurse.available) : true,
-                nursePrice: supportStaff.nurse?.price !== undefined ? supportStaff.nurse.price : 300,
-                hasDoctor: supportStaff.doctor ? Boolean(supportStaff.doctor.available) : true,
-                doctorPrice: supportStaff.doctor?.price !== undefined ? supportStaff.doctor.price : 700,
                 singleRidePrice: editData.pricing?.singleRidePrice !== undefined ? editData.pricing.singleRidePrice : 400,
                 doubleRidePrice: editData.pricing?.doubleRidePrice !== undefined ? editData.pricing.doubleRidePrice : 700,
                 baseDistance: editData.pricing?.baseDistance !== undefined ? editData.pricing.baseDistance : 5,
@@ -101,6 +186,7 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
         }
     }, [editData]);
 
+    // Handle Input Change
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
         setFormData((prev) => ({
@@ -109,16 +195,58 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
         }));
     };
 
+    // Handle Facility Availability Toggle
+    const handleFacilityToggle = (facilityId, facilityName) => {
+        setSelectedFacilities((prev) => {
+            const current = prev[facilityId] || { available: false, price: 0, name: facilityName };
+            return {
+                ...prev,
+                [facilityId]: {
+                    ...current,
+                    name: facilityName || current.name || 'Medical Support',
+                    available: !current.available
+                }
+            };
+        });
+    };
+
+    // Handle Facility Price Change
+    const handleFacilityPriceChange = (facilityId, newPrice, facilityName) => {
+        setSelectedFacilities((prev) => {
+            const current = prev[facilityId] || { available: true, price: 0, name: facilityName };
+            return {
+                ...prev,
+                [facilityId]: {
+                    ...current,
+                    name: facilityName || current.name || 'Medical Support',
+                    price: Number(newPrice) || 0
+                }
+            };
+        });
+    };
+
+    // Handle File Attachment Selection
     const handleFileChange = (e, fieldKey) => {
         if (e.target.files && e.target.files[0]) {
             setFiles((prev) => ({ ...prev, [fieldKey]: e.target.files[0] }));
         }
     };
 
+    // Icon Resolver for dynamic facility cards
+    const getFacilityIcon = (name = '') => {
+        const norm = (name || '').toLowerCase();
+        if (norm.includes('nurse')) return <User size={18} className="text-emerald-700" />;
+        if (norm.includes('doctor') || norm.includes('physician')) return <Stethoscope size={18} className="text-indigo-700" />;
+        if (norm.includes('oxygen') || norm.includes('cylinder')) return <Wind size={18} className="text-sky-700" />;
+        if (norm.includes('ventilator') || norm.includes('icu')) return <Activity size={18} className="text-rose-700" />;
+        return <HeartPulse size={18} className="text-slate-700" />;
+    };
+
+    // --- 3. Form Submission ---
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Validation
+        // Standard Validations
         if (!formData.name.trim()) return toast.error('Driver or vehicle display name is required.');
         if (!formData.phone.trim()) return toast.error('Driver mobile number is required.');
         if (!formData.vehicleNumber.trim()) return toast.error('Vehicle registration plate is required.');
@@ -128,14 +256,54 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
         try {
             const data = new FormData();
 
-            // Append all scalar fields
+            // 1. Append scalar form fields
             Object.entries(formData).forEach(([key, val]) => {
                 if (val !== '' && val !== null && val !== undefined) {
                     data.append(key, val);
                 }
             });
 
-            // Append all file attachments
+            // 2. Build Structured supportStaff ARRAY where 'name' is ALWAYS present
+            const supportStaffArray = [];
+
+            masterFacilities.forEach((facility) => {
+                const facConfig = selectedFacilities[facility._id] || {
+                    available: true,
+                    price: facility.defaultPrice || 0,
+                    name: facility.name
+                };
+
+                const validName = facility.name || facConfig.name || 'Medical Support';
+
+                supportStaffArray.push({
+                    facilityId: facility._id,
+                    name: validName, // MUST be a non-empty string
+                    available: Boolean(facConfig.available),
+                    price: Number(facConfig.price) || 0
+                });
+            });
+
+            // If empty, supply guaranteed valid defaults
+            if (supportStaffArray.length === 0) {
+                supportStaffArray.push(
+                    { name: 'Nurse', available: true, price: 300 },
+                    { name: 'Doctor', available: true, price: 700 }
+                );
+            }
+
+            // Append supportStaff array as JSON string
+            data.append('supportStaff', JSON.stringify(supportStaffArray));
+
+            // Legacy backward compatible fields
+            const nurseItem = supportStaffArray.find((s) => s.name?.toLowerCase().includes('nurse'));
+            const doctorItem = supportStaffArray.find((s) => s.name?.toLowerCase().includes('doctor'));
+
+            data.append('hasNurse', nurseItem ? nurseItem.available : false);
+            data.append('nursePrice', nurseItem ? nurseItem.price : 0);
+            data.append('hasDoctor', doctorItem ? doctorItem.available : false);
+            data.append('doctorPrice', doctorItem ? doctorItem.price : 0);
+
+            // 3. Append statutory files
             Object.entries(files).forEach(([key, file]) => {
                 if (file) {
                     data.append(key, file);
@@ -150,8 +318,10 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
             }
 
             if (response && response.success) {
-                toast.success(response.message || (isEdit ? 'Ambulance updated successfully!' : 'Ambulance registered and submitted for approval!'));
+                toast.success(response.message || (isEdit ? 'Ambulance updated successfully!' : 'Ambulance registered & submitted for verification!'));
                 onSuccess();
+            } else {
+                toast.error(response?.message || 'Failed to process ambulance registration.');
             }
         } catch (err) {
             console.error('Error submitting ambulance:', err);
@@ -166,11 +336,11 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
     return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 animate-in fade-in duration-200">
             <div className="bg-white rounded-[2.5rem] border border-slate-100 max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl relative text-left overflow-hidden">
-                
+
                 {/* Modal Header */}
                 <div className="px-6 py-5 sm:px-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-600 flex items-center justify-center border border-red-500/20">
+                        <div className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-600 flex items-center justify-center border border-red-500/20 shadow-xs">
                             <Ambulance size={22} />
                         </div>
                         <div>
@@ -178,7 +348,7 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
                                 {isEdit ? `Edit Ambulance (${formData.vehicleNumber})` : 'Register Clinic Ambulance'}
                             </h3>
                             <p className="text-xs text-slate-400 font-semibold mt-0.5">
-                                Configure driver, on-board medical staff (Nurse/Doctor), pricing and statutory certificates.
+                                Configure vehicle plate, driver login, dynamic equipment &amp; staff, and statutory documents.
                             </p>
                         </div>
                     </div>
@@ -191,15 +361,15 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
                     </button>
                 </div>
 
-                {/* Unified Scrolling Form with Submit at the Bottom */}
+                {/* Unified Scrolling Form */}
                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-8 [&::-webkit-scrollbar]:hidden">
-                    
+
                     {/* SECTION 1: DRIVER & VEHICLE CREDENTIALS */}
                     <div className="space-y-4">
                         <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
                             <User size={16} className="text-red-600" />
                             <h4 className="text-xs font-black uppercase tracking-wider text-slate-900">
-                                1. Driver & Vehicle Information
+                                1. Driver &amp; Vehicle Information
                             </h4>
                         </div>
 
@@ -214,8 +384,8 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
                                     name="name"
                                     value={formData.name}
                                     onChange={handleInputChange}
-                                    placeholder='e.g. Rajesh Kumar (Driver)'
-                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:border-red-500 focus:bg-white"
+                                    placeholder="e.g. Rajesh Kumar (Driver)"
+                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:border-red-500 focus:bg-white transition"
                                 />
                             </div>
 
@@ -230,7 +400,7 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
                                     value={formData.phone}
                                     onChange={handleInputChange}
                                     placeholder="10-digit mobile number"
-                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:border-red-500 focus:bg-white"
+                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:border-red-500 focus:bg-white transition"
                                 />
                             </div>
                         </div>
@@ -247,7 +417,7 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
                                     value={formData.vehicleNumber}
                                     onChange={handleInputChange}
                                     placeholder="e.g. PB65AB1234"
-                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 uppercase focus:outline-none focus:border-red-500 focus:bg-white"
+                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 uppercase focus:outline-none focus:border-red-500 focus:bg-white transition"
                                 />
                             </div>
 
@@ -280,7 +450,7 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
                                     value={formData.email}
                                     onChange={handleInputChange}
                                     placeholder="ambulance1@clinic.com"
-                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:border-red-500 focus:bg-white"
+                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:border-red-500 focus:bg-white transition"
                                 />
                             </div>
 
@@ -295,7 +465,7 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
                                     value={formData.password}
                                     onChange={handleInputChange}
                                     placeholder={isEdit ? '•••••••• (unchanged)' : 'Enter driver login password'}
-                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:border-red-500 focus:bg-white"
+                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:border-red-500 focus:bg-white transition"
                                 />
                             </div>
                         </div>
@@ -339,82 +509,97 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
                         </div>
                     </div>
 
-                    {/* SECTION 2: ON-BOARD MEDICAL SUPPORT STAFF */}
+                    {/* SECTION 2: DYNAMIC ON-BOARD MEDICAL SUPPORT STAFF & EQUIPMENT */}
                     <div className="space-y-4">
-                        <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-                            <HeartPulse size={16} className="text-indigo-600" />
-                            <h4 className="text-xs font-black uppercase tracking-wider text-slate-900">
-                                2. On-Board Medical Support Staff (Nurse & Doctor)
-                            </h4>
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                            <div className="flex items-center gap-2">
+                                <HeartPulse size={16} className="text-indigo-600" />
+                                <h4 className="text-xs font-black uppercase tracking-wider text-slate-900">
+                                    2. On-Board Medical Support Staff &amp; Equipment
+                                </h4>
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
+                                Dynamic Addons
+                            </span>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {/* Nurse Support Toggle & Pricing */}
-                            <div className="p-4 bg-emerald-50/50 border border-emerald-200 rounded-3xl space-y-3">
-                                <label className="flex items-center justify-between cursor-pointer">
-                                    <div className="flex items-center gap-2">
-                                        <User size={16} className="text-emerald-700" />
-                                        <span className="text-xs font-black text-slate-900">On-Board Nurse Support</span>
-                                    </div>
-                                    <input
-                                        type="checkbox"
-                                        name="hasNurse"
-                                        checked={formData.hasNurse}
-                                        onChange={handleInputChange}
-                                        className="w-4 h-4 text-emerald-600 rounded cursor-pointer"
-                                    />
-                                </label>
-
-                                {formData.hasNurse && (
-                                    <div className="space-y-1 pt-1 animate-in fade-in">
-                                        <label className="text-[10px] font-black uppercase text-slate-500">
-                                            Nurse Additional Charges (₹)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            name="nursePrice"
-                                            value={formData.nursePrice}
-                                            onChange={handleInputChange}
-                                            placeholder="300"
-                                            className="w-full px-3 py-2 bg-white border border-emerald-200 rounded-xl text-xs font-bold text-slate-800"
-                                        />
-                                    </div>
-                                )}
+                        {facilitiesLoading ? (
+                            <div className="py-8 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col items-center justify-center space-y-2">
+                                <Loader2 className="animate-spin text-indigo-600" size={24} />
+                                <p className="text-xs font-bold text-slate-400">Loading master staff and equipment options...</p>
                             </div>
-
-                            {/* Emergency Doctor Support Toggle & Pricing */}
-                            <div className="p-4 bg-indigo-50/50 border border-indigo-200 rounded-3xl space-y-3">
-                                <label className="flex items-center justify-between cursor-pointer">
-                                    <div className="flex items-center gap-2">
-                                        <Stethoscope size={16} className="text-indigo-700" />
-                                        <span className="text-xs font-black text-slate-900">Emergency Doctor Support</span>
-                                    </div>
-                                    <input
-                                        type="checkbox"
-                                        name="hasDoctor"
-                                        checked={formData.hasDoctor}
-                                        onChange={handleInputChange}
-                                        className="w-4 h-4 text-indigo-600 rounded cursor-pointer"
-                                    />
-                                </label>
-
-                                {formData.hasDoctor && (
-                                    <div className="space-y-1 pt-1 animate-in fade-in">
-                                        <label className="text-[10px] font-black uppercase text-slate-500">
-                                            Emergency Doctor Charges (₹)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            name="doctorPrice"
-                                            value={formData.doctorPrice}
-                                            onChange={handleInputChange}
-                                            placeholder="700"
-                                            className="w-full px-3 py-2 bg-white border border-indigo-200 rounded-xl text-xs font-bold text-slate-800"
-                                        />
-                                    </div>
-                                )}
+                        ) : masterFacilities.length === 0 ? (
+                            <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-800 font-bold flex items-center gap-2">
+                                <AlertCircle size={16} className="text-amber-600 shrink-0" />
+                                <span>No dynamic support facilities registered. Default support staff configured.</span>
                             </div>
-                        </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {masterFacilities.map((facility) => {
+                                    const facConfig = selectedFacilities[facility._id] || {
+                                        available: false,
+                                        price: facility.defaultPrice || 0,
+                                        name: facility.name
+                                    };
+                                    const isAvailable = Boolean(facConfig.available);
+
+                                    return (
+                                        <div
+                                            key={facility._id}
+                                            className={`p-4 rounded-3xl border transition-all space-y-3 ${isAvailable
+                                                    ? 'bg-indigo-50/40 border-indigo-300 shadow-xs'
+                                                    : 'bg-slate-50/60 border-slate-200'
+                                                }`}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0">
+                                                        {getFacilityIcon(facility.name)}
+                                                    </div>
+                                                    <div>
+                                                        <h5 className="text-xs font-black text-slate-900 leading-tight">
+                                                            {facility.name}
+                                                        </h5>
+                                                        <p className="text-[10px] text-slate-400 font-medium line-clamp-1" title={facility.description}>
+                                                            {facility.description || 'On-board emergency support'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <label className="relative inline-flex items-center cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isAvailable}
+                                                        onChange={() => handleFacilityToggle(facility._id, facility.name)}
+                                                        className="sr-only peer"
+                                                    />
+                                                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                                                </label>
+                                            </div>
+
+                                            {isAvailable && (
+                                                <div className="pt-2 border-t border-indigo-100/80 space-y-1 animate-in fade-in duration-150">
+                                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">
+                                                        Additional Fare Add-On (₹)
+                                                    </label>
+                                                    <div className="relative">
+                                                        <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={13} />
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            value={facConfig.price}
+                                                            onChange={(e) => handleFacilityPriceChange(facility._id, e.target.value, facility.name)}
+                                                            placeholder={String(facility.defaultPrice || 300)}
+                                                            className="w-full pl-8 pr-3 py-1.5 bg-white border border-indigo-200 rounded-xl text-xs font-black text-slate-800 focus:outline-none focus:border-indigo-500"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
 
                     {/* SECTION 3: FARE STRUCTURE & STATION LOCATION */}
@@ -422,7 +607,7 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
                         <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
                             <IndianRupee size={16} className="text-amber-600" />
                             <h4 className="text-xs font-black uppercase tracking-wider text-slate-900">
-                                3. Ride Pricing Structure & Base Station
+                                3. Ride Pricing Structure &amp; Base Station
                             </h4>
                         </div>
 
@@ -514,7 +699,7 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
                         <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
                             <FileText size={16} className="text-red-600" />
                             <h4 className="text-xs font-black uppercase tracking-wider text-slate-900">
-                                4. Statutory Certificates & Documents
+                                4. Statutory Certificates &amp; Documents
                             </h4>
                         </div>
 
@@ -557,7 +742,7 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
                         </div>
                     </div>
 
-                    {/* MODAL FOOTER: SUBMIT BUTTON AT THE BOTTOM */}
+                    {/* MODAL FOOTER */}
                     <div className="pt-6 border-t border-slate-100 flex items-center justify-between gap-3 shrink-0">
                         <button
                             type="button"
@@ -570,7 +755,7 @@ export default function AddAmbulance({ isOpen, onClose, onSuccess, editData = nu
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-10 py-3.5 bg-red-600 hover:bg-red-700 text-white text-xs font-black uppercase tracking-wider rounded-2xl shadow-lg shadow-red-600/25 transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                            className="px-10 py-3.5 bg-red-600 hover:bg-red-700 text-white text-xs font-black uppercase tracking-wider rounded-2xl shadow-lg shadow-red-600/25 transition flex items-center gap-2 cursor-pointer disabled:opacity-50 active:scale-95"
                         >
                             {loading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={3} />}
                             <span>{isEdit ? 'Save Ambulance Changes' : 'Submit for Admin Approval'}</span>

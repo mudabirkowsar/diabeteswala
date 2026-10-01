@@ -304,8 +304,8 @@ export default function ClinicAmbulancesPage() {
                                 key={status}
                                 onClick={() => setStatusFilter(status)}
                                 className={`px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition cursor-pointer ${statusFilter === status
-                                        ? 'bg-white text-red-600 shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-900'
+                                    ? 'bg-white text-red-600 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-900'
                                     }`}
                             >
                                 {status === 'ALL' ? 'All Status' : status}
@@ -402,8 +402,8 @@ export default function ClinicAmbulancesPage() {
                                                         disabled={togglingId === amb._id}
                                                         onClick={(e) => handleToggleEmergency(amb._id, amb.availableForEmergency, e)}
                                                         className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1.5 border cursor-pointer ${amb.availableForEmergency
-                                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
-                                                                : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
+                                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
+                                                            : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
                                                             }`}
                                                     >
                                                         {togglingId === amb._id ? (

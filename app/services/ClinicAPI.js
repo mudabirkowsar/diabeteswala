@@ -165,6 +165,46 @@ const ClinicAPI = {
         return response.data;
     },
 
+    // --- 1. Create Ambulance / Clinic Coupon ---
+    createAmbulanceCoupon: async (data) => {
+        // data: { couponName: "SAVE50", discountPercentage: 15, maxDiscount: 150, minOrderAmount: 300, maxUsagePerUser: 2, startDate: "2026-09-30", expiryDate: "2026-12-31", vendorType: "Ambulance" }
+        const response = await authApi.post('/api/clinic/coupons/create', data);
+        return response.data;
+    },
+    getAmbulanceFacilitiesList: async (params) => {
+        // params (optional): { applicableFor: 'all', isActive: true, search: 'oxygen' }
+        const response = await authApi.get('/admin/ambulance-facilities/list', { params });
+        return response.data;
+    },
+
+    // --- 2. Get My Ambulance / Clinic Coupons (Panel Dashboard) ---
+    getMyAmbulanceCoupons: async () => {
+        const response = await authApi.get('/api/clinic/coupons/my-coupons');
+        return response.data;
+    },
+
+    // --- 3. Update Ambulance / Clinic Coupon ---
+    updateAmbulanceCoupon: async (id, data) => {
+        // id: Coupon unique ObjectID (_id)
+        // data: { discountPercentage: 20, maxDiscount: 200, minOrderAmount: 500 }
+        const response = await authApi.put(`/api/clinic/coupons/update/${id}`, data);
+        return response.data;
+    },
+
+    // --- 4. Toggle Ambulance / Clinic Coupon Active/Inactive Status ---
+    toggleAmbulanceCouponStatus: async (id) => {
+        // id: Coupon unique ObjectID (_id)
+        const response = await authApi.patch(`/api/clinic/coupons/toggle-status/${id}`);
+        return response.data;
+    },
+
+    // --- 5. Delete Ambulance / Clinic Coupon ---
+    deleteAmbulanceCoupon: async (id) => {
+        // id: Coupon unique ObjectID (_id)
+        const response = await authApi.delete(`/api/clinic/coupons/delete/${id}`);
+        return response.data;
+    },
+
     // ===================================================
     // --- CLINIC DOCTOR MANAGEMENT & ONBOARDING APIS ----
     // ===================================================
@@ -459,6 +499,8 @@ const ClinicAPI = {
         const response = await authApi.post('/api/clinic/ambulance-slots/unblock-slot', data);
         return response.data;
     },
+
+
 
 }
 
