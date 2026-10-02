@@ -665,6 +665,64 @@ const UserAPI = {
         const response = await publicApi.get(`/api/user/ambulance/details/${id}`, { params });
         return response.data;
     },
+    // ==========================================
+    // STEP 1: PRE-REQUISITES & DISCOVERY
+    // ==========================================
+
+    // --- 1. Get Ambulance Time Slots (Scheduled / Referral) ---
+    getAmbulanceBookingSlots: async (ambulanceId, params) => {
+        // ambulanceId: Ambulance unique ObjectID (_id)
+        // params (optional): { date: '2026-10-02' }
+        const response = await authApi.get(`/api/user/ambulance/slots/ambu/${ambulanceId}`, { params });
+        return response.data;
+    },
+
+    // --- 2. Get Applicable Ambulance Coupons ---
+    getApplicableAmbulanceCoupons: async (ambulanceId) => {
+        // ambulanceId: Selected Ambulance unique ObjectID (_id)
+        const response = await authApi.get(`/api/user/ambulance/coupons/${ambulanceId}`);
+        return response.data;
+    },
+
+    // ==========================================
+    // STEP 2: CHECKOUT BILL CALCULATION
+    // ==========================================
+
+    // --- 3. Calculate Ambulance Fare & Preview Bill Breakdown ---
+    calculateAmbulanceFare: async (data) => {
+        // data: { ambulanceId: "6a9e4316063d78a2c13991c2", rideType: "Single Ride", pickupLocation: { address: "House 102, Phase 7, Mohali", lat: 30.7046, lng: 76.7179 }, dropoffLocation: { address: "Max Super Speciality Hospital, Phase 6", lat: 30.7185, lng: 76.7112 }, supportStaff: [{ facilityId: "6741ab89c10234ef56789012", name: "Nurse", price: 400 }], couponCode: "CLINICAMB25" }
+        const response = await authApi.post('/api/user/ambulance/booking/calculate-fare', data);
+        return response.data;
+    },
+
+    // ==========================================
+    // STEP 3: PLACING THE BOOKING
+    // ==========================================
+
+    // --- 4. Book Referral / Scheduled Ambulance Transfer (Flow 2) ---
+    bookReferralAmbulance: async (data) => {
+        // data: { ambulanceId: "6a9e4316063d78a2c13991c2", rideType: "Single Ride", pickupLocation: { address: "House 102, Phase 7, Mohali", lat: 30.7046, lng: 76.7179 }, dropoffLocation: { address: "Max Hospital, Phase 6", lat: 30.7185, lng: 76.7112 }, patientDetails: { name: "Kavita Verma", age: 60, gender: "Female", relation: "Mother", condition: "Post-Surgery Transfer" }, purpose: "Hospital Discharge Patient Transfer", scheduledDate: "2026-10-02", scheduledTime: "10:00 AM - 12:00 PM", estimateTime: "1 hr 30 mins", supportStaff: [{ facilityId: "6741ab89c10234ef56789012", name: "Nurse", price: 400 }], couponCode: "CLINICAMB25", paymentMethod: "COD" }
+        const response = await authApi.post('/api/user/ambulance/booking/referral', data);
+        return response.data;
+    },
+
+    // --- 5. Book Emergency Ambulance Broadcast (Flow 1) ---
+    bookEmergencyAmbulance: async (data) => {
+        // data: { pickupLocation: { address: "Sector 62, Phase 8, Mohali", lat: 30.7046, lng: 76.7179 }, dropoffLocation: { address: "Fortis Hospital, Sector 62", lat: 30.6983, lng: 76.7321 }, patientDetails: { name: "Amit Sharma", relation: "Self", age: 45, gender: "Male", condition: "Severe Chest Pain" }, purpose: "Cardiac Emergency", estimateTime: "Immediate (30 mins)", paymentMethod: "COD" }
+        const response = await authApi.post('/api/user/ambulance/booking/emergency', data);
+        return response.data;
+    },
+
+    // ==========================================
+    // STEP 4: PAYMENT CONFIRMATION
+    // ==========================================
+
+    // --- 6. Verify Ambulance Booking Razorpay Payment ---
+    verifyAmbulancePayment: async (data) => {
+        // data: { bookingId: "HK-REF-845123", razorpayOrderId: "order_P123456789abcd", razorpayPaymentId: "pay_P987654321wxyz", razorpaySignature: "2a3b4c5d6e7f8g9h0i1j2k3l4m5n6o7p" }
+        const response = await authApi.post('/api/user/ambulance/booking/verify-payment', data);
+        return response.data;
+    },
 
 }
 export default UserAPI;
