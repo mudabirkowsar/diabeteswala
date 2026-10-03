@@ -723,6 +723,18 @@ const UserAPI = {
         const response = await authApi.post('/api/user/ambulance/booking/verify-payment', data);
         return response.data;
     },
+    // --- 1. Get All Ambulance Booking Orders (Summary List) ---
+    getMyAmbulanceBookingOrders: async () => {
+        const response = await authApi.get('/api/user/ambulance/booking/my-orders');
+        return response.data;
+    },
+
+    // --- 2. Get Single Ambulance Booking Order Details by ID / BookingId ---
+    getAmbulanceBookingOrderById: async (id) => {
+        // id: Order MongoDB ObjectId (_id) or Booking ID (e.g. 'HK-REF-845123' or '6abe24a103800dc3c0fb2fde')
+        const response = await authApi.get(`/api/user/ambulance/booking/order/${id}`);
+        return response.data;
+    },
 
 }
 export default UserAPI;

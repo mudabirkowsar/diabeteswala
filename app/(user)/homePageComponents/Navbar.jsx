@@ -124,6 +124,7 @@ const Navbar = () => {
     { name: 'My Appointments', icon: <ClipboardList size={20} />, href: '/otherscreens/myappointments' },
     { name: 'My Orders', icon: <ShoppingBag size={20} />, href: '/otherscreens/orders' },
     { name: 'Tiffin Services', icon: <ShoppingBag size={20} />, href: '/otherscreens/tiffinorders' },
+    { name: 'Ambulance Bookings', icon: <FileText size={20} />, href: '/otherscreens/myambulancebookings' },
     { name: 'Lab Reports', icon: <FileText size={20} />, href: '/reports' },
     { name: 'My Prescriptions', icon: <FileText size={20} />, href: '/prescriptions' },
     { name: 'Settings', icon: <Settings size={20} />, href: '/settings' },
