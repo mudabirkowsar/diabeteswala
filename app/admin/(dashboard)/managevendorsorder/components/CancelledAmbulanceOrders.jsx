@@ -203,7 +203,7 @@ export default function CancelledAmbulanceOrders({ isOpen, onClose }) {
 
                                         return (
                                             <tr key={item._id} className="hover:bg-slate-50/60 transition-colors">
-                                                
+
                                                 {/* Booking ID & Category */}
                                                 <td className="px-5 py-4 align-top">
                                                     <div className="flex items-center gap-1.5">
@@ -223,11 +223,10 @@ export default function CancelledAmbulanceOrders({ isOpen, onClose }) {
                                                         </button>
                                                     </div>
                                                     <div className="mt-1">
-                                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${
-                                                            item.bookingCategory?.toLowerCase() === "emergency"
+                                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${item.bookingCategory?.toLowerCase() === "emergency"
                                                                 ? "bg-rose-50 text-rose-700 border-rose-200"
                                                                 : "bg-indigo-50 text-indigo-700 border-indigo-200"
-                                                        }`}>
+                                                            }`}>
                                                             {item.bookingCategory || "General"}
                                                         </span>
                                                     </div>
@@ -339,11 +338,10 @@ export default function CancelledAmbulanceOrders({ isOpen, onClose }) {
                                                         Total: ₹{(item.pricing?.total || 0).toLocaleString("en-IN")}
                                                     </div>
                                                     <div className="mt-1">
-                                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                                                            item.paymentStatus?.toLowerCase() === "refunded"
+                                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black uppercase ${item.paymentStatus?.toLowerCase() === "refunded"
                                                                 ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                                                                 : "bg-amber-50 text-amber-700 border border-amber-200"
-                                                        }`}>
+                                                            }`}>
                                                             <RotateCcw className="w-2.5 h-2.5" />
                                                             {item.paymentStatus || "Refunded"}
                                                         </span>

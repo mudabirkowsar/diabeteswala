@@ -351,11 +351,10 @@ export default function AmbulanceOrders() {
 
                                         {/* Profile Status */}
                                         <td className="px-5 py-4 text-center">
-                                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide border ${
-                                                amb.profileStatus?.toLowerCase() === "approved"
+                                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide border ${amb.profileStatus?.toLowerCase() === "approved"
                                                     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                                     : "bg-amber-50 text-amber-700 border-amber-200"
-                                            }`}>
+                                                }`}>
                                                 <CircleDot className="w-2.5 h-2.5" />
                                                 {amb.profileStatus || "APPROVED"}
                                             </span>
@@ -596,11 +595,10 @@ export default function AmbulanceOrders() {
                                                             {item.paymentMethod || "Online"}
                                                         </div>
                                                         <div className="mt-1">
-                                                            <span className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
-                                                                item.paymentStatus === "Paid"
+                                                            <span className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${item.paymentStatus === "Paid"
                                                                     ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                                                                     : "bg-amber-50 text-amber-700 border border-amber-200"
-                                                            }`}>
+                                                                }`}>
                                                                 {item.paymentStatus || "Paid"}
                                                             </span>
                                                         </div>
@@ -672,9 +670,9 @@ export default function AmbulanceOrders() {
                 4. CANCELLED AMBULANCE BOOKINGS MODAL
             ======================================================== */}
             {showCancelledModal && (
-                <CancelledAmbulanceOrders 
-                    isOpen={showCancelledModal} 
-                    onClose={() => setShowCancelledModal(false)} 
+                <CancelledAmbulanceOrders
+                    isOpen={showCancelledModal}
+                    onClose={() => setShowCancelledModal(false)}
                 />
             )}
         </div>

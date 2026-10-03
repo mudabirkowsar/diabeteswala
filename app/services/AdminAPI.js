@@ -940,7 +940,7 @@ const AdminAPI = {
         const response = await authApi.get('/admin/ambulances/cancelled-bookings', { params });
         return response.data;
     },
-    
+
 
 }
 
