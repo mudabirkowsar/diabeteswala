@@ -19,6 +19,7 @@ import PharmacyVendorOrders from "./components/PharmacyVendorOrders";
 import FoodVendorOrders from "./components/FoodVendorOrders";
 import IndependentDoctor from "./components/IndependentDoctor";
 import ClinicVendorOrders from "./components/ClinicVendorOrders";
+import AmbulanceOrders from "./components/AmbulanceOrders";
 
 // Fallback View for remaining categories
 function GenericVendorOrdersFallback({ title, icon: Icon }) {
@@ -47,7 +48,8 @@ export default function ManageVendorOrdersPage() {
         { id: "pharmacy", label: "Pharmacies", icon: Pill },
         { id: "food", label: "Food Outlets", icon: UtensilsCrossed },
         { id: "independentdoctor", label: "Independent Doctor", icon: Activity },
-        { id: "clinicorders", label: "Clinic Orders", icon: Activity }
+        { id: "clinicorders", label: "Clinic Orders", icon: Activity },
+        { id: "ambulanceorders", label: "Ambulance Orders", icon: Activity }
     ];
 
     const activeCategoryData = vendorCategories.find((cat) => cat.id === activeTab);
@@ -110,9 +112,10 @@ export default function ManageVendorOrdersPage() {
                     {activeTab === "food" && <FoodVendorOrders />}
                     {activeTab === "independentdoctor" && <IndependentDoctor />}
                     {activeTab === "clinicorders" && <ClinicVendorOrders />}
+                    {activeTab === "ambulanceorders" && <AmbulanceOrders />}
 
                     {/* Graceful Fallback for new unconfigured tabs */}
-                    {!["lab", "pharmacy", "food", "independentdoctor", "clinicorders"].includes(activeTab) && (
+                    {!["lab", "pharmacy", "food", "independentdoctor", "clinicorders", "ambulanceorders"].includes(activeTab) && (
                         <GenericVendorOrdersFallback
                             title={activeCategoryData?.label}
                             icon={activeCategoryData?.icon || Building2}

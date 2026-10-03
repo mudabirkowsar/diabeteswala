@@ -917,6 +917,29 @@ const AdminAPI = {
         const response = await authApi.delete(`/admin/ambulance-facilities/delete/${id}`);
         return response.data;
     },
+
+    //get ambulance orders for admin
+    // --- 1. Get All Ambulances (Fleet Control Table) ---
+    getAdminAmbulancesList: async (params) => {
+        // params (optional): { page: 1, limit: 10, search: '', status: '' }
+        const response = await authApi.get('/admin/ambulances/list', { params });
+        return response.data;
+    },
+
+    // --- 2. Get Bookings of a Specific Ambulance (or Platform-wide All Rides) ---
+    getAdminAmbulanceBookings: async (ambulanceId, params) => {
+        // ambulanceId: Specific Ambulance MongoDB ObjectId (_id) OR pass 'all' for all platform rides
+        // params (optional): { page: 1, limit: 10, status: '' }
+        const response = await authApi.get(`/admin/ambulances/${ambulanceId}/bookings`, { params });
+        return response.data;
+    },
+
+    // --- 1. Get Cancelled Ambulance Bookings (Admin Panel) ---
+    getAdminCancelledAmbulanceBookings: async (params) => {
+        // params (optional): { bookingCategory: 'Emergency' | 'Referral', search: '', page: 1, limit: 10 }
+        const response = await authApi.get('/admin/ambulances/cancelled-bookings', { params });
+        return response.data;
+    },
     
 
 }
