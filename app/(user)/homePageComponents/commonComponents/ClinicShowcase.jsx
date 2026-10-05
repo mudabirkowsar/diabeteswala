@@ -107,23 +107,23 @@ export default function ClinicShowcase() {
     };
 
     return (
-        <section className="py-12 antialiased select-none">
-            <div className="max-w-[1400px] mx-auto px-6">
+        <section className="py-8 md:py-12 antialiased select-none">
+            <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
 
                 {/* Header Section */}
-                <div className="flex justify-between items-end mb-8">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 sm:gap-0 mb-6 md:mb-8">
                     <div>
-                        <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
+                        <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                             Our <span className="text-[#3d3f96]">Premium Clinics</span>
                         </h2>
-                        <p className="text-slate-500 text-sm font-medium mt-1">
+                        <p className="text-slate-500 text-xs sm:text-sm font-medium mt-1">
                             Experience certified diabetes & multi-speciality care in person {radiusInfo ? `(within ${radiusInfo})` : ''}
                         </p>
                     </div>
 
                     <button
-                        onClick={() => router.push('/clinic/allclinics')}
-                        className="text-red-500 hover:text-red-600 font-bold text-xs flex items-center gap-1 hover:underline uppercase tracking-wider cursor-pointer"
+                        onClick={() => router.push('/clinic/viewallclinics')}
+                        className="text-red-500 hover:text-red-600 font-bold text-xs flex items-center gap-1 hover:underline uppercase tracking-wider cursor-pointer self-start sm:self-auto"
                     >
                         View All Clinics <ChevronRight size={14} />
                     </button>
@@ -131,14 +131,14 @@ export default function ClinicShowcase() {
 
                 {/* Main Content Area */}
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-24 bg-slate-50/60 rounded-3xl border border-slate-100">
+                    <div className="flex flex-col items-center justify-center py-16 md:py-24 bg-slate-50/60 rounded-3xl border border-slate-100">
                         <Loader2 className="animate-spin text-red-500 mb-3" size={36} />
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest text-center px-4">
                             Scanning verified clinics in your area...
                         </p>
                     </div>
                 ) : clinics.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center p-16 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                    <div className="flex flex-col items-center justify-center p-8 sm:p-16 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
                         <Building2 size={40} className="text-slate-300 mb-3" />
                         <h3 className="text-base font-bold text-slate-700">No Nearby Clinics Found</h3>
                         <p className="text-xs text-slate-400 mt-1 max-w-sm">
@@ -146,7 +146,7 @@ export default function ClinicShowcase() {
                         </p>
                     </div>
                 ) : (
-                    <div className="flex overflow-x-auto gap-6 pb-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                    <div className="flex overflow-x-auto gap-4 sm:gap-6 pb-6 sm:pb-8 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         {clinics.map((clinic) => {
                             const clinicImage = getMediaUrl(clinic.image || clinic.posterimage) || CLINIC_PLACEHOLDER;
                             const fullAddress = [clinic.address, clinic.city, clinic.state]
@@ -157,10 +157,10 @@ export default function ClinicShowcase() {
                                 <div
                                     key={clinic._id}
                                     onClick={() => handleClinicClick(clinic._id)}
-                                    className="flex-shrink-0 w-80 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group overflow-hidden cursor-pointer flex flex-col justify-between"
+                                    className="snap-start flex-shrink-0 w-[280px] sm:w-80 bg-white rounded-3xl sm:rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group overflow-hidden cursor-pointer flex flex-col justify-between"
                                 >
                                     {/* Image with Red Accent Badges */}
-                                    <div className="relative h-52 w-full overflow-hidden bg-slate-100">
+                                    <div className="relative h-44 sm:h-52 w-full overflow-hidden bg-slate-100">
                                         <img
                                             src={clinicImage}
                                             alt={clinic.clinicName}
@@ -171,7 +171,7 @@ export default function ClinicShowcase() {
 
                                         {/* Verified Badge */}
                                         {clinic.isVerified && (
-                                            <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md px-3 py-1 rounded-xl flex items-center gap-1.5 shadow-sm">
+                                            <div className="absolute top-3 left-3 sm:top-4 sm:left-4 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-xl flex items-center gap-1.5 shadow-sm">
                                                 <CheckCircle2 size={12} className="text-emerald-500" />
                                                 <span className="text-[10px] font-black text-slate-800 uppercase tracking-tighter">
                                                     Verified
@@ -181,14 +181,14 @@ export default function ClinicShowcase() {
 
                                         {/* Badge / Tag (Secondary Red accent) */}
                                         {clinic.badge && (
-                                            <div className="absolute top-4 right-4 bg-red-500 text-white px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm">
+                                            <div className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-red-500 text-white px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm">
                                                 {clinic.badge}
                                             </div>
                                         )}
 
                                         {/* Distance Tag */}
                                         {clinic.distanceText && (
-                                            <div className="absolute bottom-3 left-4 bg-black/60 backdrop-blur-md text-white px-2.5 py-1 rounded-xl text-[10px] font-black tracking-wide flex items-center gap-1 border border-white/10">
+                                            <div className="absolute bottom-3 left-3 sm:left-4 bg-black/60 backdrop-blur-md text-white px-2.5 py-1 rounded-xl text-[10px] font-black tracking-wide flex items-center gap-1 border border-white/10">
                                                 <Navigation size={10} className="text-red-400 shrink-0 fill-red-400" />
                                                 <span>{clinic.distanceText}</span>
                                             </div>
@@ -196,7 +196,7 @@ export default function ClinicShowcase() {
                                     </div>
 
                                     {/* Body Information */}
-                                    <div className="p-6 flex-1 flex flex-col justify-between">
+                                    <div className="p-4 sm:p-6 flex-1 flex flex-col justify-between">
                                         <div>
                                             {/* Rating */}
                                             <div className="flex items-center gap-1 text-amber-400 mb-2">
@@ -214,7 +214,7 @@ export default function ClinicShowcase() {
                                             </div>
 
                                             {/* Clinic Name */}
-                                            <h3 className="text-lg font-black text-slate-800 leading-tight mb-1 group-hover:text-red-500 transition-colors line-clamp-1">
+                                            <h3 className="text-base sm:text-lg font-black text-slate-800 leading-tight mb-1 group-hover:text-red-500 transition-colors line-clamp-1">
                                                 {clinic.clinicName}
                                             </h3>
 
@@ -232,7 +232,7 @@ export default function ClinicShowcase() {
                                             </div>
 
                                             {/* Operational Timing & Status */}
-                                            <div className="flex items-center gap-2 text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-6 flex-wrap">
+                                            <div className="flex items-center gap-2 text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-5 sm:mb-6 flex-wrap">
                                                 <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-lg">
                                                     <Clock size={13} className="text-slate-400" />
                                                     <span>{clinic.is24x7 ? "24x7 Open" : clinic.timings || "09:00 AM - 08:00 PM"}</span>
@@ -246,20 +246,20 @@ export default function ClinicShowcase() {
                                         </div>
 
                                         {/* Action Buttons */}
-                                        <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-50">
+                                        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-2 border-t border-slate-50">
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     handleClinicClick(clinic._id);
                                                 }}
-                                                className="bg-[#3d3f96] hover:bg-red-500 text-white py-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-slate-200 active:scale-95 cursor-pointer"
+                                                className="bg-[#3d3f96] hover:bg-red-500 text-white py-2.5 sm:py-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-slate-200 active:scale-95 cursor-pointer"
                                             >
                                                 Book Visit
                                             </button>
 
                                             <button
                                                 onClick={(e) => handlePhoneCall(e, clinic.phoneNumber)}
-                                                className="border border-slate-200 text-slate-700 hover:border-red-300 hover:text-red-500 py-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                                                className="border border-slate-200 text-slate-700 hover:border-red-300 hover:text-red-500 py-2.5 sm:py-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
                                                 disabled={!clinic.phoneNumber}
                                                 title={clinic.phoneNumber || "No phone available"}
                                             >

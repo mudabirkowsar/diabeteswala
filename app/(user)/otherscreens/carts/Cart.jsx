@@ -9,10 +9,10 @@ import { useCart } from '../../../context/CartContext'; // Adjust the path as ne
 
 const menuVariants = {
     hidden: { opacity: 0, y: 30, scale: 0.95, pointerEvents: "none" },
-    visible: { 
-        opacity: 1, 
-        y: 0, 
-        scale: 1, 
+    visible: {
+        opacity: 1,
+        y: 0,
+        scale: 1,
         pointerEvents: "auto",
         transition: {
             type: "spring",
@@ -31,10 +31,10 @@ const itemVariants = {
 
 const Cart = () => {
     const { isLoggedIn } = useAuth(); // Get login status from auth context
-    const { 
-        pharmacyCart, 
-        pharmacyCartTotal, 
-        labCart, 
+    const {
+        pharmacyCart,
+        pharmacyCartTotal,
+        labCart,
         labCartTotal,
         foodCart,
         foodCartTotal
@@ -88,9 +88,13 @@ const Cart = () => {
         }] : [])
     ];
 
+    const toggleMenu = () => {
+        setIsHovered((prev) => !prev);
+    };
+
     return (
-        <div 
-            className="fixed bottom-8 right-8 z-[999] antialiased flex flex-col items-end gap-3"
+        <div
+            className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-[999] antialiased flex flex-col items-end gap-3 select-none"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
@@ -102,12 +106,13 @@ const Cart = () => {
                         initial="hidden"
                         animate="visible"
                         exit="hidden"
-                        className="flex flex-col gap-2.5 mb-1.5 w-[260px]"
+                        className="flex flex-col gap-2.5 mb-1.5 w-[240px] sm:w-[260px]"
                     >
                         {cartOptions.map((opt, idx) => (
                             <motion.div key={idx} variants={itemVariants}>
-                                <Link 
+                                <Link
                                     href={opt.href}
+                                    onClick={() => setIsHovered(false)}
                                     className="flex items-center justify-between bg-white border border-slate-100 p-3 rounded-2xl shadow-xl hover:shadow-2xl hover:border-slate-200 transition-all duration-300 group/item w-full relative overflow-hidden"
                                 >
                                     <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#EB333C] opacity-0 group-hover/item:opacity-100 transition-opacity" />
@@ -134,15 +139,17 @@ const Cart = () => {
             </AnimatePresence>
 
             {/* --- MAIN FLOATING ACTION TRIGGER --- */}
-            <div className="relative">
+            <div className="relative group">
                 <motion.div
+                    onClick={toggleMenu}
                     initial={{ scale: 0, opacity: 0, y: 20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="flex items-center gap-4 bg-[#3d3f96] text-white p-2 pl-6 rounded-[2rem] shadow-[0_20px_50px_rgba(61,63,150,0.3)] border border-white/10 cursor-pointer"
+                    whileTap={{ scale: 0.95 }}
+                    className="flex items-center bg-[#3d3f96] text-white p-3.5 sm:p-2 sm:pl-6 rounded-full sm:rounded-[2rem] shadow-[0_15px_35px_rgba(61,63,150,0.35)] border border-white/10 cursor-pointer"
                 >
-                    <div className="flex flex-col pr-1">
+                    {/* Text Section (Desktop / Tablet only) */}
+                    <div className="hidden sm:flex flex-col pr-2">
                         <p className="text-[9px] font-black text-indigo-200 uppercase tracking-widest leading-none">
                             Total Cart
                         </p>
@@ -151,19 +158,16 @@ const Cart = () => {
                         </p>
                     </div>
 
-                    <div className="relative bg-white/10 p-4 rounded-2xl transition-all duration-300">
-                        <ShoppingBag size={24} strokeWidth={2.5} />
+                    {/* Icon Container (Mobile shows only this icon structure) */}
+                    <div className="relative bg-white/10 sm:p-4 rounded-2xl transition-all duration-300">
+                        <ShoppingBag size={22} className="sm:w-6 sm:h-6" strokeWidth={2.5} />
 
-                        <span className="absolute -top-1 -right-1 flex h-5 w-5">
+                        <span className="absolute -top-2 -right-2 sm:-top-1 sm:-right-1 flex h-5 w-5">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#EB333C] opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-5 w-5 bg-[#EB333C] text-[10px] font-black items-center justify-center border-2 border-[#3d3f96]">
                                 {totalItems}
                             </span>
                         </span>
-                    </div>
-
-                    <div className="absolute -top-10 right-0 bg-slate-900 text-white text-[9px] font-black px-3.5 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl border border-white/10 uppercase tracking-widest">
-                        View Sub Carts <ArrowRight size={11} className="inline ml-1 text-[#EB333C]" />
                     </div>
                 </motion.div>
             </div>
