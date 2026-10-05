@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
     FaTachometerAlt, FaChartLine, FaWallet, FaUserShield, FaUsers, FaStore,
     FaChevronDown, FaChevronRight, FaSlidersH, FaPills, FaCapsules, FaTruck,
-    FaFlask, FaUserMd, FaStethoscope, FaBoxes, FaHeadset, FaClipboardList, FaAd,FaAmbulance,
+    FaFlask, FaUserMd, FaStethoscope, FaBoxes, FaHeadset, FaClipboardList, FaAd, FaAmbulance,
     FaUtensils, FaHospital, FaCheck // Added FaUtensils for the Food section icon
 } from "react-icons/fa";
 
@@ -78,6 +78,7 @@ export default function Sidebar({ sidebarOpen }) {
         if (pathname.includes("/managepackages")) setOpenMenu("managepackages");
         if (pathname.includes("/food")) setOpenMenu("food"); // Keep Food menu expanded if path is active
         if (pathname.includes("/requests")) setOpenMenu("requests");
+        if (pathname.includes("/managecgmproducts")) setOpenMenu("managecgmproducts");
         if (pathname.includes("/appbanners")) setOpenMenu("appbanners");
         if (pathname.includes("/articles")) setOpenMenu("articles");
         if (pathname.includes("/subscribers")) setOpenMenu("subscribers");
@@ -473,6 +474,36 @@ export default function Sidebar({ sidebarOpen }) {
                     </Link>
                 )}
 
+                <GroupLabel show={isExpanded}>CGM &amp; Others</GroupLabel>
+                {hasAccess() && (
+                    <>
+                        <div
+                            className={`${rowBase} ${isParentActive("/admin/managecgmproducts") ? rowActive : rowInactive}`}
+                            onClick={() => toggleMenu("managecgmproducts")}
+                        >
+                            {isParentActive("/admin/managecgmproducts") && <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-md" style={{ backgroundColor: theme.primary }} />}
+                            <IconChip icon={FaHeadset} active={isParentActive("/admin/managecgmproducts")} />
+                            {isExpanded && <span className="truncate">Manage Devices</span>}
+                            {isExpanded && (
+                                openMenu === "managecgmproducts"
+                                    ? <FaChevronDown className="ml-auto text-[11px] text-gray-400 transition-transform duration-200 rotate-90" />
+                                    : <FaChevronRight className="ml-auto text-[11px] text-gray-400 transition-transform duration-200" />
+                            )}
+                            <CollapsedTooltip label="Requests Issue" show={!isExpanded} />
+                        </div>
+                        {openMenu === "managecgmproducts" && isExpanded && (
+                            <div className="flex flex-col gap-1 mt-1 mb-1 pl-4 border-l-2 border-gray-100 transition-all duration-200">
+                                <Link href="/admin/managecgmproducts/manageproducts" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/managecgmproducts/manageproducts") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/managecgmproducts/manageproducts") ? theme.primary : "#D1D5DB" }} /> Manage Products
+                                </Link>
+                                <Link href="/admin/managecgmproducts/createcategory" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/managecgmproducts/createcategory") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/managecgmproducts/createcategory") ? theme.primary : "#D1D5DB" }} /> Create Category
+                                </Link>
+                            </div>
+                        )}
+                    </>
+                )}
+
                 <GroupLabel show={isExpanded}>Support &amp; Content</GroupLabel>
 
                 {/* Requests Issue */}
@@ -656,7 +687,7 @@ export default function Sidebar({ sidebarOpen }) {
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/others/managereshcedulelimit") ? theme.primary : "#D1D5DB" }} />
                                     Manage Reschedule Limit
                                 </Link>
-                                
+
                                 <Link href="/admin/others/maganedoctordegreeandspecilization" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/others/maganedoctordegreeandspecilization") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/others/maganedoctordegreeandspecilization") ? theme.primary : "#D1D5DB" }} />
                                     Manage Doctor Degrees and Specializations

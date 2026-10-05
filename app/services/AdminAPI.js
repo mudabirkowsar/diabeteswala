@@ -942,6 +942,98 @@ const AdminAPI = {
     },
 
 
+    //CGM Devices
+
+    // --- 1. Create CGM Device Category ---
+    createCgmCategory: async (data) => {
+        // data: { name: "CGM Device", description: "Continuous Glucose Monitoring Sensors and Kits" }
+        const response = await authApi.post('/admin/cgm/category/add', data);
+        return response.data;
+    },
+
+    // --- 2. Get All CGM Device Categories (Dropdown & List) ---
+    getAllCgmCategories: async () => {
+        const response = await publicApi.get('/admin/cgm/category/get');
+        return response.data;
+    },
+
+    // --- 3. Update CGM Device Category ---
+    updateCgmCategory: async (id, data) => {
+        // id: Category unique ObjectID (_id)
+        // data: { name: "Continuous Glucose Monitors (CGM)", description: "24/7 Real-Time Smart Monitoring Sensors" }
+        const response = await authApi.put(`/admin/cgm/category/update/${id}`, data);
+        return response.data;
+    },
+
+    // --- 4. Toggle CGM Device Category Active/Inactive Status ---
+    toggleCgmCategoryStatus: async (id) => {
+        // id: Category unique ObjectID (_id)
+        const response = await authApi.patch(`/admin/cgm/category/toggle-status/${id}`);
+        return response.data;
+    },
+
+    // --- 5. Delete CGM Device Category ---
+    deleteCgmCategory: async (id) => {
+        // id: Category unique ObjectID (_id)
+        const response = await authApi.delete(`/admin/cgm/category/delete/${id}`);
+        return response.data;
+    },
+    // --- 1. Admin Create CGM / Glucometer Device (Multipart Form-Data) ---
+    createCgmDevice: async (formData) => {
+        // formData: FormData object containing text fields, JSON strings (variants, specifications, highlights, howToUseSteps, boxContents, faqs), mainImage file, and optional gallery images files
+        const response = await authApi.post('/admin/cgm/devices/add', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
+
+    // --- 2. Get All CGM Devices (Catalog, Search & Filter) ---
+    getAllCgmDevices: async (params) => {
+        // params (optional): { page: 1, limit: 10, search: 'Curv', categoryId: '6ac3333a4e63b6b66e5fa918', activeOnly: true }
+        const response = await publicApi.get('/admin/cgm/devices/get', { params });
+        return response.data;
+    },
+
+    // --- 3. Get Single CGM Device Details by ID ---
+    getCgmDeviceById: async (id) => {
+        // id: Device unique ObjectID (_id)
+        const response = await publicApi.get(`/admin/cgm/devices/get/${id}`);
+        return response.data;
+    },
+
+    // --- 4. Admin Update CGM Device Details (Multipart Form-Data) ---
+    updateCgmDevice: async (id, formData) => {
+        // id: Device unique ObjectID (_id)
+        // formData: FormData object with optional updated text fields and optional replacement image files
+        const response = await authApi.put(`/admin/cgm/devices/update/${id}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
+
+    // --- 5. Admin Toggle CGM Device Active Status ---
+    toggleCgmDeviceStatus: async (id) => {
+        // id: Device unique ObjectID (_id)
+        const response = await authApi.patch(`/admin/cgm/devices/toggle-status/${id}`);
+        return response.data;
+    },
+
+    // --- 6. Admin Delete CGM Device ---
+    deleteCgmDevice: async (id) => {
+        // id: Device unique ObjectID (_id)
+        const response = await authApi.delete(`/admin/cgm/devices/delete/${id}`);
+        return response.data;
+    },
+
+    // --- 7. Admin Bulk Import CGM Devices via CSV / Excel ---
+    bulkImportCgmDevicesCsv: async (formData) => {
+        // formData: FormData object containing 'file' (.csv, .xlsx, .xls)
+        const response = await authApi.post('/admin/cgm/devices/bulk-import-csv', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },  
+
 }
 
 export default AdminAPI;
