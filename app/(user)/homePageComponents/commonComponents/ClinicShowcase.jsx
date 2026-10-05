@@ -122,7 +122,7 @@ export default function ClinicShowcase() {
                     </div>
 
                     <button
-                        onClick={() => router.push('/clinic/viewallclinics')}
+                        onClick={() => router.push('/clinic/allclinics')}
                         className="text-red-500 hover:text-red-600 font-bold text-xs flex items-center gap-1 hover:underline uppercase tracking-wider cursor-pointer self-start sm:self-auto"
                     >
                         View All Clinics <ChevronRight size={14} />
