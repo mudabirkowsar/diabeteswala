@@ -21,20 +21,20 @@ export default function PromoteCGM() {
     return (
         <section className="py-12 sm:py-16 lg:py-20 bg-slate-50/60 text-slate-800 text-left antialiased overflow-hidden select-none">
             <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-                
+
                 {/* --- HERO BANNER & VALUE PROP --- */}
                 <div className="relative rounded-[2.5rem] bg-gradient-to-br from-[#161843] via-[#242761] to-[#333680] text-white p-6 sm:p-10 lg:p-14 overflow-hidden shadow-2xl shadow-indigo-950/20 border border-white/10">
-                    
+
                     {/* Background Ambient Glows */}
                     <div className="absolute -right-20 -top-20 w-96 h-96 bg-red-500/20 rounded-full blur-[120px] pointer-events-none" />
                     <div className="absolute right-1/3 -bottom-20 w-80 h-80 bg-indigo-500/20 rounded-full blur-[100px] pointer-events-none" />
                     <div className="absolute left-1/4 top-1/2 -translate-y-1/2 w-64 h-64 bg-rose-500/10 rounded-full blur-[90px] pointer-events-none" />
 
                     <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-                        
+
                         {/* Left Column: Headlines & Benefits */}
                         <div className="lg:col-span-7 space-y-6">
-                            
+
                             {/* Top Pill Badges */}
                             <div className="inline-flex flex-wrap items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/15 shadow-sm">
                                 <div className="flex items-center gap-1.5">
@@ -126,7 +126,7 @@ export default function PromoteCGM() {
                         {/* Right Column: Application Showcase Banner */}
                         <div className="lg:col-span-5">
                             <div className="relative bg-white/10 backdrop-blur-2xl rounded-[2rem] border border-white/20 p-6 sm:p-7 shadow-2xl overflow-hidden group">
-                                
+
                                 {/* Background Highlight */}
                                 <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none" />
 
@@ -149,9 +149,9 @@ export default function PromoteCGM() {
                                         priority
                                         className="object-contain p-2 group-hover:scale-105 transition-transform duration-500 ease-out"
                                     />
-                                    
+
                                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent pointer-events-none" />
-                                    
+
                                     <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white z-10">
                                         <div>
                                             <span className="text-xs font-bold drop-shadow-md text-slate-100 block">

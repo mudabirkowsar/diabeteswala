@@ -23,9 +23,9 @@ function page() {
       <Hero />
       <MedicineShowcase />
       {/* <MiniCarePrograms /> */}
-      <MedicinePromotion />
+      {/* <MedicinePromotion /> */}
       <DoctorShowcase />
-      <DoctorPromotion />
+      {/* <DoctorPromotion /> */}
       <PromoteCGM />
       <AmbulancesList />
       <AbulancePromoBanner />

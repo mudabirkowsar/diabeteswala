@@ -82,57 +82,61 @@ function DoctorShowcase() {
   };
 
   return (
-    <section className="py-20 relative">
+    <section className="py-12 sm:py-16 lg:py-20 relative overflow-hidden">
       {/* Structural subtle geometric accents */}
       <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] opacity-70 pointer-events-none"></div>
 
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
         {/* Modern Minimalist Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 pb-6 border-b border-slate-200/60 gap-4">
-          <div>
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-12 pb-6 border-b border-slate-200/60 gap-4">
+          <div className="space-y-1">
             <div className="flex items-center gap-2 text-[#3d3f96] font-bold text-xs tracking-widest uppercase mb-2">
               <ShieldCheck size={16} className="text-red-500 fill-red-50" />
               Verified Expert Panels
             </div>
-            <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
               Consult Top <span className="text-[#3d3f96] relative inline-block">Diabetes Experts</span>
             </h2>
-            <p className="text-slate-500 text-base font-normal mt-2">Direct access to clinical leaders, credentialed specialists, and certified nutritionists.</p>
+            <p className="text-slate-500 text-sm sm:text-base font-normal mt-2 max-w-2xl">
+              Direct access to clinical leaders, credentialed specialists, and certified nutritionists.
+            </p>
           </div>
+
+          {/* View Panel Directory -> Navigates to /doctor/seealldoctors */}
           <button
-            onClick={() => router.push('/doctor')}
-            className="flex items-center gap-2 text-sm font-bold text-[#3d3f96] hover:text-slate-900 transition-colors group bg-white border border-slate-200 shadow-sm px-5 py-3 rounded-2xl whitespace-nowrap self-start md:self-end cursor-pointer"
+            onClick={() => router.push('/doctor/seealldoctors')}
+            className="flex items-center justify-center gap-2 text-xs sm:text-sm font-bold text-[#3d3f96] hover:text-slate-900 transition-colors group bg-white border border-slate-200 shadow-sm px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl whitespace-nowrap w-full sm:w-auto self-start md:self-end cursor-pointer active:scale-95"
           >
-            View Panel Directory
+            <span>View Panel Directory</span>
             <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
 
         {/* Loading State */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-500">
+          <div className="flex flex-col items-center justify-center py-16 sm:py-20 gap-3 text-slate-500">
             <Loader2 className="animate-spin text-[#3d3f96]" size={36} />
             <p className="text-sm font-semibold">Finding nearest verified doctors...</p>
           </div>
         ) : doctors.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <p className="text-slate-600 font-medium">No doctors currently available in your area.</p>
+          <div className="text-center py-16 bg-white rounded-2xl border border-slate-200 shadow-sm px-4">
+            <p className="text-slate-600 font-medium text-sm sm:text-base">No doctors currently available in your area.</p>
           </div>
         ) : (
-          /* Horizontal Scroll Layout (Scrollbar completely hidden) */
+          /* Responsive Horizontal Scroll Layout */
           <div
-            className="flex overflow-x-auto gap-x-5 pt-8 pb-4 scroll-smooth [&::-webkit-scrollbar]:hidden"
+            className="flex overflow-x-auto gap-4 sm:gap-5 pt-8 pb-4 scroll-smooth snap-x snap-mandatory lg:snap-none [&::-webkit-scrollbar]:hidden"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {doctors.slice(0, 6).map((doc) => (
               <div
                 key={doc._id}
                 onClick={() => handleDoctorClick(doc._id)}
-                className="flex flex-col bg-white rounded-2xl border border-slate-200/70 shadow-sm hover:shadow-2xl hover:border-transparent transition-all duration-300 group h-full relative p-4 cursor-pointer shrink-0 w-[260px] sm:w-[280px]"
+                className="flex flex-col bg-white rounded-2xl border border-slate-200/70 shadow-sm hover:shadow-2xl hover:border-transparent transition-all duration-300 group h-full relative p-4 cursor-pointer shrink-0 w-[260px] sm:w-[280px] snap-start"
               >
                 {/* Profile Image Container with Layer offset */}
-                <div className="relative -mt-8 mx-2 h-48 rounded-xl overflow-hidden bg-slate-100 shadow-md border border-white">
+                <div className="relative -mt-8 mx-2 h-44 sm:h-48 rounded-xl overflow-hidden bg-slate-100 shadow-md border border-white">
                   <img
                     src={getImageSrc(doc.profileImage)}
                     alt={doc.name || 'Doctor'}
@@ -207,7 +211,7 @@ function DoctorShowcase() {
                         e.stopPropagation();
                         handleDoctorClick(doc._id);
                       }}
-                      className="w-full bg-[#3d3f96] hover:bg-slate-900 text-white py-3 rounded-xl text-xs font-bold tracking-wide transition-all duration-300 flex items-center justify-center gap-1.5 group/btn shadow-md shadow-indigo-100 cursor-pointer"
+                      className="w-full bg-[#3d3f96] hover:bg-slate-900 text-white py-3 rounded-xl text-xs font-bold tracking-wide transition-all duration-300 flex items-center justify-center gap-1.5 group/btn shadow-md shadow-indigo-100 cursor-pointer active:scale-95"
                     >
                       <span>Request Booking</span>
                       <ChevronRight size={14} className="group-hover/btn:translate-x-0.5 transition-transform" />
