@@ -255,11 +255,10 @@ export default function CgmDevicesPage() {
                             <button
                                 key={type.id}
                                 onClick={() => { setProductTypeFilter(type.id); setPage(1); }}
-                                className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer shrink-0 ${
-                                    productTypeFilter === type.id
+                                className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer shrink-0 ${productTypeFilter === type.id
                                         ? 'bg-white text-[#3d3f96] shadow-sm'
                                         : 'text-slate-500 hover:text-slate-900'
-                                }`}
+                                    }`}
                             >
                                 {type.label}
                             </button>
@@ -408,13 +407,12 @@ export default function CgmDevicesPage() {
                                             </td>
 
                                             <td className="py-4.5 px-6">
-                                                <span className={`inline-flex items-center gap-1 text-[11px] font-black uppercase px-2.5 py-1 rounded-xl border ${
-                                                    device.stockQuantity > 10
+                                                <span className={`inline-flex items-center gap-1 text-[11px] font-black uppercase px-2.5 py-1 rounded-xl border ${device.stockQuantity > 10
                                                         ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                                         : device.stockQuantity > 0
                                                             ? 'bg-amber-50 text-amber-700 border-amber-200'
                                                             : 'bg-rose-50 text-rose-700 border-rose-200'
-                                                }`}>
+                                                    }`}>
                                                     {device.stockQuantity} Units
                                                 </span>
                                             </td>
@@ -423,11 +421,10 @@ export default function CgmDevicesPage() {
                                                 <button
                                                     disabled={togglingId === device._id}
                                                     onClick={() => handleToggleStatus(device)}
-                                                    className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border transition cursor-pointer ${
-                                                        device.isActive
+                                                    className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border transition cursor-pointer ${device.isActive
                                                             ? 'text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100'
                                                             : 'text-rose-700 bg-rose-50 border-rose-200 hover:bg-rose-100'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     {togglingId === device._id ? (
                                                         <Loader2 size={11} className="animate-spin" />

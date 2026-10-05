@@ -32,7 +32,6 @@ export default function DeviceCategoryPage() {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
-    const [togglingId, setTogglingId] = useState(null);
 
     // --- Search & Filter States ---
     const [searchQuery, setSearchQuery] = useState('');
@@ -129,32 +128,6 @@ export default function DeviceCategoryPage() {
             toast.error(err.response?.data?.message || 'Server error processing request.');
         } finally {
             setActionLoading(false);
-        }
-    };
-
-    // --- 5. Toggle Category Status ---
-    const handleToggleStatus = async (category) => {
-        setTogglingId(category._id);
-        try {
-            const response = await AdminAPI.toggleCgmCategoryStatus(category._id);
-            if (response && response.success) {
-                toast.success(response.message || 'Category status updated.');
-                // Update locally for instantaneous UI feedback
-                setCategories((prev) =>
-                    prev.map((item) =>
-                        item._id === category._id
-                            ? { ...item, isActive: response.data?.isActive !== undefined ? response.data.isActive : !item.isActive }
-                            : item
-                    )
-                );
-            } else {
-                toast.error(response?.message || 'Failed to toggle status.');
-            }
-        } catch (err) {
-            console.error('Error toggling category status:', err);
-            toast.error(err.response?.data?.message || 'Failed to toggle category status.');
-        } finally {
-            setTogglingId(null);
         }
     };
 
@@ -302,11 +275,10 @@ export default function DeviceCategoryPage() {
                         <button
                             key={tab.id}
                             onClick={() => setStatusFilter(tab.id)}
-                            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer shrink-0 ${
-                                statusFilter === tab.id
+                            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer shrink-0 ${statusFilter === tab.id
                                     ? 'bg-white text-[#3d3f96] shadow-sm'
                                     : 'text-slate-500 hover:text-slate-900'
-                            }`}
+                                }`}
                         >
                             {tab.label}
                         </button>
@@ -339,7 +311,6 @@ export default function DeviceCategoryPage() {
                                     <th className="py-4.5 px-6">Category Name</th>
                                     <th className="py-4.5 px-6">Description</th>
                                     <th className="py-4.5 px-6">Created / Modified</th>
-                                    <th className="py-4.5 px-6">Status</th>
                                     <th className="py-4.5 px-6 text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -387,28 +358,6 @@ export default function DeviceCategoryPage() {
                                             </span>
                                         </td>
 
-                                        {/* 4. Status Toggle */}
-                                        <td className="py-4.5 px-6">
-                                            <button
-                                                disabled={togglingId === category._id}
-                                                onClick={() => handleToggleStatus(category)}
-                                                className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border transition cursor-pointer ${
-                                                    category.isActive
-                                                        ? 'text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100'
-                                                        : 'text-rose-700 bg-rose-50 border-rose-200 hover:bg-rose-100'
-                                                }`}
-                                            >
-                                                {togglingId === category._id ? (
-                                                    <Loader2 size={11} className="animate-spin" />
-                                                ) : category.isActive ? (
-                                                    <CheckCircle2 size={12} className="text-emerald-500" />
-                                                ) : (
-                                                    <Ban size={12} className="text-rose-500" />
-                                                )}
-                                                <span>{category.isActive ? 'Active' : 'Inactive'}</span>
-                                            </button>
-                                        </td>
-
                                         {/* 5. Actions */}
                                         <td className="py-4.5 px-6 text-right">
                                             <div className="flex items-center justify-end gap-1.5">
@@ -443,7 +392,7 @@ export default function DeviceCategoryPage() {
             {isModalOpen && (
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
                     <div className="bg-white rounded-[2.5rem] border border-slate-100 max-w-lg w-full p-6 sm:p-8 shadow-2xl relative text-left overflow-hidden">
-                        
+
                         {/* Modal Header */}
                         <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
                             <div className="flex items-center gap-3">
@@ -470,7 +419,7 @@ export default function DeviceCategoryPage() {
 
                         {/* Modal Form */}
                         <form onSubmit={handleFormSubmit} className="space-y-4">
-                            
+
                             {/* Category Name */}
                             <div className="space-y-1.5">
                                 <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500">
@@ -510,7 +459,7 @@ export default function DeviceCategoryPage() {
                                 >
                                     Cancel
                                 </button>
-                                
+
                                 <button
                                     type="submit"
                                     disabled={actionLoading}

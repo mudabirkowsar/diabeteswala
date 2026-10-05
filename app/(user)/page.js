@@ -9,6 +9,7 @@ import DoctorShowcase from './homePageComponents/commonComponents/DoctorShowcase
 import LabTestShowcase from './homePageComponents/commonComponents/LabTestShowcase'
 import ClinicShowcase from './homePageComponents/commonComponents/ClinicShowcase'
 import MedicineShowcase from './homePageComponents/commonComponents/MedicineShowcase'
+import PromoteCGM from './homePageComponents/commonComponents/PromoteCGM'
 import MedicinePromotion from './homePageComponents/MedicinePromotion'
 import LabPromotion from './homePageComponents/LabPromotion'
 import DiabetesScienceHub from './homePageComponents/DiabetesScienceHub'
@@ -25,6 +26,7 @@ function page() {
       <MedicinePromotion />
       <DoctorShowcase />
       <DoctorPromotion />
+      <PromoteCGM />
       <AmbulancesList />
       <AbulancePromoBanner />
       <LabTestShowcase />
