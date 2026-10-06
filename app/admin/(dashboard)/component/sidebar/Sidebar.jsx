@@ -499,6 +499,9 @@ export default function Sidebar({ sidebarOpen }) {
                                 <Link href="/admin/managecgmproducts/createcategory" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/managecgmproducts/createcategory") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/managecgmproducts/createcategory") ? theme.primary : "#D1D5DB" }} /> Create Category
                                 </Link>
+                                <Link href="/admin/managecgmproducts/addaddons" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/managecgmproducts/addaddons") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/managecgmproducts/addaddons") ? theme.primary : "#D1D5DB" }} /> Add Other Things
+                                </Link>
                             </div>
                         )}
                     </>
