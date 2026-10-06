@@ -574,6 +574,12 @@ const UserAPI = {
         const response = await publicApi.get(`/user/doctors/details/${id}`);
         return response.data;
     },
+    // --- 1. Get Live Doctor & Speciality Search Suggestions (Auto-complete) ---
+    getDoctorSearchSuggestions: async (data) => {
+        // data: { query: "Kab", limit: 10 } (Note: 'query' requires minimum 2 characters)
+        const response = await publicApi.post('/user/doctors/search-suggestions', data);
+        return response.data;
+    },
 
     // ===================================================
     // --- USER DOCTOR APPOINTMENT & SLOTS APIS ---------
