@@ -17,7 +17,9 @@ import {
     Layers,
     IndianRupee,
     Info,
-    ListOrdered
+    ListOrdered,
+    FileText,
+    ExternalLink
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import AdminAPI from '../../../../../services/AdminAPI';
@@ -122,11 +124,13 @@ export default function CreateProduct({
         { question: 'Does this device require batteries?', answer: 'No, it draws power directly from your smartphone via Type-C.' }
     ]);
 
-    // --- 5. Media Upload States ---
+    // --- 5. Media & PDF Upload States ---
     const [mainImageFile, setMainImageFile] = useState(null);
     const [mainImagePreview, setMainImagePreview] = useState('');
     const [galleryImageFiles, setGalleryImageFiles] = useState([]);
     const [existingGalleryImages, setExistingGalleryImages] = useState([]);
+    const [userManualPdfFile, setUserManualPdfFile] = useState(null);
+    const [existingUserManualPdf, setExistingUserManualPdf] = useState('');
 
     // Populate or Reset Form
     useEffect(() => {
@@ -195,6 +199,8 @@ export default function CreateProduct({
             setMainImagePreview(editData.mainImage ? getMediaUrl(editData.mainImage) : '');
             setGalleryImageFiles([]);
             setExistingGalleryImages(editData.images || []);
+            setUserManualPdfFile(null);
+            setExistingUserManualPdf(editData.userManualPdf || '');
         } else {
             // Reset to defaults for new product
             setFormData({
@@ -293,6 +299,8 @@ export default function CreateProduct({
             setMainImagePreview('');
             setGalleryImageFiles([]);
             setExistingGalleryImages([]);
+            setUserManualPdfFile(null);
+            setExistingUserManualPdf('');
         }
         setFormTab('basic');
     }, [editData, categories, isOpen]);
@@ -378,7 +386,7 @@ export default function CreateProduct({
             data.append('howToUseSteps', JSON.stringify(howToUseSteps.filter(s => s.title && s.title.trim())));
             data.append('faqs', JSON.stringify(faqs.filter(f => f.question && f.question.trim())));
 
-            // 4. Media Attachments
+            // 4. Media & PDF Attachments
             if (mainImageFile) {
                 data.append('mainImage', mainImageFile);
             }
@@ -386,6 +394,9 @@ export default function CreateProduct({
                 Array.from(galleryImageFiles).forEach((file) => {
                     data.append('images', file);
                 });
+            }
+            if (userManualPdfFile) {
+                data.append('userManualPdf', userManualPdfFile);
             }
 
             // 5. Send Request
@@ -1261,6 +1272,68 @@ export default function CreateProduct({
                                         className="hidden"
                                     />
                                 </label>
+                            </div>
+
+                            {/* User Manual PDF Upload */}
+                            <div className="p-4 bg-slate-50 border border-slate-200 rounded-3xl space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-black uppercase text-slate-500 block">
+                                        User Manual PDF Document (Optional)
+                                    </span>
+                                    {existingUserManualPdf && !userManualPdfFile && (
+                                        <a
+                                            href={getMediaUrl(existingUserManualPdf)}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-1 text-[11px] font-bold text-[#3d3f96] hover:underline"
+                                        >
+                                            <span>View Current PDF</span>
+                                            <ExternalLink size={12} />
+                                        </a>
+                                    )}
+                                </div>
+
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center shrink-0">
+                                        <FileText size={20} />
+                                    </div>
+
+                                    <label className="flex-1 p-4 bg-white border border-dashed border-slate-300 hover:border-[#3d3f96] rounded-2xl flex items-center justify-between gap-2 cursor-pointer transition">
+                                        <div className="flex items-center gap-2 truncate">
+                                            <Upload size={16} className="text-slate-400 shrink-0" />
+                                            <span className="text-xs font-bold text-slate-700 truncate">
+                                                {userManualPdfFile
+                                                    ? userManualPdfFile.name
+                                                    : existingUserManualPdf
+                                                    ? `Replace Manual (${existingUserManualPdf.split('/').pop()})`
+                                                    : 'Upload Product User Manual (.pdf)'}
+                                            </span>
+                                        </div>
+                                        {userManualPdfFile && (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    setUserManualPdfFile(null);
+                                                }}
+                                                className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-rose-600"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        )}
+                                        <input
+                                            type="file"
+                                            accept=".pdf,application/pdf"
+                                            onChange={(e) => {
+                                                if (e.target.files && e.target.files[0]) {
+                                                    setUserManualPdfFile(e.target.files[0]);
+                                                }
+                                            }}
+                                            className="hidden"
+                                        />
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     )}

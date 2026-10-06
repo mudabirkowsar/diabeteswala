@@ -210,13 +210,13 @@ export default function CgmDevicesPage() {
                         <span>Refresh</span>
                     </button>
 
-                    <button
+                    {/* <button
                         onClick={() => setIsImportModalOpen(true)}
                         className="px-4 py-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-black text-xs uppercase tracking-wider rounded-2xl shadow-xs transition flex items-center gap-2 cursor-pointer"
                     >
                         <FileSpreadsheet size={16} />
                         <span>Bulk Import CSV</span>
-                    </button>
+                    </button> */}
 
                     <button
                         onClick={() => {
@@ -249,15 +249,15 @@ export default function CgmDevicesPage() {
                             { id: 'ALL', label: 'All Catalog' },
                             { id: 'Glucometer', label: 'Glucometers' },
                             { id: 'CGM', label: 'CGM Sensors' },
-                            { id: 'Supplement', label: 'Supplements' },
-                            { id: 'Accessory', label: 'Accessories' }
+                            // { id: 'Supplement', label: 'Supplements' },
+                            // { id: 'Accessory', label: 'Accessories' }
                         ].map((type) => (
                             <button
                                 key={type.id}
                                 onClick={() => { setProductTypeFilter(type.id); setPage(1); }}
                                 className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer shrink-0 ${productTypeFilter === type.id
-                                        ? 'bg-white text-[#3d3f96] shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-900'
+                                    ? 'bg-white text-[#3d3f96] shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-900'
                                     }`}
                             >
                                 {type.label}
@@ -408,10 +408,10 @@ export default function CgmDevicesPage() {
 
                                             <td className="py-4.5 px-6">
                                                 <span className={`inline-flex items-center gap-1 text-[11px] font-black uppercase px-2.5 py-1 rounded-xl border ${device.stockQuantity > 10
-                                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                                        : device.stockQuantity > 0
-                                                            ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                                            : 'bg-rose-50 text-rose-700 border-rose-200'
+                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                    : device.stockQuantity > 0
+                                                        ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                                        : 'bg-rose-50 text-rose-700 border-rose-200'
                                                     }`}>
                                                     {device.stockQuantity} Units
                                                 </span>
@@ -422,8 +422,8 @@ export default function CgmDevicesPage() {
                                                     disabled={togglingId === device._id}
                                                     onClick={() => handleToggleStatus(device)}
                                                     className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border transition cursor-pointer ${device.isActive
-                                                            ? 'text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100'
-                                                            : 'text-rose-700 bg-rose-50 border-rose-200 hover:bg-rose-100'
+                                                        ? 'text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100'
+                                                        : 'text-rose-700 bg-rose-50 border-rose-200 hover:bg-rose-100'
                                                         }`}
                                                 >
                                                     {togglingId === device._id ? (
