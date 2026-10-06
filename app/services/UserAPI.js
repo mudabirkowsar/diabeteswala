@@ -742,5 +742,25 @@ const UserAPI = {
         return response.data;
     },
 
+    // --- 1. Get User CGM Storefront Categories (Category Tabs) ---
+    getUserCgmCategories: async () => {
+        const response = await publicApi.get('/user/cgm/devices/categories');
+        return response.data;
+    },
+
+    // --- 2. Get User CGM Products Catalog (Listing, Filters & Search) ---
+    getUserCgmProductsCatalog: async (params) => {
+        // params (optional): { categoryId: '', productType: 'Glucometer' | 'CGM' | 'Supplement' | 'Accessory', search: 'DiabetesWala', sortBy: 'newest' | 'price_low_high' | 'price_high_low' | 'popular', isPopular: true, isFeatured: true, page: 1, limit: 20 }
+        const response = await publicApi.get('/user/cgm/devices/get', { params });
+        return response.data;
+    },
+
+    // --- 3. Get Single CGM Product Details by ID (Full View) ---
+    getUserCgmProductDetailsById: async (id) => {
+        // id: Product unique ObjectID (_id)
+        const response = await publicApi.get(`/user/cgm/devices/get/${id}`);
+        return response.data;
+    },
+
 }
 export default UserAPI;
