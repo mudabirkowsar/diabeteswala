@@ -36,12 +36,67 @@ import { useNotification } from '../../../../context/NotificationContext';
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 const DIABETES_TYPES = [
-  'Type 1',
-  'Type 2',
-  'Pre-diabetic',
-  'Gestational',
-  'General Wellness',
-  'Not Sure'
+  // Common types
+  'Type 1 Diabetes',
+  'Type 2 Diabetes',
+  'Gestational Diabetes',
+
+  // Intermediate / related condition
+  'Prediabetes',
+
+  // Autoimmune diabetes
+  'Latent Autoimmune Diabetes in Adults (LADA)',
+  'Type 1 Diabetes with Autoimmune Polyglandular Syndrome',
+
+  // Genetic / monogenic diabetes
+  'Maturity-Onset Diabetes of the Young (MODY)',
+  'Neonatal Diabetes Mellitus',
+  'Permanent Neonatal Diabetes',
+  'Transient Neonatal Diabetes',
+  'Mitochondrial Diabetes',
+
+  // Secondary / diabetes due to other conditions
+  'Diabetes due to Pancreatic Disease',
+  'Diabetes due to Pancreatitis',
+  'Diabetes due to Cystic Fibrosis',
+  'Diabetes due to Hemochromatosis',
+  'Diabetes due to Endocrine Disorders',
+  'Diabetes due to Genetic Syndromes',
+  'Post-Pancreatectomy Diabetes',
+  'Post-Transplantation Diabetes',
+
+  // Drug / chemical-induced
+  'Steroid-Induced Diabetes',
+  'Drug-Induced Diabetes',
+  'Chemical-Induced Diabetes',
+
+  // Endocrine-related diabetes
+  'Diabetes due to Cushing Syndrome',
+  'Diabetes due to Acromegaly',
+  'Diabetes due to Hyperthyroidism',
+  'Diabetes due to Pheochromocytoma',
+
+  // Genetic syndromes associated with diabetes
+  'Wolfram Syndrome',
+  'Alström Syndrome',
+  'Down Syndrome-associated Diabetes',
+  'Turner Syndrome-associated Diabetes',
+  'Klinefelter Syndrome-associated Diabetes',
+  'Prader-Willi Syndrome-associated Diabetes',
+
+  // Pregnancy-related
+  'Gestational Diabetes - Diet Controlled',
+  'Gestational Diabetes - Medication Controlled',
+
+  // Other
+  'Secondary Diabetes Mellitus',
+  'Other Specified Diabetes',
+  'Unspecified Diabetes',
+  'Diabetes in Remission',
+  'Not Sure',
+
+  // Non-diabetes wellness category
+  'General Wellness'
 ];
 
 // Helper to dynamically load Razorpay script
@@ -608,8 +663,8 @@ export default function BuyProductCheckoutPage() {
                         type="button"
                         onClick={() => setIsDiabetic(opt.value)}
                         className={`py-2.5 px-3 rounded-2xl text-xs font-bold border transition-all cursor-pointer text-center ${isDiabetic === opt.value
-                            ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
-                            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                          ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                           }`}
                       >
                         {opt.label}
@@ -651,8 +706,8 @@ export default function BuyProductCheckoutPage() {
                       type="button"
                       onClick={() => setHasUsedBefore(true)}
                       className={`py-2.5 px-3 rounded-2xl text-xs font-bold border transition-all cursor-pointer ${hasUsedBefore === true
-                          ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
-                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                        ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                         }`}
                     >
                       Yes, Experienced User
@@ -661,8 +716,8 @@ export default function BuyProductCheckoutPage() {
                       type="button"
                       onClick={() => setHasUsedBefore(false)}
                       className={`py-2.5 px-3 rounded-2xl text-xs font-bold border transition-all cursor-pointer ${hasUsedBefore === false
-                          ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
-                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                        ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                         }`}
                     >
                       No, First-time User
@@ -674,8 +729,8 @@ export default function BuyProductCheckoutPage() {
               {/* 3. 1-ON-1 CERTIFIED COACH CONSULTATION (OPTIONAL ADD-ON) */}
               {coachData && coachData.isActive && (
                 <div className={`rounded-3xl p-5 sm:p-6 border transition-all ${includeCoachCharge
-                    ? 'border-[#3d3f96] bg-gradient-to-br from-indigo-50/70 via-white to-blue-50/40 ring-1 ring-[#3d3f96] shadow-xs'
-                    : 'border-slate-200/80 bg-white shadow-xs'
+                  ? 'border-[#3d3f96] bg-gradient-to-br from-indigo-50/70 via-white to-blue-50/40 ring-1 ring-[#3d3f96] shadow-xs'
+                  : 'border-slate-200/80 bg-white shadow-xs'
                   }`}>
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3.5">
@@ -705,8 +760,8 @@ export default function BuyProductCheckoutPage() {
                         type="button"
                         onClick={() => setIncludeCoachCharge(!includeCoachCharge)}
                         className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${includeCoachCharge
-                            ? 'bg-[#3d3f96] text-white shadow-xs'
-                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          ? 'bg-[#3d3f96] text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                           }`}
                       >
                         {includeCoachCharge ? <Check size={14} /> : <Plus size={14} />}
@@ -738,8 +793,8 @@ export default function BuyProductCheckoutPage() {
                         <div
                           key={addon._id}
                           className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 ${isAdded
-                              ? 'border-[#3d3f96] bg-indigo-50/30'
-                              : 'border-slate-200/80 bg-white hover:border-slate-300'
+                            ? 'border-[#3d3f96] bg-indigo-50/30'
+                            : 'border-slate-200/80 bg-white hover:border-slate-300'
                             }`}
                         >
                           <div className="flex items-center gap-3 min-w-0">
@@ -828,8 +883,8 @@ export default function BuyProductCheckoutPage() {
                             key={addr._id}
                             onClick={() => setSelectedAddressId(addr._id)}
                             className={`p-3.5 rounded-2xl border transition-all cursor-pointer relative ${isSelected
-                                ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 ring-[#3d3f96]'
-                                : 'border-slate-200 bg-white hover:border-slate-300'
+                              ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 ring-[#3d3f96]'
+                              : 'border-slate-200 bg-white hover:border-slate-300'
                               }`}
                           >
                             <div className="flex items-center justify-between mb-1">
@@ -855,8 +910,8 @@ export default function BuyProductCheckoutPage() {
                       <div
                         onClick={() => setSelectedAddressId('new')}
                         className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col items-center justify-center gap-1 min-h-[95px] ${selectedAddressId === 'new'
-                            ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 ring-[#3d3f96]'
-                            : 'border-dashed border-slate-300 hover:border-slate-400 bg-slate-50/50'
+                          ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 ring-[#3d3f96]'
+                          : 'border-dashed border-slate-300 hover:border-slate-400 bg-slate-50/50'
                           }`}
                       >
                         <PlusCircle size={18} className="text-[#3d3f96]" />
@@ -995,8 +1050,8 @@ export default function BuyProductCheckoutPage() {
                   <label
                     onClick={() => setPaymentMethod('Online')}
                     className={`p-4 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${paymentMethod === 'Online'
-                        ? 'border-[#3d3f96] bg-indigo-50/40 ring-2 ring-[#3d3f96]/20'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
+                      ? 'border-[#3d3f96] bg-indigo-50/40 ring-2 ring-[#3d3f96]/20'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
                       }`}
                   >
                     <div className="flex items-center gap-3">
@@ -1020,8 +1075,8 @@ export default function BuyProductCheckoutPage() {
                   <label
                     onClick={() => setPaymentMethod('COD')}
                     className={`p-4 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${paymentMethod === 'COD'
-                        ? 'border-[#3d3f96] bg-indigo-50/40 ring-2 ring-[#3d3f96]/20'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
+                      ? 'border-[#3d3f96] bg-indigo-50/40 ring-2 ring-[#3d3f96]/20'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
                       }`}
                   >
                     <div className="flex items-center gap-3">
