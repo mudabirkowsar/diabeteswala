@@ -1033,7 +1033,106 @@ const AdminAPI = {
         });
         return response.data;
     },
+    // =========================================================================
+    // --- CGM & DIABETES DEVICE ADD-ONS MANAGEMENT APIs ---
+    // =========================================================================
 
+    /**
+     * 1. Create New Add-on Item
+     * @param {FormData} formData - Contains { name, price, description, imageUrl (File) }
+     */
+    createCgmAddon: async (formData) => {
+        const response = await authApi.post('/admin/cgm/addons/add', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    /**
+     * 2. Get All Add-on Items (Admin & Checkout screen)
+     * @param {Object} params - Optional: { activeOnly: true/false }
+     */
+    getAllCgmAddons: async (params = {}) => {
+        const response = await authApi.get('/admin/cgm/addons/get', { params });
+        return response.data;
+    },
+
+    /**
+     * 4. Update Add-on Item (Auto-deletes old image if new image uploaded)
+     * @param {string} id - Add-on ObjectId
+     * @param {FormData|Object} data - Contains updated fields and optional imageUrl file
+     */
+    updateCgmAddon: async (id, data) => {
+        const isFormData = data instanceof FormData;
+        const response = await authApi.put(`/admin/cgm/addons/update/${id}`, data, {
+            headers: isFormData
+                ? { 'Content-Type': 'multipart/form-data' }
+                : { 'Content-Type': 'application/json' },
+        });
+        return response.data;
+    },
+
+    /**
+     * 5. Toggle Add-on Active / Inactive Status
+     * @param {string} id - Add-on ObjectId
+     */
+    toggleCgmAddonStatus: async (id) => {
+        const response = await authApi.patch(`/admin/cgm/addons/toggle-status/${id}`);
+        return response.data;
+    },
+
+    /**
+     * 6. Delete Add-on Item (Permanent cleanup with image file)
+     * @param {string} id - Add-on ObjectId
+     */
+    deleteCgmAddon: async (id) => {
+        const response = await authApi.delete(`/admin/cgm/addons/delete/${id}`);
+        return response.data;
+    },
+    // --- 1. Admin Create CGM Coach Charge ---
+    createCgmCoachCharge: async (data) => {
+        // data: { coachCharge: 299, description: "1-on-1 Certified Diabetes Coach consultation and live sensor onboarding." }
+        const response = await authApi.post('/admin/cgm/coach-charge/add', data);
+        return response.data;
+    },
+
+    // --- 2. Get All CGM Coach Charges (Admin & Storefront Checkout) ---
+    getAllCgmCoachCharges: async (params) => {
+        // params (optional): { activeOnly: true }
+        const response = await publicApi.get('/admin/cgm/coach-charge/get', { params });
+        return response.data;
+    },
+
+    // --- 3. Get Single CGM Coach Charge Details by ID ---
+    getCgmCoachChargeById: async (id) => {
+        // id: Coach charge unique ObjectID (_id)
+        const response = await publicApi.get(`/admin/cgm/coach-charge/get/${id}`);
+        return response.data;
+    },
+
+    // --- 4. Admin Update CGM Coach Charge ---
+    updateCgmCoachCharge: async (id, data) => {
+        // id: Coach charge unique ObjectID (_id)
+        // data: { coachCharge: 349, description: "Updated 1-on-1 sensor training and trend analysis session." }
+        const response = await authApi.put(`/admin/cgm/coach-charge/update/${id}`, data);
+        return response.data;
+    },
+
+    // --- 5. Admin Toggle CGM Coach Charge Active/Inactive Status ---
+    toggleCgmCoachChargeStatus: async (id) => {
+        // id: Coach charge unique ObjectID (_id)
+        const response = await authApi.patch(`/admin/cgm/coach-charge/toggle-status/${id}`);
+        return response.data;
+    },
+
+    // --- 6. Admin Delete CGM Coach Charge ---
+    deleteCgmCoachCharge: async (id) => {
+        // id: Coach charge unique ObjectID (_id)
+        const response = await authApi.delete(`/admin/cgm/coach-charge/delete/${id}`);
+        return response.data;
+    },
 }
 
 export default AdminAPI;
