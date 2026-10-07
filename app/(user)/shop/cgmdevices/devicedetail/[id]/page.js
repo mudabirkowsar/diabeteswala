@@ -28,24 +28,35 @@ import {
   HelpCircle,
   Plus,
   Minus,
-  ShoppingBag,
   CreditCard,
   Lock,
   Check,
   Radio,
   UserCheck,
   Waves,
-  Clock
+  Clock,
+  ArrowRight
 } from 'lucide-react';
 import UserAPI from '../../../../../services/UserAPI';
+import { useNotification } from '../../../../../context/NotificationContext';
+
+const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+
+const STATIC_PRODUCT_FALLBACK_GALLERY = [
+  'https://images.unsplash.com/photo-1583947581924-860bda6a26df?q=80&w=800&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=600&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?q=80&w=600&auto=format&fit=crop'
+];
 
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const productId = params?.id;
+  const { showNotification } = useNotification?.() || {};
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedImage, setSelectedImage] = useState('');
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -55,22 +66,23 @@ export default function ProductDetailPage() {
   // Helper for safe image URL formatting
   const getImageSrc = (imgPath) => {
     if (!imgPath) {
-      return 'https://images.unsplash.com/photo-1583947581924-860bda6a26df?q=80&w=800&auto=format&fit=crop';
+      return STATIC_PRODUCT_FALLBACK_GALLERY[0];
     }
     if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) {
       return imgPath;
     }
-    const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-    return `${baseUrl}${imgPath}`;
+    return `${BASE_URL}${imgPath}`;
   };
 
-  // Fetch product by ID
+  // Fetch product details by ID
   useEffect(() => {
     const fetchProduct = async () => {
       if (!productId) return;
       try {
         setLoading(true);
+        setError(null);
         const res = await UserAPI.getUserCgmProductDetailsById(productId);
+
         if (res && res.data) {
           const item = res.data;
           setProduct(item);
@@ -103,22 +115,31 @@ export default function ProductDetailPage() {
             const defaultVar = availableVariants.find((v) => v.isDefault) || availableVariants[0];
             setSelectedVariant(defaultVar);
           }
+        } else {
+          throw new Error('Product details not found.');
         }
       } catch (err) {
         console.error('Error fetching product details:', err);
+        setError('Failed to retrieve product details');
+        if (showNotification) {
+          showNotification(err?.message || 'Unable to fetch product details.', 'error');
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchProduct();
-  }, [productId]);
+  }, [productId, showNotification]);
 
   // Handle Share link
   const handleShare = () => {
     if (typeof window !== 'undefined') {
       navigator.clipboard.writeText(window.location.href);
       setIsCopied(true);
+      if (showNotification) {
+        showNotification('Product link copied to clipboard!', 'success');
+      }
       setTimeout(() => setIsCopied(false), 2000);
     }
   };
@@ -161,7 +182,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  if (!product) {
+  if (error || !product) {
     return (
       <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center p-6 text-center">
         <div className="w-16 h-16 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mb-4 shadow-sm">
@@ -169,7 +190,7 @@ export default function ProductDetailPage() {
         </div>
         <h2 className="text-2xl font-black text-slate-900 mb-2">Product Not Found</h2>
         <p className="text-sm text-slate-500 max-w-md mb-6 leading-relaxed">
-          The requested device or supplement might be out of stock or currently unavailable.
+          {error || 'The requested device or supplement might be out of stock or currently unavailable.'}
         </p>
         <button
           onClick={() => router.back()}
@@ -181,7 +202,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  // Determine Product Category Type
+  // Determine Category Type
   const isCgmProduct =
     product.productType === 'CGM' ||
     product.categoryId?.name?.toLowerCase().includes('cgm') ||
@@ -210,64 +231,85 @@ export default function ProductDetailPage() {
     selectedVariant?.compatibility || product.glucometerConfig?.compatibility || product.compatibility;
   const connectorType = product.glucometerConfig?.connectorType || product.connectorType;
 
-  // Build list of unique images
+  // List of unique images
   const allImages = [product.mainImage, ...(product.images || [])].filter(Boolean);
+
+  // Buy Now: Package all user choices and navigate to /shop/cgmdevices/buyproduct
+  const handleBuyNow = () => {
+    try {
+      const checkoutPayload = {
+        productId: product._id,
+        productTitle: product.title,
+        productBrand: product.brand || 'DiabetesWala',
+        productType: product.productType || 'Device',
+        categoryName: product.categoryId?.name || product.productType,
+        mainImage: product.mainImage,
+        badge: product.badge,
+        selectedVariant: selectedVariant
+          ? {
+              _id: selectedVariant._id,
+              displayName: selectedVariant.displayName,
+              type: selectedVariant.type,
+              sensorsCount: selectedVariant.sensorsCount,
+              stripsCount: selectedVariant.stripsCount,
+              lancetsCount: selectedVariant.lancetsCount,
+              compatibility: selectedVariant.compatibility,
+              mrp: selectedVariant.mrp,
+              sellingPrice: selectedVariant.sellingPrice,
+              savingsAmount: selectedVariant.savingsAmount
+            }
+          : null,
+        quantity,
+        unitSellingPrice,
+        unitMrp,
+        totalSellingPrice,
+        totalMrp,
+        totalSavings,
+        compatibility,
+        connectorType,
+        cgmConfig: cgmConfig
+          ? {
+              sensorLifeSpanDays: cgmConfig.sensorLifeSpanDays,
+              isCoachSupportIncluded: cgmConfig.isCoachSupportIncluded,
+              coachSupportDuration: cgmConfig.coachSupportDuration
+            }
+          : null,
+        timestamp: new Date().toISOString()
+      };
+
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('cgm_checkout_item', JSON.stringify(checkoutPayload));
+      }
+
+      router.push(`/shop/cgmdevices/buyproduct?productId=${product._id}`);
+    } catch (err) {
+      console.error('Error initiating buy now flow:', err);
+      if (showNotification) {
+        showNotification('Unable to proceed to checkout. Please try again.', 'error');
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50/60 pb-28 text-slate-800 antialiased selection:bg-[#3d3f96] selection:text-white">
       {/* Background Decor */}
       <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none -z-10" />
 
-      {/* Top Header Bar */}
-      {/* <header className="bg-white/90 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 transition-all">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
-          <button
-            onClick={() => router.back()}
-            className="group flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-600 hover:text-[#3d3f96] transition-colors cursor-pointer"
-          >
-            <div className="w-8 h-8 rounded-full bg-slate-100 group-hover:bg-indigo-50 flex items-center justify-center transition-colors">
-              <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
-            </div>
-            <span>Back to Store</span>
-          </button>
-
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-[#3d3f96] bg-indigo-50/90 border border-indigo-100 px-3 py-1 rounded-full">
-              <Sparkles size={13} /> {product.categoryId?.name || product.productType}
-            </span>
-
-            <button
-              onClick={handleShare}
-              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-all cursor-pointer relative"
-              title="Share Product"
-            >
-              {isCopied ? <Check size={14} className="text-emerald-600" /> : <Share2 size={14} />}
-              {isCopied && (
-                <span className="absolute -bottom-8 right-0 bg-slate-900 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-md whitespace-nowrap">
-                  Link Copied!
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-      </header> */}
-
-      {/* Main Product Section */}
+      {/* Main Content Layout */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
           
           {/* ================= LEFT COLUMN: STICKY GALLERY & TRUST BADGES (5 COLS) ================= */}
           <div className="lg:col-span-5 lg:sticky lg:top-20 space-y-4">
             
-            {/* Main Stage Display Card */}
+            {/* Main Image Display Card */}
             <div className="relative bg-white rounded-3xl border border-slate-200/80 p-8 flex items-center justify-center h-80 sm:h-96 md:h-[420px] shadow-sm overflow-hidden group">
               <img
                 src={getImageSrc(selectedImage)}
                 alt={product.title}
                 className="max-h-full max-w-full object-contain transition-transform duration-700 ease-out group-hover:scale-105"
                 onError={(e) => {
-                  e.currentTarget.src =
-                    'https://images.unsplash.com/photo-1583947581924-860bda6a26df?q=80&w=800&auto=format&fit=crop';
+                  e.currentTarget.src = STATIC_PRODUCT_FALLBACK_GALLERY[0];
                 }}
               />
 
@@ -348,10 +390,10 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          {/* ================= RIGHT COLUMN: PRODUCT INFO & PURCHASE CARD (7 COLS) ================= */}
+          {/* ================= RIGHT COLUMN: DETAILS & BUY NOW CARD (7 COLS) ================= */}
           <div className="lg:col-span-7 space-y-6">
             
-            {/* Title & Ratings Block */}
+            {/* Title & Ratings Header */}
             <div className="space-y-2.5">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-black uppercase tracking-wider text-[#3d3f96] bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
@@ -395,7 +437,7 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* ================= HERO PRICING & INLINE ACTION CARD ================= */}
+            {/* ================= HERO PRICING & BUY NOW ACTION CARD ================= */}
             <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/90 shadow-sm space-y-6">
               
               {/* Pricing breakdown */}
@@ -423,7 +465,7 @@ export default function ProductDetailPage() {
                 )}
               </div>
 
-              {/* Free Health Coach Callout (If CGM coach support is active) */}
+              {/* Free Health Coach Callout (CGM coaching) */}
               {cgmConfig?.isCoachSupportIncluded && (
                 <div className="bg-gradient-to-r from-emerald-50 to-teal-50/50 border border-emerald-200/80 rounded-2xl p-4 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
@@ -445,7 +487,7 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              {/* Variant Selector (Supports CGM Packs AND Glucometer Strip Variants) */}
+              {/* Variant Selector */}
               {activeVariants.length > 0 && (
                 <div className="space-y-3">
                   <label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center justify-between">
@@ -486,7 +528,6 @@ export default function ProductDetailPage() {
                               )}
                             </div>
                             
-                            {/* Sensors count / Strips count pill */}
                             {v.sensorsCount ? (
                               <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">
                                 {v.sensorsCount} Sensor{v.sensorsCount > 1 ? 's' : ''} ({v.sensorsCount * (cgmConfig?.sensorLifeSpanDays || 15)} Days)
@@ -504,7 +545,7 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              {/* Quantity Stepper & Inline Actions */}
+              {/* Quantity Stepper & Buy Now CTA */}
               <div className="space-y-4 pt-2">
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -535,28 +576,16 @@ export default function ProductDetailPage() {
                   </div>
                 </div>
 
-                {/* Primary Action Buttons (Desktop Inline) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                {/* ONLY BUY NOW ACTION BUTTON */}
+                <div className="pt-2">
                   <button
                     type="button"
-                    onClick={() =>
-                      alert(`Added ${quantity}x ${product.title} (${selectedVariant?.displayName || 'Standard'}) to cart!`)
-                    }
-                    className="w-full bg-indigo-50/80 hover:bg-indigo-100 text-[#3d3f96] border border-indigo-200 py-3.5 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 active:scale-98 cursor-pointer"
+                    onClick={handleBuyNow}
+                    className="w-full bg-[#3d3f96] hover:bg-slate-900 text-white py-4 rounded-2xl font-black text-base shadow-xl shadow-indigo-200 transition-all flex items-center justify-center gap-2 active:scale-98 cursor-pointer group"
                   >
-                    <ShoppingBag size={18} />
-                    <span>Add to Cart</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      alert(`Proceeding to checkout with ${quantity}x ${product.title} (${selectedVariant?.displayName || 'Standard'})`)
-                    }
-                    className="w-full bg-[#3d3f96] hover:bg-slate-900 text-white py-3.5 rounded-2xl font-extrabold text-sm shadow-xl shadow-indigo-200 transition-all flex items-center justify-center gap-2 active:scale-98 cursor-pointer"
-                  >
-                    <CreditCard size={18} />
+                    <CreditCard size={20} />
                     <span>Buy Now • ₹{totalSellingPrice.toLocaleString('en-IN')}</span>
+                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform ml-1" />
                   </button>
                 </div>
 
@@ -623,7 +652,7 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* GLUCOMETER TECHNICAL SPECIFICATIONS (If Glucometer / Non-CGM) */}
+            {/* GLUCOMETER TECHNICAL SPECIFICATIONS */}
             {!isCgmProduct && glucoSpecs && (
               <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-5">
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
@@ -778,7 +807,7 @@ export default function ProductDetailPage() {
         </div>
       </main>
 
-      {/* ================= ULTRA-COMPACT FLOATING ACTION BAR FOR MOBILE ================= */}
+      {/* ================= ULTRA-COMPACT FLOATING BUY NOW BAR FOR MOBILE ================= */}
       <aside className="lg:hidden fixed bottom-3 left-3 right-3 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl p-3 z-40 shadow-2xl">
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col pl-1">
@@ -795,28 +824,15 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() =>
-                alert(`Added ${quantity}x ${product.title} to cart!`)
-              }
-              className="p-2.5 rounded-xl border border-indigo-200 text-[#3d3f96] bg-indigo-50/80 font-bold active:scale-95 transition-all cursor-pointer"
-              aria-label="Add to cart"
-            >
-              <ShoppingBag size={18} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                alert(`Proceeding to checkout with ${quantity}x ${product.title}`)
-              }
-              className="px-5 py-2.5 bg-[#3d3f96] hover:bg-slate-900 text-white rounded-xl font-bold text-xs shadow-md shadow-indigo-200 active:scale-95 transition-all cursor-pointer"
-            >
-              Buy Now
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleBuyNow}
+            className="flex-1 max-w-[200px] py-3 bg-[#3d3f96] hover:bg-slate-900 text-white rounded-xl font-extrabold text-xs shadow-md shadow-indigo-200 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <CreditCard size={15} />
+            <span>Buy Now</span>
+            <ArrowRight size={14} />
+          </button>
         </div>
       </aside>
     </div>
