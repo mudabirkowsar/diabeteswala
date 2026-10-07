@@ -782,12 +782,12 @@ const UserAPI = {
         const response = await authApi.post('/api/user/cgm/checkout/verify-payment', data);
         return response.data;
     },
-    getCgmAddOns : async () => {
+    getCgmAddOns: async () => {
         const response = await authApi.get("/user/cgm/devices/addons")
         return response.data;
     },
 
-    getCgmCoachCharges: async () =>{
+    getCgmCoachCharges: async () => {
         const response = await authApi.get('/user/cgm/devices/coach-charge')
         return response.data;
     }

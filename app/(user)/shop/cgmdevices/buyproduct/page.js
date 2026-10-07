@@ -33,12 +33,67 @@ import { useNotification } from '../../../../context/NotificationContext';
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 const DIABETES_TYPES = [
-  'Type 1',
-  'Type 2',
-  'Pre-diabetic',
-  'Gestational',
-  'General Wellness',
-  'Not Sure'
+  // Common types
+  'Type 1 Diabetes',
+  'Type 2 Diabetes',
+  'Gestational Diabetes',
+
+  // Intermediate / related condition
+  'Prediabetes',
+
+  // Autoimmune diabetes
+  'Latent Autoimmune Diabetes in Adults (LADA)',
+  'Type 1 Diabetes with Autoimmune Polyglandular Syndrome',
+
+  // Genetic / monogenic diabetes
+  'Maturity-Onset Diabetes of the Young (MODY)',
+  'Neonatal Diabetes Mellitus',
+  'Permanent Neonatal Diabetes',
+  'Transient Neonatal Diabetes',
+  'Mitochondrial Diabetes',
+
+  // Secondary / diabetes due to other conditions
+  'Diabetes due to Pancreatic Disease',
+  'Diabetes due to Pancreatitis',
+  'Diabetes due to Cystic Fibrosis',
+  'Diabetes due to Hemochromatosis',
+  'Diabetes due to Endocrine Disorders',
+  'Diabetes due to Genetic Syndromes',
+  'Post-Pancreatectomy Diabetes',
+  'Post-Transplantation Diabetes',
+
+  // Drug / chemical-induced
+  'Steroid-Induced Diabetes',
+  'Drug-Induced Diabetes',
+  'Chemical-Induced Diabetes',
+
+  // Endocrine-related diabetes
+  'Diabetes due to Cushing Syndrome',
+  'Diabetes due to Acromegaly',
+  'Diabetes due to Hyperthyroidism',
+  'Diabetes due to Pheochromocytoma',
+
+  // Genetic syndromes associated with diabetes
+  'Wolfram Syndrome',
+  'Alström Syndrome',
+  'Down Syndrome-associated Diabetes',
+  'Turner Syndrome-associated Diabetes',
+  'Klinefelter Syndrome-associated Diabetes',
+  'Prader-Willi Syndrome-associated Diabetes',
+
+  // Pregnancy-related
+  'Gestational Diabetes - Diet Controlled',
+  'Gestational Diabetes - Medication Controlled',
+
+  // Other
+  'Secondary Diabetes Mellitus',
+  'Other Specified Diabetes',
+  'Unspecified Diabetes',
+  'Diabetes in Remission',
+  'Not Sure',
+
+  // Non-diabetes wellness category
+  'General Wellness'
 ];
 
 // Helper to dynamically load Razorpay script
@@ -153,12 +208,12 @@ export default function BuyProductCheckoutPage() {
               badge: item.badge,
               selectedVariant: defaultVar
                 ? {
-                    _id: defaultVar._id,
-                    displayName: defaultVar.packName || defaultVar.variantName || 'Standard',
-                    sellingPrice: defaultVar.sellingPrice,
-                    mrp: defaultVar.mrp,
-                    savingsAmount: defaultVar.savingsAmount
-                  }
+                  _id: defaultVar._id,
+                  displayName: defaultVar.packName || defaultVar.variantName || 'Standard',
+                  sellingPrice: defaultVar.sellingPrice,
+                  mrp: defaultVar.mrp,
+                  savingsAmount: defaultVar.savingsAmount
+                }
                 : null,
               quantity: 1,
               unitSellingPrice: defaultVar?.sellingPrice || item.sellingPrice,
@@ -347,8 +402,8 @@ export default function BuyProductCheckoutPage() {
             isDiabetic === 'no'
               ? 'General Wellness'
               : isDiabetic === 'pre-diabetic'
-              ? 'Pre-diabetic'
-              : diabetesType,
+                ? 'Pre-diabetic'
+                : diabetesType,
           hasUsedBefore: Boolean(hasUsedBefore)
         },
         includeCoachCharge,
@@ -514,10 +569,10 @@ export default function BuyProductCheckoutPage() {
       <main className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 pt-4 sm:pt-8">
         <form onSubmit={handlePlaceOrder}>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-8 items-start">
-            
+
             {/* ================= LEFT COLUMN: DETAILS & CUSTOMIZATIONS (7 COLS) ================= */}
             <div className="lg:col-span-7 space-y-3.5 sm:space-y-6">
-              
+
               {/* 1. PRODUCT SUMMARY CARD */}
               <div className="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 border border-slate-200/80 shadow-xs space-y-3 sm:space-y-4">
                 <div className="flex items-center justify-between pb-2 sm:pb-3 border-b border-slate-100">
@@ -620,11 +675,10 @@ export default function BuyProductCheckoutPage() {
                         key={opt.value}
                         type="button"
                         onClick={() => setIsDiabetic(opt.value)}
-                        className={`py-2 sm:py-2.5 px-1.5 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer text-center truncate ${
-                          isDiabetic === opt.value
-                            ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
-                            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                        }`}
+                        className={`py-2 sm:py-2.5 px-1.5 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer text-center truncate ${isDiabetic === opt.value
+                          ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                          }`}
                       >
                         {opt.label}
                       </button>
@@ -664,22 +718,20 @@ export default function BuyProductCheckoutPage() {
                     <button
                       type="button"
                       onClick={() => setHasUsedBefore(true)}
-                      className={`py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer truncate ${
-                        hasUsedBefore === true
-                          ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
-                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                      }`}
+                      className={`py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer truncate ${hasUsedBefore === true
+                        ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                        }`}
                     >
                       Yes, Used Before
                     </button>
                     <button
                       type="button"
                       onClick={() => setHasUsedBefore(false)}
-                      className={`py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer truncate ${
-                        hasUsedBefore === false
-                          ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
-                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                      }`}
+                      className={`py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer truncate ${hasUsedBefore === false
+                        ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                        }`}
                     >
                       No, First-timer
                     </button>
@@ -690,11 +742,10 @@ export default function BuyProductCheckoutPage() {
               {/* 3. 1-ON-1 CERTIFIED COACH CONSULTATION (ATTRACTIVE GRADIENT & RESPONSIVE) */}
               {coachData && coachData.isActive && (
                 <div
-                  className={`relative overflow-hidden rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border transition-all duration-300 ${
-                    includeCoachCharge
-                      ? 'border-[#3d3f96] bg-gradient-to-br from-indigo-100/90 via-purple-50/70 to-blue-50/80 ring-1.5 sm:ring-2 ring-[#3d3f96] shadow-md shadow-indigo-100/60'
-                      : 'border-indigo-200/70 bg-gradient-to-br from-indigo-50/50 via-purple-50/25 to-white shadow-xs hover:border-indigo-300 hover:shadow-sm'
-                  }`}
+                  className={`relative overflow-hidden rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border transition-all duration-300 ${includeCoachCharge
+                    ? 'border-[#3d3f96] bg-gradient-to-br from-indigo-100/90 via-purple-50/70 to-blue-50/80 ring-1.5 sm:ring-2 ring-[#3d3f96] shadow-md shadow-indigo-100/60'
+                    : 'border-indigo-200/70 bg-gradient-to-br from-indigo-50/50 via-purple-50/25 to-white shadow-xs hover:border-indigo-300 hover:shadow-sm'
+                    }`}
                 >
                   {/* Decorative Background Glow Effect */}
                   <div className="absolute -top-12 -right-12 w-28 h-28 sm:w-36 sm:h-36 bg-gradient-to-br from-[#3d3f96]/20 to-purple-400/20 rounded-full blur-2xl pointer-events-none -z-0" />
@@ -738,11 +789,10 @@ export default function BuyProductCheckoutPage() {
                         <button
                           type="button"
                           onClick={() => setIncludeCoachCharge(!includeCoachCharge)}
-                          className={`px-2.5 py-1 sm:px-4 sm:py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-black transition-all duration-200 cursor-pointer flex items-center gap-1 shadow-xs active:scale-95 ${
-                            includeCoachCharge
-                              ? 'bg-[#3d3f96] hover:bg-[#32347c] text-white shadow-indigo-300/50 ring-1 ring-[#3d3f96]'
-                              : 'bg-white hover:bg-indigo-50 text-[#3d3f96] border border-indigo-300/80 hover:border-[#3d3f96]'
-                          }`}
+                          className={`px-2.5 py-1 sm:px-4 sm:py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-black transition-all duration-200 cursor-pointer flex items-center gap-1 shadow-xs active:scale-95 ${includeCoachCharge
+                            ? 'bg-[#3d3f96] hover:bg-[#32347c] text-white shadow-indigo-300/50 ring-1 ring-[#3d3f96]'
+                            : 'bg-white hover:bg-indigo-50 text-[#3d3f96] border border-indigo-300/80 hover:border-[#3d3f96]'
+                            }`}
                         >
                           {includeCoachCharge ? <Check size={12} strokeWidth={3} /> : <Plus size={12} strokeWidth={3} />}
                           <span>{includeCoachCharge ? 'Added' : 'Add'}</span>
@@ -773,11 +823,10 @@ export default function BuyProductCheckoutPage() {
                       return (
                         <div
                           key={addon._id}
-                          className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all flex items-center justify-between gap-2.5 sm:gap-3 ${
-                            isAdded
-                              ? 'border-[#3d3f96] bg-indigo-50/30'
-                              : 'border-slate-200/80 bg-white hover:border-slate-300'
-                          }`}
+                          className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all flex items-center justify-between gap-2.5 sm:gap-3 ${isAdded
+                            ? 'border-[#3d3f96] bg-indigo-50/30'
+                            : 'border-slate-200/80 bg-white hover:border-slate-300'
+                            }`}
                         >
                           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                             <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-slate-50 border border-slate-100 p-1 shrink-0 flex items-center justify-center overflow-hidden">
@@ -864,11 +913,10 @@ export default function BuyProductCheckoutPage() {
                           <div
                             key={addr._id}
                             onClick={() => setSelectedAddressId(addr._id)}
-                            className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all cursor-pointer relative ${
-                              isSelected
-                                ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 ring-[#3d3f96]'
-                                : 'border-slate-200 bg-white hover:border-slate-300'
-                            }`}
+                            className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all cursor-pointer relative ${isSelected
+                              ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 ring-[#3d3f96]'
+                              : 'border-slate-200 bg-white hover:border-slate-300'
+                              }`}
                           >
                             <div className="flex items-center justify-between mb-0.5 sm:mb-1">
                               <span className="text-[11px] sm:text-xs font-extrabold text-slate-900 flex items-center gap-1">
@@ -891,11 +939,10 @@ export default function BuyProductCheckoutPage() {
                       {/* Add New Address Card */}
                       <div
                         onClick={() => setSelectedAddressId('new')}
-                        className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all cursor-pointer flex flex-col items-center justify-center gap-1 min-h-[75px] sm:min-h-[90px] ${
-                          selectedAddressId === 'new'
-                            ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 ring-[#3d3f96]'
-                            : 'border-dashed border-slate-300 hover:border-slate-400 bg-slate-50/50'
-                        }`}
+                        className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all cursor-pointer flex flex-col items-center justify-center gap-1 min-h-[75px] sm:min-h-[90px] ${selectedAddressId === 'new'
+                          ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 ring-[#3d3f96]'
+                          : 'border-dashed border-slate-300 hover:border-slate-400 bg-slate-50/50'
+                          }`}
                       >
                         <PlusCircle size={16} className="text-[#3d3f96]" />
                         <span className="text-[11px] sm:text-xs font-bold text-slate-800">Enter New Address</span>
@@ -1032,11 +1079,10 @@ export default function BuyProductCheckoutPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                   <label
                     onClick={() => setPaymentMethod('Online')}
-                    className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
-                      paymentMethod === 'Online'
-                        ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 sm:ring-2 ring-[#3d3f96]/20'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
+                    className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${paymentMethod === 'Online'
+                      ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 sm:ring-2 ring-[#3d3f96]/20'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                      }`}
                   >
                     <div className="flex items-center gap-2.5 sm:gap-3">
                       <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-indigo-100 text-[#3d3f96] flex items-center justify-center shrink-0">
@@ -1058,11 +1104,10 @@ export default function BuyProductCheckoutPage() {
 
                   <label
                     onClick={() => setPaymentMethod('COD')}
-                    className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
-                      paymentMethod === 'COD'
-                        ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 sm:ring-2 ring-[#3d3f96]/20'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
+                    className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${paymentMethod === 'COD'
+                      ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 sm:ring-2 ring-[#3d3f96]/20'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                      }`}
                   >
                     <div className="flex items-center gap-2.5 sm:gap-3">
                       <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
@@ -1087,7 +1132,7 @@ export default function BuyProductCheckoutPage() {
 
             {/* ================= RIGHT COLUMN: FARE BREAKDOWN (5 COLS) ================= */}
             <div className="lg:col-span-5 lg:sticky lg:top-20 space-y-3 sm:space-y-4">
-              
+
               {/* Fare Summary Card */}
               <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-sm space-y-3 sm:space-y-4 relative">
                 <div className="flex items-center justify-between pb-1.5 sm:pb-2 border-b border-slate-100">
