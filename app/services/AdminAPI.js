@@ -1133,6 +1133,54 @@ const AdminAPI = {
         const response = await authApi.delete(`/admin/cgm/coach-charge/delete/${id}`);
         return response.data;
     },
+
+    //manage coaches 
+    // --- 1. Admin Create Diabetes Coach (Multipart Form-Data) ---
+    createDiabetesCoach: async (formData) => {
+        // formData: FormData containing text fields ('name', 'price', 'phone', 'email', 'about', 'languages', 'lat', 'lng', 'address', 'city', 'state', 'pincode') and optional 'profileImage' file
+        const response = await authApi.post('/admin/cgm/coaches/add', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
+
+    // --- 2. Admin Get All Diabetes Coaches (Table List & Filters) ---
+    getAllDiabetesCoaches: async (params) => {
+        // params (optional): { page: 1, limit: 10, search: 'Ananya', city: 'Mohali', activeOnly: true }
+        const response = await authApi.get('/admin/cgm/coaches/all', { params });
+        return response.data;
+    },
+
+    // --- 3. Admin Get Single Diabetes Coach Details by ID ---
+    getDiabetesCoachById: async (id) => {
+        // id: Coach unique ObjectID (_id)
+        const response = await authApi.get(`/admin/cgm/coaches/detail/${id}`);
+        return response.data;
+    },
+
+    // --- 4. Admin Update Diabetes Coach (Multipart Form-Data) ---
+    updateDiabetesCoach: async (id, formData) => {
+        // id: Coach unique ObjectID (_id)
+        // formData: FormData with optional text fields ('name', 'price', 'phone', 'about', 'lat', 'lng') and optional replacement 'profileImage' file
+        const response = await authApi.put(`/admin/cgm/coaches/update/${id}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
+
+    // --- 5. Admin Toggle Diabetes Coach Active/Inactive Status ---
+    toggleDiabetesCoachStatus: async (id) => {
+        // id: Coach unique ObjectID (_id)
+        const response = await authApi.patch(`/admin/cgm/coaches/toggle-status/${id}`);
+        return response.data;
+    },
+
+    // --- 6. Admin Delete Diabetes Coach ---
+    deleteDiabetesCoach: async (id) => {
+        // id: Coach unique ObjectID (_id)
+        const response = await authApi.delete(`/admin/cgm/coaches/delete/${id}`);
+        return response.data;
+    },
 }
 
 export default AdminAPI;
