@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import {
     X,
     User,
-    IndianRupee,
     Phone,
     Mail,
     MapPin,
@@ -13,6 +12,11 @@ import {
     Ban,
     Languages,
     Compass,
+    Clock,
+    Calendar,
+    Sparkles,
+    CalendarOff,
+    ShieldCheck,
     Loader2
 } from 'lucide-react';
 import AdminAPI from '../../../../../services/AdminAPI';
@@ -52,15 +56,25 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
 
     if (!isOpen) return null;
 
+    const slotConfig = coach?.slotConfig;
+
     return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 max-w-lg w-full p-6 sm:p-8 shadow-2xl relative text-left overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative text-left overflow-hidden max-h-[92vh] flex flex-col">
 
                 {/* Header */}
                 <div className="flex items-center justify-between pb-4 border-b border-slate-100 shrink-0 mb-4">
-                    <span className="text-[11px] font-black uppercase text-[#3d3f96] bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full shadow-2xs">
-                        Coach Dossier
-                    </span>
+                    <div className="flex items-center gap-2.5">
+                        <span className="text-[11px] font-black uppercase text-[#3d3f96] bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full shadow-2xs">
+                            Coach Dossier
+                        </span>
+                        {coach?.role && (
+                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                                <ShieldCheck size={11} className="text-[#3d3f96]" />
+                                {coach.role}
+                            </span>
+                        )}
+                    </div>
                     <button
                         onClick={onClose}
                         className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition cursor-pointer"
@@ -70,18 +84,18 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
                 </div>
 
                 {loading ? (
-                    <div className="py-20 flex flex-col items-center justify-center space-y-3">
-                        <Loader2 className="animate-spin text-[#3d3f96]" size={32} />
-                        <p className="text-xs font-bold text-slate-400">Loading profile data...</p>
+                    <div className="py-24 flex flex-col items-center justify-center space-y-3">
+                        <Loader2 className="animate-spin text-[#3d3f96]" size={36} />
+                        <p className="text-xs font-bold text-slate-400">Loading complete dossier & schedule...</p>
                     </div>
                 ) : !coach ? (
-                    <div className="py-16 text-center text-xs font-bold text-slate-400">
+                    <div className="py-20 text-center text-xs font-bold text-slate-400">
                         Unable to find coach records.
                     </div>
                 ) : (
                     <div className="overflow-y-auto space-y-5 pr-1 flex-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
 
-                        {/* Top Card: Avatar, Name, Rating & Status */}
+                        {/* 1. Profile Top Card */}
                         <div className="flex items-center gap-4 p-4 rounded-3xl bg-slate-50 border border-slate-100">
                             <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 overflow-hidden flex items-center justify-center shrink-0 shadow-xs relative">
                                 {coach.profileImage ? (
@@ -114,7 +128,7 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
                                     )}
                                 </div>
 
-                                <div className="flex items-center gap-3 mt-1 text-xs">
+                                <div className="flex items-center gap-3 mt-1.5 text-xs flex-wrap">
                                     <div className="flex items-center gap-1 text-amber-500 font-black">
                                         <Star size={13} fill="currentColor" />
                                         <span>{coach.rating || '0.0'}</span>
@@ -130,10 +144,10 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
                             </div>
                         </div>
 
-                        {/* Contact Information */}
+                        {/* 2. Contact Information Cards */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                             <div className="p-3 bg-white border border-slate-200/80 rounded-2xl flex items-center gap-3">
-                                <Phone size={16} className="text-[#3d3f96]" />
+                                <Phone size={16} className="text-[#3d3f96] shrink-0" />
                                 <div className="min-w-0">
                                     <span className="text-[9px] font-black uppercase text-slate-400 block">Phone</span>
                                     <span className="font-bold text-slate-800 truncate block">
@@ -143,7 +157,7 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
                             </div>
 
                             <div className="p-3 bg-white border border-slate-200/80 rounded-2xl flex items-center gap-3">
-                                <Mail size={16} className="text-[#3d3f96]" />
+                                <Mail size={16} className="text-[#3d3f96] shrink-0" />
                                 <div className="min-w-0">
                                     <span className="text-[9px] font-black uppercase text-slate-400 block">Email</span>
                                     <span className="font-bold text-slate-800 truncate block">
@@ -153,7 +167,128 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
                             </div>
                         </div>
 
-                        {/* Languages */}
+                        {/* 3. Slot Configuration & Scheduling */}
+                        {slotConfig ? (
+                            <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-3xl space-y-3.5">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                                        <Clock size={14} className="text-[#3d3f96]" /> Consultation Slot Configuration
+                                    </span>
+                                    <span className="text-[10px] font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg">
+                                        {slotConfig.slotDuration || 30} mins / slot
+                                    </span>
+                                </div>
+
+                                {/* Operational Timings & Shifts */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                    <div className="p-3 bg-white rounded-2xl border border-slate-100 space-y-1">
+                                        <span className="text-[9px] font-black uppercase text-slate-400 block">
+                                            Operating Window
+                                        </span>
+                                        <span className="font-black text-slate-800 text-sm">
+                                            {slotConfig.startTime || '09:00'} &mdash; {slotConfig.endTime || '20:00'}
+                                        </span>
+                                    </div>
+
+                                    <div className="p-3 bg-white rounded-2xl border border-slate-100 space-y-1.5">
+                                        <span className="text-[9px] font-black uppercase text-slate-400 block">
+                                            Shift Coverage
+                                        </span>
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${slotConfig.morningSlots ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-400'}`}>
+                                                Morning
+                                            </span>
+                                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${slotConfig.afternoonSlots ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-400'}`}>
+                                                Afternoon
+                                            </span>
+                                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${slotConfig.eveningSlots ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-400'}`}>
+                                                Evening
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Premium Slots */}
+                                {slotConfig.premiumSlots && slotConfig.premiumSlots.length > 0 && (
+                                    <div className="space-y-1.5">
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                                            <Sparkles size={11} className="text-amber-500" /> Premium Slots (Extra Charges)
+                                        </span>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {slotConfig.premiumSlots.map((prem) => (
+                                                <span
+                                                    key={prem._id || prem.time}
+                                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold rounded-xl"
+                                                >
+                                                    <span>{prem.time}</span>
+                                                    <span className="text-[10px] font-black text-amber-700 bg-amber-100/70 px-1.5 py-0.2 rounded-md">
+                                                        +₹{prem.extraFee}
+                                                    </span>
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Unavailable / Break Slots */}
+                                {slotConfig.unavailableSlots && slotConfig.unavailableSlots.length > 0 && (
+                                    <div className="space-y-1">
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                                            Break & Unavailable Slots
+                                        </span>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {slotConfig.unavailableSlots.map((time, idx) => (
+                                                <span
+                                                    key={idx}
+                                                    className="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold rounded-lg"
+                                                >
+                                                    {time}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Off Days & Blocked Dates */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                                    {slotConfig.offDays && slotConfig.offDays.length > 0 && (
+                                        <div className="space-y-1">
+                                            <span className="text-[9px] font-black uppercase text-slate-400 block">
+                                                Weekly Off Days
+                                            </span>
+                                            <div className="flex flex-wrap gap-1">
+                                                {slotConfig.offDays.map((day, idx) => (
+                                                    <span key={idx} className="px-2 py-0.5 bg-slate-200/70 text-slate-700 text-[10px] font-bold rounded-md">
+                                                        {day}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {slotConfig.blockedDates && slotConfig.blockedDates.length > 0 && (
+                                        <div className="space-y-1">
+                                            <span className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-1">
+                                                <CalendarOff size={10} /> Blocked Holiday Dates
+                                            </span>
+                                            <div className="flex flex-wrap gap-1">
+                                                {slotConfig.blockedDates.map((date, idx) => (
+                                                    <span key={idx} className="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-100 text-[10px] font-mono font-bold rounded-md">
+                                                        {date}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-xs text-slate-400 font-semibold text-center">
+                                No custom slot configuration created for this coach.
+                            </div>
+                        )}
+
+                        {/* 4. Languages */}
                         {coach.languages && coach.languages.length > 0 && (
                             <div>
                                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-2">
@@ -175,7 +310,7 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
                             </div>
                         )}
 
-                        {/* Bio */}
+                        {/* 5. Bio / Guidance Summary */}
                         {coach.about && (
                             <div className="space-y-1">
                                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
@@ -187,7 +322,7 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
                             </div>
                         )}
 
-                        {/* Address & Coordinates */}
+                        {/* 6. Physical Location & Coordinates */}
                         <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-2xl space-y-2">
                             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                                 <MapPin size={12} className="text-[#3d3f96]" /> Operating Location
@@ -212,7 +347,7 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
                             )}
                         </div>
 
-                        {/* Footer timestamps */}
+                        {/* 7. Footer Timestamps */}
                         <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 pt-2 border-t border-slate-100">
                             <span>ID: {coach._id}</span>
                             <span>Added: {new Date(coach.createdAt).toLocaleDateString()}</span>

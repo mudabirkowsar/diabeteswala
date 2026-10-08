@@ -19,6 +19,7 @@ import {
     ToggleRight,
     ChevronLeft,
     ChevronRight,
+    Clock,
     User
 } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
@@ -45,7 +46,7 @@ export default function DiabetesCoachesPage() {
     // --- Search & Filters ---
     const [searchQuery, setSearchQuery] = useState('');
     const [cityFilter, setCityFilter] = useState('');
-    const [statusFilter, setStatusFilter] = useState('ALL');
+    const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'ACTIVE' | 'INACTIVE'
 
     // --- Pagination ---
     const [page, setPage] = useState(1);
@@ -64,7 +65,7 @@ export default function DiabetesCoachesPage() {
     // --- Delete Confirmation State ---
     const [deleteTarget, setDeleteTarget] = useState(null);
 
-    // Fetch Coaches
+    // 1. Fetch Coaches
     const fetchCoaches = useCallback(async () => {
         setLoading(true);
         try {
@@ -103,6 +104,7 @@ export default function DiabetesCoachesPage() {
         fetchCoaches();
     };
 
+    // 2. Toggle Status
     const handleToggleStatus = async (coach) => {
         setActionLoading(true);
         try {
@@ -125,6 +127,7 @@ export default function DiabetesCoachesPage() {
         }
     };
 
+    // 3. Confirm Delete
     const handleConfirmDelete = async () => {
         if (!deleteTarget) return;
 
@@ -153,7 +156,7 @@ export default function DiabetesCoachesPage() {
         <div className="max-w-[1600px] mx-auto space-y-7 py-4 pb-20 antialiased select-none text-left">
             <Toaster position="top-right" />
 
-            {/* Top Header */}
+            {/* --- TOP HEADER SECTION --- */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 border-b border-slate-100 pb-6">
                 <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-3xl bg-[#3d3f96]/10 text-[#3d3f96] flex items-center justify-center border border-[#3d3f96]/20 shadow-xs shrink-0">
@@ -169,7 +172,7 @@ export default function DiabetesCoachesPage() {
                             </span>
                         </div>
                         <p className="text-xs text-slate-500 font-bold mt-1">
-                            Manage certified diabetes educators, CGM reading counselors, consultations, and schedules.
+                            Manage certified diabetes educators, CGM reading counselors, consultations, and slot timings.
                         </p>
                     </div>
                 </div>
@@ -200,7 +203,7 @@ export default function DiabetesCoachesPage() {
                 </div>
             </div>
 
-            {/* Stat Cards */}
+            {/* --- STAT METRIC CARDS --- */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center font-black">
@@ -239,7 +242,7 @@ export default function DiabetesCoachesPage() {
                 </div>
             </div>
 
-            {/* Search & Filter Bar */}
+            {/* --- SEARCH & FILTER BAR --- */}
             <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto flex-1">
                     <div className="relative w-full sm:w-80">
@@ -249,7 +252,7 @@ export default function DiabetesCoachesPage() {
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit(e)}
-                            placeholder="Search by name, phone, email..."
+                            placeholder="Search by name, phone, email, city..."
                             className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#3d3f96] focus:bg-white transition"
                         />
                     </div>
@@ -290,7 +293,7 @@ export default function DiabetesCoachesPage() {
                 </div>
             </div>
 
-            {/* Table Section */}
+            {/* --- COACHES TABLE --- */}
             {loading ? (
                 <div className="py-28 bg-white rounded-3xl border border-slate-200 shadow-xs flex flex-col items-center justify-center space-y-3">
                     <Loader2 className="animate-spin text-[#3d3f96]" size={36} />
@@ -313,7 +316,7 @@ export default function DiabetesCoachesPage() {
                             <thead>
                                 <tr className="border-b border-slate-100 text-slate-400 uppercase font-black bg-slate-50/70 tracking-wider">
                                     <th className="py-4.5 px-6">Coach Name & Profile</th>
-                                    <th className="py-4.5 px-6">Consultation Fee</th>
+                                    <th className="py-4.5 px-6">Fee & Slot Timings</th>
                                     <th className="py-4.5 px-6">Contact / Location</th>
                                     <th className="py-4.5 px-6">Rating</th>
                                     <th className="py-4.5 px-6">Active Status</th>
@@ -352,12 +355,20 @@ export default function DiabetesCoachesPage() {
                                             </div>
                                         </td>
 
-                                        {/* Price */}
+                                        {/* Fee & Slot Timings */}
                                         <td className="py-4.5 px-6">
-                                            <span className="text-sm font-black text-slate-900 flex items-center">
-                                                ₹{coach.price}
-                                            </span>
-                                            <span className="text-[10px] text-slate-400">per session</span>
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-sm font-black text-slate-900">
+                                                        ₹{coach.price}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400">/ session</span>
+                                                </div>
+                                                <div className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg">
+                                                    <Clock size={11} className="text-[#3d3f96]" />
+                                                    <span>{coach.slotTimings || 'Not Configured'}</span>
+                                                </div>
+                                            </div>
                                         </td>
 
                                         {/* Contact / Location */}
@@ -417,7 +428,7 @@ export default function DiabetesCoachesPage() {
                                                         setIsViewModalOpen(true);
                                                     }}
                                                     className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition cursor-pointer"
-                                                    title="View Profile Details"
+                                                    title="View Full Profile & Slot Details"
                                                 >
                                                     <Eye size={14} />
                                                 </button>
