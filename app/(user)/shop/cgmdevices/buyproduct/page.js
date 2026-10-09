@@ -10,90 +10,32 @@ import {
   Lock,
   Plus,
   Minus,
-  MapPin,
   Sparkles,
-  UserCheck,
-  CheckCircle2,
   Loader2,
   PackageCheck,
   ChevronDown,
-  PlusCircle,
-  Check,
   Zap,
   Activity,
   ShoppingBag,
   CheckCircle,
-  Home,
-  Briefcase,
   ArrowRight
 } from 'lucide-react';
 import UserAPI from '../../../../services/UserAPI';
 import { useNotification } from '../../../../context/NotificationContext';
 
+// Import Modular Subcomponents
+import ChooseAddress from './components/ChooseAddress';
+import ChooseCoachAndSlot from './components/ChooseCoachAndSlot';
+
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 const DIABETES_TYPES = [
-  // Common types
-  'Type 1 Diabetes',
-  'Type 2 Diabetes',
-  'Gestational Diabetes',
-
-  // Intermediate / related condition
-  'Prediabetes',
-
-  // Autoimmune diabetes
-  'Latent Autoimmune Diabetes in Adults (LADA)',
-  'Type 1 Diabetes with Autoimmune Polyglandular Syndrome',
-
-  // Genetic / monogenic diabetes
-  'Maturity-Onset Diabetes of the Young (MODY)',
-  'Neonatal Diabetes Mellitus',
-  'Permanent Neonatal Diabetes',
-  'Transient Neonatal Diabetes',
-  'Mitochondrial Diabetes',
-
-  // Secondary / diabetes due to other conditions
-  'Diabetes due to Pancreatic Disease',
-  'Diabetes due to Pancreatitis',
-  'Diabetes due to Cystic Fibrosis',
-  'Diabetes due to Hemochromatosis',
-  'Diabetes due to Endocrine Disorders',
-  'Diabetes due to Genetic Syndromes',
-  'Post-Pancreatectomy Diabetes',
-  'Post-Transplantation Diabetes',
-
-  // Drug / chemical-induced
-  'Steroid-Induced Diabetes',
-  'Drug-Induced Diabetes',
-  'Chemical-Induced Diabetes',
-
-  // Endocrine-related diabetes
-  'Diabetes due to Cushing Syndrome',
-  'Diabetes due to Acromegaly',
-  'Diabetes due to Hyperthyroidism',
-  'Diabetes due to Pheochromocytoma',
-
-  // Genetic syndromes associated with diabetes
-  'Wolfram Syndrome',
-  'Alström Syndrome',
-  'Down Syndrome-associated Diabetes',
-  'Turner Syndrome-associated Diabetes',
-  'Klinefelter Syndrome-associated Diabetes',
-  'Prader-Willi Syndrome-associated Diabetes',
-
-  // Pregnancy-related
-  'Gestational Diabetes - Diet Controlled',
-  'Gestational Diabetes - Medication Controlled',
-
-  // Other
-  'Secondary Diabetes Mellitus',
-  'Other Specified Diabetes',
-  'Unspecified Diabetes',
-  'Diabetes in Remission',
-  'Not Sure',
-
-  // Non-diabetes wellness category
-  'General Wellness'
+  'Type 1',
+  'Type 2',
+  'Pre-diabetic',
+  'Gestational',
+  'General Wellness',
+  'Not Sure'
 ];
 
 // Helper to dynamically load Razorpay script
@@ -117,6 +59,28 @@ export default function BuyProductCheckoutPage() {
   const productId = searchParams.get('productId');
   const { showNotification } = useNotification?.() || {};
 
+  // Retrieve Stored User Coordinates with exact default fallback
+  const getInitialCoords = () => {
+    let lat = 30.698383813970036;
+    let lng = 76.68573589283919;
+
+    if (typeof window !== 'undefined') {
+      const savedCoords = localStorage.getItem('userCoords');
+      if (savedCoords) {
+        try {
+          const parsed = JSON.parse(savedCoords);
+          if (parsed.lat !== undefined && parsed.lng !== undefined) {
+            lat = Number(parsed.lat);
+            lng = Number(parsed.lng);
+          }
+        } catch (e) {
+          console.error('Error reading stored user coordinates:', e);
+        }
+      }
+    }
+    return { lat, lng };
+  };
+
   // Core Product Checkout State
   const [checkoutItem, setCheckoutItem] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
@@ -124,35 +88,27 @@ export default function BuyProductCheckoutPage() {
   const [placingOrder, setPlacingOrder] = useState(false);
 
   // Health Profile Questionnaire
-  const [isDiabetic, setIsDiabetic] = useState('yes'); // 'yes' | 'no' | 'pre-diabetic'
+  const [isDiabetic, setIsDiabetic] = useState('yes');
   const [diabetesType, setDiabetesType] = useState('Type 2');
   const [hasUsedBefore, setHasUsedBefore] = useState(false);
 
-  // Coach Charge Consultation
-  const [coachData, setCoachData] = useState(null);
+  // Coach & Slots Modular State
   const [includeCoachCharge, setIncludeCoachCharge] = useState(false);
+  const [selectedCoach, setSelectedCoach] = useState(null);
+  const [selectedSlot, setSelectedSlot] = useState(null);
 
   // Add-ons
   const [availableAddons, setAvailableAddons] = useState([]);
-  const [selectedAddons, setSelectedAddons] = useState({}); // { [addonId]: quantity }
+  const [selectedAddons, setSelectedAddons] = useState({});
 
-  // Addresses
-  const [savedAddresses, setSavedAddresses] = useState([]);
-  const [selectedAddressId, setSelectedAddressId] = useState('new');
-  const [customAddress, setCustomAddress] = useState({
-    name: '',
-    phone: '',
-    houseNo: '',
-    sector: '',
-    landmark: '',
-    city: '',
-    state: '',
-    pincode: '',
-    addressType: 'Home'
-  });
+  // Delivery Address Modular State
+  const [selectedDeliveryAddress, setSelectedDeliveryAddress] = useState(null);
+
+  // User location for coach discovery
+  const [userLocation, setUserLocation] = useState(getInitialCoords);
 
   // Payment Options
-  const [paymentMethod, setPaymentMethod] = useState('Online'); // 'Online' | 'COD'
+  const [paymentMethod, setPaymentMethod] = useState('Online');
 
   // Calculated Backend Bill Breakdown
   const [billSummary, setBillSummary] = useState(null);
@@ -171,7 +127,7 @@ export default function BuyProductCheckoutPage() {
     return `${BASE_URL}${imgPath}`;
   };
 
-  // 1. Initial Load: Retrieve Product, Add-ons, Coach charges & Saved Addresses
+  // 1. Initial Load: Retrieve Product & Add-ons
   useEffect(() => {
     const initializeCheckout = async () => {
       try {
@@ -186,6 +142,10 @@ export default function BuyProductCheckoutPage() {
             setCheckoutItem(currentItem);
           }
         }
+
+        // Set user location from storage helper
+        const coords = getInitialCoords();
+        setUserLocation(coords);
 
         // Fallback API Load if session is absent
         if (!currentItem && productId) {
@@ -227,28 +187,10 @@ export default function BuyProductCheckoutPage() {
           }
         }
 
-        // Parallel Fetch: Addons, Coach Charges & User Addresses
-        const [addonsRes, coachRes, addressRes] = await Promise.allSettled([
-          UserAPI.getCgmAddOns(),
-          UserAPI.getCgmCoachCharges(),
-          UserAPI.getAddressList()
-        ]);
-
-        if (addonsRes.status === 'fulfilled' && addonsRes.value?.data) {
-          setAvailableAddons(addonsRes.value.data);
-        }
-
-        if (coachRes.status === 'fulfilled' && coachRes.value?.data) {
-          setCoachData(coachRes.value.data);
-        }
-
-        if (addressRes.status === 'fulfilled' && addressRes.value?.data && Array.isArray(addressRes.value.data)) {
-          const addrs = addressRes.value.data;
-          setSavedAddresses(addrs);
-          const defaultAddr = addrs.find((a) => a.isDefault) || addrs[0];
-          if (defaultAddr) {
-            setSelectedAddressId(defaultAddr._id);
-          }
+        // Fetch Addons
+        const addonsRes = await UserAPI.getCgmAddOns();
+        if (addonsRes && addonsRes.data && Array.isArray(addonsRes.data)) {
+          setAvailableAddons(addonsRes.data);
         }
       } catch (err) {
         console.error('Error initializing checkout data:', err);
@@ -284,7 +226,7 @@ export default function BuyProductCheckoutPage() {
         variantId: checkoutItem.selectedVariant?._id || undefined,
         quantity: checkoutItem.quantity || 1,
         includeCoachCharge,
-        coachChargeId: coachData?._id || undefined,
+        coachChargeId: selectedCoach?._id || undefined,
         addons: formattedAddonsPayload
       };
 
@@ -297,9 +239,8 @@ export default function BuyProductCheckoutPage() {
     } finally {
       setCalculatingBill(false);
     }
-  }, [checkoutItem, includeCoachCharge, coachData, formattedAddonsPayload]);
+  }, [checkoutItem, includeCoachCharge, selectedCoach, formattedAddonsPayload]);
 
-  // Trigger recalculation whenever selection updates
   useEffect(() => {
     if (checkoutItem) {
       calculateBill();
@@ -324,7 +265,7 @@ export default function BuyProductCheckoutPage() {
     });
   };
 
-  // Handle Addon selection toggle & qty
+  // Addons toggle & stepper
   const handleToggleAddon = (addonId) => {
     setSelectedAddons((prev) => {
       const current = prev[addonId] || 0;
@@ -350,42 +291,19 @@ export default function BuyProductCheckoutPage() {
     });
   };
 
-  // Get active delivery address object
-  const getActiveDeliveryAddress = () => {
-    if (selectedAddressId !== 'new') {
-      const found = savedAddresses.find((a) => a._id === selectedAddressId);
-      if (found) {
-        return {
-          name: found.name,
-          phone: found.phone,
-          houseNo: found.houseNo,
-          sector: found.sector || '',
-          landmark: found.landmark || '',
-          city: found.city,
-          state: found.state,
-          pincode: found.pincode,
-          addressType: found.addressType || 'Home'
-        };
-      }
-    }
-    return customAddress;
-  };
-
   // 4. Place Order Handler (Razorpay Online & Cash on Delivery)
   const handlePlaceOrder = async (e) => {
     if (e) e.preventDefault();
 
-    const activeAddress = getActiveDeliveryAddress();
-
     if (
-      !activeAddress.name?.trim() ||
-      !activeAddress.phone?.trim() ||
-      !activeAddress.houseNo?.trim() ||
-      !activeAddress.city?.trim() ||
-      !activeAddress.pincode?.trim()
+      !selectedDeliveryAddress?.name?.trim() ||
+      !selectedDeliveryAddress?.phone?.trim() ||
+      !selectedDeliveryAddress?.houseNo?.trim() ||
+      !selectedDeliveryAddress?.city?.trim() ||
+      !selectedDeliveryAddress?.pincode?.trim()
     ) {
       if (showNotification) {
-        showNotification('Please provide complete delivery address details.', 'error');
+        showNotification('Please select or provide complete delivery address details.', 'error');
       }
       return;
     }
@@ -407,9 +325,18 @@ export default function BuyProductCheckoutPage() {
           hasUsedBefore: Boolean(hasUsedBefore)
         },
         includeCoachCharge,
+        coachChargeId: selectedCoach?._id || undefined,
         addons: formattedAddonsPayload,
         paymentMethod,
-        deliveryAddress: activeAddress
+        deliveryAddress: selectedDeliveryAddress,
+        consultationSlot: selectedSlot
+          ? {
+            date: selectedSlot.date,
+            slotTime: selectedSlot.slotTime,
+            displayTime: selectedSlot.displayTime,
+            extraFee: selectedSlot.extraFee || 0
+          }
+          : undefined
       };
 
       const res = await UserAPI.placeCgmOrder(orderPayload);
@@ -421,7 +348,7 @@ export default function BuyProductCheckoutPage() {
 
           if (!isScriptLoaded) {
             if (showNotification) {
-              showNotification('Razorpay SDK failed to load. Please check your internet connection.', 'error');
+              showNotification('Razorpay SDK failed to load. Please check your connection.', 'error');
             }
             setPlacingOrder(false);
             return;
@@ -451,7 +378,7 @@ export default function BuyProductCheckoutPage() {
                   setOrderSuccessData({
                     orderId: res.orderId,
                     isOnlinePayment: true,
-                    amountPaid: billSummary?.pricingBreakdown?.totalPayable || (res.amount / 100)
+                    amountPaid: finalPayableAmount
                   });
                 } else {
                   throw new Error(verifyRes?.message || 'Payment verification failed.');
@@ -464,8 +391,8 @@ export default function BuyProductCheckoutPage() {
               }
             },
             prefill: {
-              name: activeAddress.name,
-              contact: activeAddress.phone
+              name: selectedDeliveryAddress.name,
+              contact: selectedDeliveryAddress.phone
             },
             theme: {
               color: '#3d3f96'
@@ -483,7 +410,7 @@ export default function BuyProductCheckoutPage() {
             orderId: res.orderId,
             deliveryOtp: res.deliveryOtp,
             isOnlinePayment: false,
-            amountPaid: res.billSummary?.totalPayable || billSummary?.pricingBreakdown?.totalPayable
+            amountPaid: finalPayableAmount
           });
         }
       } else {
@@ -510,7 +437,6 @@ export default function BuyProductCheckoutPage() {
     );
   }
 
-  // Fallback if no item is loaded
   if (!checkoutItem) {
     return (
       <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center p-4 text-center">
@@ -531,8 +457,11 @@ export default function BuyProductCheckoutPage() {
     );
   }
 
-  // Active pricing values
-  const payableAmount = billSummary?.pricingBreakdown?.totalPayable ?? checkoutItem.totalSellingPrice;
+  // Active pricing values + Premium Slot Extra Fee Calculation
+  const basePayableAmount = billSummary?.pricingBreakdown?.totalPayable ?? checkoutItem.totalSellingPrice;
+  const slotExtraFee = includeCoachCharge && selectedSlot?.extraFee ? Number(selectedSlot.extraFee) : 0;
+  const finalPayableAmount = basePayableAmount + slotExtraFee;
+
   const itemTotal = billSummary?.pricingBreakdown?.itemTotal ?? checkoutItem.totalSellingPrice;
   const mrpTotal = billSummary?.pricingBreakdown?.mrpTotal ?? checkoutItem.totalMrp;
   const savings =
@@ -660,7 +589,6 @@ export default function BuyProductCheckoutPage() {
                   <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium">Personalized Setup</span>
                 </div>
 
-                {/* Question 1: Are you diabetic? */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-600 block">
                     1. Diagnosed with Diabetes?
@@ -676,8 +604,8 @@ export default function BuyProductCheckoutPage() {
                         type="button"
                         onClick={() => setIsDiabetic(opt.value)}
                         className={`py-2 sm:py-2.5 px-1.5 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer text-center truncate ${isDiabetic === opt.value
-                          ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
-                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                            ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
+                            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                           }`}
                       >
                         {opt.label}
@@ -686,7 +614,6 @@ export default function BuyProductCheckoutPage() {
                   </div>
                 </div>
 
-                {/* Question 1b: Dropdown for Diabetes Type (If Yes) */}
                 {isDiabetic === 'yes' && (
                   <div className="space-y-1 sm:space-y-2 pt-0.5 sm:pt-1">
                     <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-600 block">
@@ -709,7 +636,6 @@ export default function BuyProductCheckoutPage() {
                   </div>
                 )}
 
-                {/* Question 2: Have you used CGM before? */}
                 <div className="space-y-1.5 pt-2 border-t border-slate-100">
                   <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-600 block">
                     2. Ever used a {isCgm ? 'CGM Sensor' : 'Glucometer'} before?
@@ -719,8 +645,8 @@ export default function BuyProductCheckoutPage() {
                       type="button"
                       onClick={() => setHasUsedBefore(true)}
                       className={`py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer truncate ${hasUsedBefore === true
-                        ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                          ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                         }`}
                     >
                       Yes, Used Before
@@ -729,8 +655,8 @@ export default function BuyProductCheckoutPage() {
                       type="button"
                       onClick={() => setHasUsedBefore(false)}
                       className={`py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer truncate ${hasUsedBefore === false
-                        ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                          ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                         }`}
                     >
                       No, First-timer
@@ -739,69 +665,17 @@ export default function BuyProductCheckoutPage() {
                 </div>
               </div>
 
-              {/* 3. 1-ON-1 CERTIFIED COACH CONSULTATION (ATTRACTIVE GRADIENT & RESPONSIVE) */}
-              {coachData && coachData.isActive && (
-                <div
-                  className={`relative overflow-hidden rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border transition-all duration-300 ${includeCoachCharge
-                    ? 'border-[#3d3f96] bg-gradient-to-br from-indigo-100/90 via-purple-50/70 to-blue-50/80 ring-1.5 sm:ring-2 ring-[#3d3f96] shadow-md shadow-indigo-100/60'
-                    : 'border-indigo-200/70 bg-gradient-to-br from-indigo-50/50 via-purple-50/25 to-white shadow-xs hover:border-indigo-300 hover:shadow-sm'
-                    }`}
-                >
-                  {/* Decorative Background Glow Effect */}
-                  <div className="absolute -top-12 -right-12 w-28 h-28 sm:w-36 sm:h-36 bg-gradient-to-br from-[#3d3f96]/20 to-purple-400/20 rounded-full blur-2xl pointer-events-none -z-0" />
-                  <div className="absolute -bottom-10 -left-10 w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-tr from-blue-300/15 to-indigo-300/20 rounded-full blur-xl pointer-events-none -z-0" />
-
-                  <div className="relative z-10 space-y-2.5 sm:space-y-3">
-                    {/* Top Highlight Badge Pill */}
-                    <div className="flex items-center justify-between gap-1.5 flex-wrap">
-                      <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-gradient-to-r from-[#3d3f96] to-indigo-600 text-white text-[8.5px] sm:text-[10px] font-black uppercase tracking-wider shadow-xs">
-                        <Sparkles size={10} className="text-amber-300 animate-pulse" />
-                        <span>Certified Expert Consultation</span>
-                      </div>
-                      <span className="text-[8.5px] sm:text-[10px] font-bold text-indigo-700 bg-white/90 border border-indigo-200/70 px-1.5 py-0.5 rounded-md shadow-2xs">
-                        ⭐ Highly Recommended
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-2.5 sm:gap-4">
-                      {/* Left: Icon & Text */}
-                      <div className="flex items-start gap-2 sm:gap-3.5 min-w-0 flex-1">
-                        <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#3d3f96] to-indigo-700 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
-                          <UserCheck size={16} className="sm:w-5 sm:h-5" />
-                        </div>
-                        <div className="space-y-0.5 min-w-0 flex-1">
-                          <h4 className="text-[11.5px] sm:text-sm font-extrabold text-slate-900 leading-snug">
-                            1-on-1 Certified Coach Session
-                          </h4>
-                          <p className="text-[9.5px] sm:text-xs text-slate-600 leading-snug line-clamp-2 sm:line-clamp-none font-medium">
-                            {coachData.description || 'Live virtual onboarding, sensor placement guide & personalized diet guidance.'}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Right: Price & Toggle Action */}
-                      <div className="flex flex-col items-end gap-1 sm:gap-1.5 shrink-0 pl-1">
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-xs sm:text-base font-black text-slate-900 tracking-tight">
-                            +₹{coachData.coachCharge}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setIncludeCoachCharge(!includeCoachCharge)}
-                          className={`px-2.5 py-1 sm:px-4 sm:py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-black transition-all duration-200 cursor-pointer flex items-center gap-1 shadow-xs active:scale-95 ${includeCoachCharge
-                            ? 'bg-[#3d3f96] hover:bg-[#32347c] text-white shadow-indigo-300/50 ring-1 ring-[#3d3f96]'
-                            : 'bg-white hover:bg-indigo-50 text-[#3d3f96] border border-indigo-300/80 hover:border-[#3d3f96]'
-                            }`}
-                        >
-                          {includeCoachCharge ? <Check size={12} strokeWidth={3} /> : <Plus size={12} strokeWidth={3} />}
-                          <span>{includeCoachCharge ? 'Added' : 'Add'}</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* 3. 1-ON-1 COACH AND TIME SLOTS COMPONENT */}
+              <ChooseCoachAndSlot
+                includeCoachCharge={includeCoachCharge}
+                onToggleCoachCharge={setIncludeCoachCharge}
+                selectedCoach={selectedCoach}
+                onCoachSelect={setSelectedCoach}
+                selectedSlot={selectedSlot}
+                onSlotSelect={setSelectedSlot}
+                userLocation={userLocation}
+                showNotification={showNotification}
+              />
 
               {/* 4. RECOMMENDED ACCESSORIES & ADD-ONS */}
               {availableAddons.length > 0 && (
@@ -824,8 +698,8 @@ export default function BuyProductCheckoutPage() {
                         <div
                           key={addon._id}
                           className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all flex items-center justify-between gap-2.5 sm:gap-3 ${isAdded
-                            ? 'border-[#3d3f96] bg-indigo-50/30'
-                            : 'border-slate-200/80 bg-white hover:border-slate-300'
+                              ? 'border-[#3d3f96] bg-indigo-50/30'
+                              : 'border-slate-200/80 bg-white hover:border-slate-300'
                             }`}
                         >
                           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -888,184 +762,12 @@ export default function BuyProductCheckoutPage() {
                 </div>
               )}
 
-              {/* 5. DELIVERY ADDRESS SELECTION */}
-              <div className="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 border border-slate-200/80 shadow-xs space-y-3 sm:space-y-4">
-                <div className="flex items-center justify-between pb-1.5 sm:pb-2 border-b border-slate-100">
-                  <div className="flex items-center gap-1.5">
-                    <MapPin size={16} className="text-[#3d3f96]" />
-                    <h3 className="text-xs sm:text-base font-extrabold text-slate-900">
-                      Delivery Address
-                    </h3>
-                  </div>
-                  <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium">Free Express Delivery</span>
-                </div>
-
-                {/* Saved Addresses */}
-                {savedAddresses.length > 0 && (
-                  <div className="space-y-2">
-                    <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 block">
-                      Saved Addresses
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                      {savedAddresses.map((addr) => {
-                        const isSelected = selectedAddressId === addr._id;
-                        return (
-                          <div
-                            key={addr._id}
-                            onClick={() => setSelectedAddressId(addr._id)}
-                            className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all cursor-pointer relative ${isSelected
-                              ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 ring-[#3d3f96]'
-                              : 'border-slate-200 bg-white hover:border-slate-300'
-                              }`}
-                          >
-                            <div className="flex items-center justify-between mb-0.5 sm:mb-1">
-                              <span className="text-[11px] sm:text-xs font-extrabold text-slate-900 flex items-center gap-1">
-                                {addr.addressType === 'Work' ? <Briefcase size={12} /> : <Home size={12} />}
-                                {addr.name}
-                              </span>
-                              {isSelected && <CheckCircle2 size={14} className="text-[#3d3f96]" />}
-                            </div>
-                            <p className="text-[10px] sm:text-[11px] text-slate-500 leading-snug line-clamp-2">
-                              {addr.houseNo}, {addr.sector && `${addr.sector}, `}
-                              {addr.city}, {addr.state} - {addr.pincode}
-                            </p>
-                            <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 block mt-1">
-                              Ph: {addr.phone}
-                            </span>
-                          </div>
-                        );
-                      })}
-
-                      {/* Add New Address Card */}
-                      <div
-                        onClick={() => setSelectedAddressId('new')}
-                        className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all cursor-pointer flex flex-col items-center justify-center gap-1 min-h-[75px] sm:min-h-[90px] ${selectedAddressId === 'new'
-                          ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 ring-[#3d3f96]'
-                          : 'border-dashed border-slate-300 hover:border-slate-400 bg-slate-50/50'
-                          }`}
-                      >
-                        <PlusCircle size={16} className="text-[#3d3f96]" />
-                        <span className="text-[11px] sm:text-xs font-bold text-slate-800">Enter New Address</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Custom Address Form */}
-                {(selectedAddressId === 'new' || savedAddresses.length === 0) && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 pt-1">
-                    <div>
-                      <label className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-0.5">
-                        Full Name *
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Mudabir Kowser"
-                        value={customAddress.name}
-                        onChange={(e) => setCustomAddress({ ...customAddress, name: e.target.value })}
-                        required
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl px-3 py-2 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#3d3f96]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-0.5">
-                        Contact Phone *
-                      </label>
-                      <input
-                        type="tel"
-                        placeholder="e.g. 9876543210"
-                        value={customAddress.phone}
-                        onChange={(e) => setCustomAddress({ ...customAddress, phone: e.target.value })}
-                        required
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl px-3 py-2 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#3d3f96]"
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-0.5">
-                        House No / Flat / Street *
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Flat 402, Green Valley"
-                        value={customAddress.houseNo}
-                        onChange={(e) => setCustomAddress({ ...customAddress, houseNo: e.target.value })}
-                        required
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl px-3 py-2 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#3d3f96]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-0.5">
-                        Sector / Area
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Sector 62"
-                        value={customAddress.sector}
-                        onChange={(e) => setCustomAddress({ ...customAddress, sector: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl px-3 py-2 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#3d3f96]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-0.5">
-                        Landmark
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Near City Hospital"
-                        value={customAddress.landmark}
-                        onChange={(e) => setCustomAddress({ ...customAddress, landmark: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl px-3 py-2 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#3d3f96]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-0.5">
-                        City *
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Mohali"
-                        value={customAddress.city}
-                        onChange={(e) => setCustomAddress({ ...customAddress, city: e.target.value })}
-                        required
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl px-3 py-2 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#3d3f96]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-0.5">
-                        State *
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Punjab"
-                        value={customAddress.state}
-                        onChange={(e) => setCustomAddress({ ...customAddress, state: e.target.value })}
-                        required
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl px-3 py-2 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#3d3f96]"
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-0.5">
-                        Pincode *
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. 160062"
-                        value={customAddress.pincode}
-                        onChange={(e) => setCustomAddress({ ...customAddress, pincode: e.target.value })}
-                        required
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl px-3 py-2 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#3d3f96]"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* 5. DELIVERY ADDRESS COMPONENT */}
+              <ChooseAddress
+                selectedAddress={selectedDeliveryAddress}
+                onAddressSelect={setSelectedDeliveryAddress}
+                showNotification={showNotification}
+              />
 
               {/* 6. PAYMENT MODE SELECTOR */}
               <div className="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 border border-slate-200/80 shadow-xs space-y-3 sm:space-y-4">
@@ -1080,8 +782,8 @@ export default function BuyProductCheckoutPage() {
                   <label
                     onClick={() => setPaymentMethod('Online')}
                     className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${paymentMethod === 'Online'
-                      ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 sm:ring-2 ring-[#3d3f96]/20'
-                      : 'border-slate-200 bg-white hover:border-slate-300'
+                        ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 sm:ring-2 ring-[#3d3f96]/20'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
                       }`}
                   >
                     <div className="flex items-center gap-2.5 sm:gap-3">
@@ -1105,8 +807,8 @@ export default function BuyProductCheckoutPage() {
                   <label
                     onClick={() => setPaymentMethod('COD')}
                     className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${paymentMethod === 'COD'
-                      ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 sm:ring-2 ring-[#3d3f96]/20'
-                      : 'border-slate-200 bg-white hover:border-slate-300'
+                        ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 sm:ring-2 ring-[#3d3f96]/20'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
                       }`}
                   >
                     <div className="flex items-center gap-2.5 sm:gap-3">
@@ -1163,12 +865,28 @@ export default function BuyProductCheckoutPage() {
                     </div>
                   )}
 
-                  {includeCoachCharge && coachData && (
+                  {/* Coach Base Fee */}
+                  {includeCoachCharge && selectedCoach && (
                     <div className="flex items-center justify-between text-slate-600">
-                      <span>1-on-1 Coach Consultation</span>
-                      <span className="font-bold text-slate-900">
-                        +₹{coachData.coachCharge}
+                      <span>
+                        1-on-1 Coach ({selectedCoach.name.split(' ')[0]})
                       </span>
+                      <span className="font-bold text-slate-900">
+                        +₹{selectedCoach.price}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Peak / Premium Slot Extra Fee Row */}
+                  {includeCoachCharge && slotExtraFee > 0 && (
+                    <div className="flex items-center justify-between text-amber-700 bg-amber-50/70 px-2 py-1 rounded-lg border border-amber-100">
+                      <span className="flex items-center gap-1 font-semibold">
+                        <span>Peak / Premium Slot Fee</span>
+                        <span className="text-[8px] bg-amber-200 text-amber-900 px-1 py-0.2 rounded font-black uppercase">
+                          Peak
+                        </span>
+                      </span>
+                      <span className="font-extrabold">+₹{slotExtraFee}</span>
                     </div>
                   )}
 
@@ -1192,7 +910,7 @@ export default function BuyProductCheckoutPage() {
                       <span className="text-[9px] sm:text-[10px] text-slate-400">Inclusive of all taxes & GST</span>
                     </div>
                     <span className="text-lg sm:text-2xl font-black text-slate-900">
-                      ₹{payableAmount?.toLocaleString('en-IN')}
+                      ₹{finalPayableAmount?.toLocaleString('en-IN')}
                     </span>
                   </div>
                 </div>
@@ -1213,7 +931,7 @@ export default function BuyProductCheckoutPage() {
                       <CreditCard size={16} />
                       <span>
                         {paymentMethod === 'Online' ? 'Pay Online via Razorpay' : 'Place Cash on Delivery Order'} • ₹
-                        {payableAmount?.toLocaleString('en-IN')}
+                        {finalPayableAmount?.toLocaleString('en-IN')}
                       </span>
                       <ArrowRight size={15} />
                     </>
@@ -1226,7 +944,7 @@ export default function BuyProductCheckoutPage() {
                 </div>
               </div>
 
-              {/* Security Banner */}
+              {/* Security Guarantee Card */}
               <div className="bg-indigo-50/50 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-indigo-100/80 flex items-center gap-2.5 sm:gap-3">
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-[#3d3f96] text-white flex items-center justify-center shrink-0">
                   <Lock size={15} />
@@ -1247,8 +965,13 @@ export default function BuyProductCheckoutPage() {
               <div className="flex flex-col pl-1">
                 <span className="text-[9px] uppercase font-bold text-slate-400">Total Payable</span>
                 <span className="text-base sm:text-lg font-black text-slate-900 leading-none">
-                  ₹{payableAmount?.toLocaleString('en-IN')}
+                  ₹{finalPayableAmount?.toLocaleString('en-IN')}
                 </span>
+                {slotExtraFee > 0 && (
+                  <span className="text-[8px] text-amber-700 font-bold mt-0.5">
+                    Includes ₹{slotExtraFee} Peak Slot Fee
+                  </span>
+                )}
               </div>
 
               <button
@@ -1305,6 +1028,13 @@ export default function BuyProductCheckoutPage() {
                 </strong>
               </div>
 
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 font-semibold uppercase text-[9px] sm:text-[10px]">Total Paid</span>
+                <strong className="text-slate-900 font-bold">
+                  ₹{orderSuccessData.amountPaid?.toLocaleString('en-IN')}
+                </strong>
+              </div>
+
               {orderSuccessData.deliveryOtp && (
                 <div className="flex items-center justify-between pt-1.5 sm:pt-2 border-t border-slate-200">
                   <div>
@@ -1320,7 +1050,7 @@ export default function BuyProductCheckoutPage() {
 
             <button
               type="button"
-              onClick={() => router.push('/shop/cgmdevices')}
+              onClick={() => router.push('/shop')}
               className="w-full py-2.5 sm:py-3.5 bg-[#3d3f96] hover:bg-slate-900 text-white rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
             >
               Continue Shopping

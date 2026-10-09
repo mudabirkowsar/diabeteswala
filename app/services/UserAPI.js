@@ -790,7 +790,29 @@ const UserAPI = {
     getCgmCoachCharges: async () => {
         const response = await authApi.get('/user/cgm/devices/coach-charge')
         return response.data;
-    }
+    },
+    // --- 1. Get Nearby Diabetes Coaches (Distance Calculation & Discovery) ---
+    getNearbyDiabetesCoaches: async (data) => {
+        // data: { userLat: 30.7046, userLng: 76.7179, city: "Mohali", search: "Ananya" }
+        const response = await publicApi.post('/user/cgm/coaches/nearby', data);
+        return response.data;
+    },
+
+    // --- 2. Get Single Diabetes Coach Details by ID (With Optional Slots Preview) ---
+    getUserDiabetesCoachById: async (id, params) => {
+        // id: Coach unique ObjectID (_id)
+        // params (optional): { selectedDate: "2026-10-10" }
+        const response = await publicApi.get(`/user/cgm/coaches/get/${id}`, { params });
+        return response.data;
+    },
+
+    // --- 3. Get Available Diabetes Coach Slots by Date (Calendar Date Picker) ---
+    getUserDiabetesCoachSlotsByDate: async (id, params) => {
+        // id: Coach unique ObjectID (_id)
+        // params (required): { selectedDate: "2026-10-10" }
+        const response = await publicApi.get(`/user/cgm/coaches/slots/${id}`, { params });
+        return response.data;
+    },
 
 }
 export default UserAPI;

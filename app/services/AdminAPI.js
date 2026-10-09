@@ -1134,6 +1134,20 @@ const AdminAPI = {
         return response.data;
     },
 
+    //manage charges 
+    // --- 1. Admin Get Coach Offline Distance & Travel Surcharge Configuration ---
+    getAdminCoachDistanceConfig: async () => {
+        const response = await authApi.get('/admin/cgm/coach-distance-config');
+        return response.data;
+    },
+
+    // --- 2. Admin Set / Update Coach Offline Distance Configuration ---
+    updateAdminCoachDistanceConfig: async (data) => {
+        // data: { freeDistanceKM: 5, pricePerKM: 20, maxServiceRadiusKM: 30, isActive: true }
+        const response = await authApi.put('/admin/cgm/coach-distance-config', data);
+        return response.data;
+    },
+
     //manage coaches 
     // --- 1. Admin Create Diabetes Coach (Multipart Form-Data) ---
     createDiabetesCoach: async (formData) => {

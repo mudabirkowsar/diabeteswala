@@ -20,7 +20,10 @@ import {
     ChevronLeft,
     ChevronRight,
     Clock,
-    User
+    User,
+    GraduationCap,
+    Video,
+    Home
 } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
 
@@ -46,6 +49,7 @@ export default function DiabetesCoachesPage() {
     // --- Search & Filters ---
     const [searchQuery, setSearchQuery] = useState('');
     const [cityFilter, setCityFilter] = useState('');
+    const [coachTypeFilter, setCoachTypeFilter] = useState('ALL'); // 'ALL' | 'Both' | 'Diabetes Educator' | 'Diabetes Coach'
     const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'ACTIVE' | 'INACTIVE'
 
     // --- Pagination ---
@@ -65,7 +69,7 @@ export default function DiabetesCoachesPage() {
     // --- Delete Confirmation State ---
     const [deleteTarget, setDeleteTarget] = useState(null);
 
-    // 1. Fetch Coaches
+    // Fetch Coaches
     const fetchCoaches = useCallback(async () => {
         setLoading(true);
         try {
@@ -76,6 +80,7 @@ export default function DiabetesCoachesPage() {
 
             if (searchQuery.trim()) params.search = searchQuery.trim();
             if (cityFilter.trim()) params.city = cityFilter.trim();
+            if (coachTypeFilter !== 'ALL') params.coachType = coachTypeFilter;
             if (statusFilter === 'ACTIVE') params.activeOnly = true;
 
             const response = await AdminAPI.getAllDiabetesCoaches(params);
@@ -92,7 +97,7 @@ export default function DiabetesCoachesPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, limit, searchQuery, cityFilter, statusFilter]);
+    }, [page, limit, searchQuery, cityFilter, coachTypeFilter, statusFilter]);
 
     useEffect(() => {
         fetchCoaches();
@@ -104,7 +109,6 @@ export default function DiabetesCoachesPage() {
         fetchCoaches();
     };
 
-    // 2. Toggle Status
     const handleToggleStatus = async (coach) => {
         setActionLoading(true);
         try {
@@ -127,7 +131,6 @@ export default function DiabetesCoachesPage() {
         }
     };
 
-    // 3. Confirm Delete
     const handleConfirmDelete = async () => {
         if (!deleteTarget) return;
 
@@ -165,14 +168,14 @@ export default function DiabetesCoachesPage() {
                     <div>
                         <div className="flex items-center gap-3 flex-wrap">
                             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                                Diabetes Coaches & Counselors
+                                Diabetes Coaches & Educators
                             </h1>
                             <span className="text-[11px] font-black uppercase text-[#3d3f96] bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full shadow-2xs">
                                 CGM Clinical Directory
                             </span>
                         </div>
                         <p className="text-xs text-slate-500 font-bold mt-1">
-                            Manage certified diabetes educators, CGM reading counselors, consultations, and slot timings.
+                            Manage certified diabetes educators, CGM reading counselors, consultation fee packages, and schedules.
                         </p>
                     </div>
                 </div>
@@ -242,9 +245,10 @@ export default function DiabetesCoachesPage() {
                 </div>
             </div>
 
-            {/* --- SEARCH & FILTER BAR --- */}
-            <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto flex-1">
+            {/* --- SEARCH & MULTI-FILTER BAR --- */}
+            <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex flex-col xl:flex-row items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto flex-1">
+                    {/* Search Input */}
                     <div className="relative w-full sm:w-80">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                         <input
@@ -252,12 +256,13 @@ export default function DiabetesCoachesPage() {
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit(e)}
-                            placeholder="Search by name, phone, email, city..."
+                            placeholder="Search name, degree, phone, city..."
                             className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#3d3f96] focus:bg-white transition"
                         />
                     </div>
 
-                    <div className="relative w-full sm:w-48">
+                    {/* City Filter */}
+                    <div className="relative w-full sm:w-44">
                         <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
                         <input
                             type="text"
@@ -268,9 +273,27 @@ export default function DiabetesCoachesPage() {
                             className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#3d3f96] focus:bg-white transition"
                         />
                     </div>
+
+                    {/* Coach Type Dropdown Filter */}
+                    <div className="w-full sm:w-48">
+                        <select
+                            value={coachTypeFilter}
+                            onChange={(e) => {
+                                setCoachTypeFilter(e.target.value);
+                                setPage(1);
+                            }}
+                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:outline-none focus:border-[#3d3f96] cursor-pointer"
+                        >
+                            <option value="ALL">All Roles</option>
+                            <option value="Both">Both Roles</option>
+                            <option value="Diabetes Educator">Diabetes Educator</option>
+                            <option value="Diabetes Coach">Diabetes Coach</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div className="flex items-center bg-slate-100 p-1 rounded-2xl gap-1 w-full md:w-auto overflow-x-auto [&::-webkit-scrollbar]:hidden">
+                {/* Status Tabs */}
+                <div className="flex items-center bg-slate-100 p-1 rounded-2xl gap-1 w-full xl:w-auto overflow-x-auto [&::-webkit-scrollbar]:hidden">
                     {[
                         { id: 'ALL', label: 'All Counselors' },
                         { id: 'ACTIVE', label: 'Active Only' },
@@ -282,10 +305,11 @@ export default function DiabetesCoachesPage() {
                                 setStatusFilter(tab.id);
                                 setPage(1);
                             }}
-                            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer shrink-0 ${statusFilter === tab.id
+                            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer shrink-0 ${
+                                statusFilter === tab.id
                                     ? 'bg-white text-[#3d3f96] shadow-sm'
                                     : 'text-slate-500 hover:text-slate-900'
-                                }`}
+                            }`}
                         >
                             {tab.label}
                         </button>
@@ -315,8 +339,9 @@ export default function DiabetesCoachesPage() {
                         <table className="w-full text-left text-xs border-collapse">
                             <thead>
                                 <tr className="border-b border-slate-100 text-slate-400 uppercase font-black bg-slate-50/70 tracking-wider">
-                                    <th className="py-4.5 px-6">Coach Name & Profile</th>
-                                    <th className="py-4.5 px-6">Fee & Slot Timings</th>
+                                    <th className="py-4.5 px-6">Coach & Qualification</th>
+                                    <th className="py-4.5 px-6">Consultation Fees</th>
+                                    <th className="py-4.5 px-6">Slot Timings</th>
                                     <th className="py-4.5 px-6">Contact / Location</th>
                                     <th className="py-4.5 px-6">Rating</th>
                                     <th className="py-4.5 px-6">Active Status</th>
@@ -324,143 +349,166 @@ export default function DiabetesCoachesPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 text-slate-700 font-semibold">
-                                {coaches.map((coach) => (
-                                    <tr key={coach._id} className="hover:bg-slate-50/70 transition-colors">
+                                {coaches.map((coach) => {
+                                    const fees = coach.fees || {};
+                                    const modes = coach.consultationModes || {};
 
-                                        {/* Avatar & Name */}
-                                        <td className="py-4.5 px-6">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-11 h-11 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center overflow-hidden shrink-0 relative">
-                                                    {coach.profileImage ? (
-                                                        <img
-                                                            src={getImageUrl(coach.profileImage)}
-                                                            alt={coach.name}
-                                                            className="w-full h-full object-cover"
-                                                            onError={(e) => {
-                                                                e.currentTarget.style.display = 'none';
-                                                            }}
-                                                        />
-                                                    ) : (
-                                                        <User size={18} className="text-[#3d3f96]" />
-                                                    )}
+                                    return (
+                                        <tr key={coach._id} className="hover:bg-slate-50/70 transition-colors">
+                                            
+                                            {/* 1. Avatar, Name & Qualification */}
+                                            <td className="py-4.5 px-6">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center overflow-hidden shrink-0 relative">
+                                                        {coach.profileImage ? (
+                                                            <img
+                                                                src={getImageUrl(coach.profileImage)}
+                                                                alt={coach.name}
+                                                                className="w-full h-full object-cover"
+                                                                onError={(e) => {
+                                                                    e.currentTarget.style.display = 'none';
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <User size={20} className="text-[#3d3f96]" />
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <strong className="text-sm font-black text-slate-900 block">
+                                                            {coach.name}
+                                                        </strong>
+                                                        <span className="text-[10px] text-[#3d3f96] font-bold block">
+                                                            {coach.qualification || 'Certified Diabetes Educator'}
+                                                        </span>
+                                                        <span className="text-[9px] font-mono text-slate-400">
+                                                            {coach.coachType || 'Both'}
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <strong className="text-sm font-black text-slate-900 block">
-                                                        {coach.name}
-                                                    </strong>
-                                                    <span className="text-[10px] font-mono text-slate-400">
-                                                        ID: {coach._id}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </td>
+                                            </td>
 
-                                        {/* Fee & Slot Timings */}
-                                        <td className="py-4.5 px-6">
-                                            <div className="space-y-1">
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="text-sm font-black text-slate-900">
-                                                        ₹{coach.price}
-                                                    </span>
-                                                    <span className="text-[10px] text-slate-400">/ session</span>
+                                            {/* 2. Fees (Online / Offline) */}
+                                            <td className="py-4.5 px-6">
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-1.5 text-xs">
+                                                        <span className="text-[10px] font-bold text-indigo-700 flex items-center gap-0.5">
+                                                            <Video size={11} /> Online:
+                                                        </span>
+                                                        <span className={`font-black ${modes.isOnlineAvailable === false ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                                                            ₹{fees.online ?? 299}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 text-xs">
+                                                        <span className="text-[10px] font-bold text-emerald-700 flex items-center gap-0.5">
+                                                            <Home size={11} /> Offline:
+                                                        </span>
+                                                        <span className={`font-black ${modes.isOfflineAvailable === false ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                                                            ₹{fees.offline ?? 599}
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                                <div className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg">
+                                            </td>
+
+                                            {/* 3. Slot Timings */}
+                                            <td className="py-4.5 px-6">
+                                                <div className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg">
                                                     <Clock size={11} className="text-[#3d3f96]" />
                                                     <span>{coach.slotTimings || 'Not Configured'}</span>
                                                 </div>
-                                            </div>
-                                        </td>
+                                            </td>
 
-                                        {/* Contact / Location */}
-                                        <td className="py-4.5 px-6">
-                                            <div className="space-y-0.5">
-                                                <span className="text-xs font-bold text-slate-800 block">
-                                                    {coach.phone || coach.email || 'No direct contact'}
+                                            {/* 4. Contact / Location */}
+                                            <td className="py-4.5 px-6">
+                                                <div className="space-y-0.5">
+                                                    <span className="text-xs font-bold text-slate-800 block">
+                                                        {coach.phone || coach.email || 'No contact'}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                                                        <MapPin size={10} />
+                                                        {[coach.location?.city, coach.location?.state].filter(Boolean).join(', ') || 'Online'}
+                                                    </span>
+                                                </div>
+                                            </td>
+
+                                            {/* 5. Rating */}
+                                            <td className="py-4.5 px-6">
+                                                <div className="flex items-center gap-1 text-amber-500 font-black">
+                                                    <Star size={13} fill="currentColor" />
+                                                    <span>{coach.rating || '0.0'}</span>
+                                                </div>
+                                                <span className="text-[10px] text-slate-400">
+                                                    {coach.totalReviews || 0} reviews
                                                 </span>
-                                                <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                                                    <MapPin size={10} />
-                                                    {[coach.location?.city, coach.location?.state].filter(Boolean).join(', ') || 'Online'}
-                                                </span>
-                                            </div>
-                                        </td>
+                                            </td>
 
-                                        {/* Rating */}
-                                        <td className="py-4.5 px-6">
-                                            <div className="flex items-center gap-1 text-amber-500 font-black">
-                                                <Star size={13} fill="currentColor" />
-                                                <span>{coach.rating || '0.0'}</span>
-                                            </div>
-                                            <span className="text-[10px] text-slate-400">
-                                                {coach.totalReviews || 0} reviews
-                                            </span>
-                                        </td>
-
-                                        {/* Toggle Status */}
-                                        <td className="py-4.5 px-6">
-                                            <button
-                                                onClick={() => handleToggleStatus(coach)}
-                                                disabled={actionLoading}
-                                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border ${coach.isActive
-                                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                                                        : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+                                            {/* 6. Active Toggle */}
+                                            <td className="py-4.5 px-6">
+                                                <button
+                                                    onClick={() => handleToggleStatus(coach)}
+                                                    disabled={actionLoading}
+                                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border ${
+                                                        coach.isActive
+                                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                                            : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
                                                     }`}
-                                            >
-                                                {coach.isActive ? (
-                                                    <>
-                                                        <ToggleRight size={16} />
-                                                        <span>Active</span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <ToggleLeft size={16} />
-                                                        <span>Inactive</span>
-                                                    </>
-                                                )}
-                                            </button>
-                                        </td>
-
-                                        {/* Action buttons */}
-                                        <td className="py-4.5 px-6 text-right">
-                                            <div className="flex items-center justify-end gap-1.5">
-                                                <button
-                                                    onClick={() => {
-                                                        setViewCoachId(coach._id);
-                                                        setIsViewModalOpen(true);
-                                                    }}
-                                                    className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition cursor-pointer"
-                                                    title="View Full Profile & Slot Details"
                                                 >
-                                                    <Eye size={14} />
+                                                    {coach.isActive ? (
+                                                        <>
+                                                            <ToggleRight size={16} />
+                                                            <span>Active</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <ToggleLeft size={16} />
+                                                            <span>Inactive</span>
+                                                        </>
+                                                    )}
                                                 </button>
+                                            </td>
 
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedCoach(coach);
-                                                        setFormMode('edit');
-                                                        setIsFormModalOpen(true);
-                                                    }}
-                                                    className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl border border-indigo-200 transition cursor-pointer"
-                                                    title="Edit Coach Details"
-                                                >
-                                                    <Edit3 size={14} />
-                                                </button>
+                                            {/* 7. Action Buttons */}
+                                            <td className="py-4.5 px-6 text-right">
+                                                <div className="flex items-center justify-end gap-1.5">
+                                                    <button
+                                                        onClick={() => {
+                                                            setViewCoachId(coach._id);
+                                                            setIsViewModalOpen(true);
+                                                        }}
+                                                        className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition cursor-pointer"
+                                                        title="View Full Profile & Slot Details"
+                                                    >
+                                                        <Eye size={14} />
+                                                    </button>
 
-                                                <button
-                                                    onClick={() => setDeleteTarget(coach)}
-                                                    className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl border border-rose-200 transition cursor-pointer"
-                                                    title="Delete Coach"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedCoach(coach);
+                                                            setFormMode('edit');
+                                                            setIsFormModalOpen(true);
+                                                        }}
+                                                        className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl border border-indigo-200 transition cursor-pointer"
+                                                        title="Edit Coach Details"
+                                                    >
+                                                        <Edit3 size={14} />
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() => setDeleteTarget(coach)}
+                                                        className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl border border-rose-200 transition cursor-pointer"
+                                                        title="Delete Coach"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
 
-                    {/* Pagination */}
+                    {/* Pagination Controls */}
                     {totalPages > 1 && (
                         <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-500">
                             <span>

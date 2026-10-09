@@ -13,10 +13,12 @@ import {
     Languages,
     Compass,
     Clock,
-    Calendar,
     Sparkles,
     CalendarOff,
-    ShieldCheck,
+    GraduationCap,
+    Award,
+    Video,
+    Home,
     Loader2
 } from 'lucide-react';
 import AdminAPI from '../../../../../services/AdminAPI';
@@ -57,6 +59,8 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
     if (!isOpen) return null;
 
     const slotConfig = coach?.slotConfig;
+    const fees = coach?.fees || {};
+    const modes = coach?.consultationModes || {};
 
     return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
@@ -68,10 +72,10 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
                         <span className="text-[11px] font-black uppercase text-[#3d3f96] bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full shadow-2xs">
                             Coach Dossier
                         </span>
-                        {coach?.role && (
-                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                                <ShieldCheck size={11} className="text-[#3d3f96]" />
-                                {coach.role}
+                        {coach?.coachType && (
+                            <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                                <Award size={11} className="text-[#3d3f96]" />
+                                {coach.coachType}
                             </span>
                         )}
                     </div>
@@ -128,6 +132,11 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
                                     )}
                                 </div>
 
+                                <div className="text-xs text-[#3d3f96] font-bold mt-0.5 flex items-center gap-1">
+                                    <GraduationCap size={13} />
+                                    <span>{coach.qualification || 'Certified Diabetes Educator'}</span>
+                                </div>
+
                                 <div className="flex items-center gap-3 mt-1.5 text-xs flex-wrap">
                                     <div className="flex items-center gap-1 text-amber-500 font-black">
                                         <Star size={13} fill="currentColor" />
@@ -136,15 +145,42 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
                                             ({coach.totalReviews || 0} reviews)
                                         </span>
                                     </div>
-                                    <div className="flex items-center font-black text-slate-900">
-                                        <span>₹{coach.price}</span>
-                                        <span className="text-[10px] text-slate-400 font-semibold ml-1">/ session</span>
-                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* 2. Contact Information Cards */}
+                        {/* 2. Consultation Modes & Fees Breakdown */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div className="p-3.5 bg-indigo-50/50 border border-indigo-100 rounded-2xl space-y-1">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-black uppercase text-indigo-700 flex items-center gap-1">
+                                        <Video size={13} /> Video Consultation
+                                    </span>
+                                    <span className={`text-[9px] font-bold px-2 py-0.2 rounded-full ${modes.isOnlineAvailable ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-500'}`}>
+                                        {modes.isOnlineAvailable ? 'Enabled' : 'Disabled'}
+                                    </span>
+                                </div>
+                                <span className="text-base font-black text-slate-900 block pt-1">
+                                    ₹{fees.online ?? coach.onlineFee ?? 299}
+                                </span>
+                            </div>
+
+                            <div className="p-3.5 bg-emerald-50/50 border border-emerald-100 rounded-2xl space-y-1">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-black uppercase text-emerald-700 flex items-center gap-1">
+                                        <Home size={13} /> Offline / Home Visit
+                                    </span>
+                                    <span className={`text-[9px] font-bold px-2 py-0.2 rounded-full ${modes.isOfflineAvailable ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-500'}`}>
+                                        {modes.isOfflineAvailable ? 'Enabled' : 'Disabled'}
+                                    </span>
+                                </div>
+                                <span className="text-base font-black text-slate-900 block pt-1">
+                                    ₹{fees.offline ?? coach.offlineFee ?? 599}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* 3. Contact Details */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                             <div className="p-3 bg-white border border-slate-200/80 rounded-2xl flex items-center gap-3">
                                 <Phone size={16} className="text-[#3d3f96] shrink-0" />
@@ -167,7 +203,7 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
                             </div>
                         </div>
 
-                        {/* 3. Slot Configuration & Scheduling */}
+                        {/* 4. Slot Configuration & Scheduling */}
                         {slotConfig ? (
                             <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-3xl space-y-3.5">
                                 <div className="flex items-center justify-between">
@@ -179,7 +215,6 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
                                     </span>
                                 </div>
 
-                                {/* Operational Timings & Shifts */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                                     <div className="p-3 bg-white rounded-2xl border border-slate-100 space-y-1">
                                         <span className="text-[9px] font-black uppercase text-slate-400 block">
@@ -208,7 +243,6 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
                                     </div>
                                 </div>
 
-                                {/* Premium Slots */}
                                 {slotConfig.premiumSlots && slotConfig.premiumSlots.length > 0 && (
                                     <div className="space-y-1.5">
                                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1">
@@ -230,7 +264,6 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
                                     </div>
                                 )}
 
-                                {/* Unavailable / Break Slots */}
                                 {slotConfig.unavailableSlots && slotConfig.unavailableSlots.length > 0 && (
                                     <div className="space-y-1">
                                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
@@ -249,7 +282,6 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
                                     </div>
                                 )}
 
-                                {/* Off Days & Blocked Dates */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
                                     {slotConfig.offDays && slotConfig.offDays.length > 0 && (
                                         <div className="space-y-1">
@@ -282,13 +314,9 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
                                     )}
                                 </div>
                             </div>
-                        ) : (
-                            <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-xs text-slate-400 font-semibold text-center">
-                                No custom slot configuration created for this coach.
-                            </div>
-                        )}
+                        ) : null}
 
-                        {/* 4. Languages */}
+                        {/* 5. Languages */}
                         {coach.languages && coach.languages.length > 0 && (
                             <div>
                                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-2">
@@ -310,7 +338,7 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
                             </div>
                         )}
 
-                        {/* 5. Bio / Guidance Summary */}
+                        {/* 6. Bio / Guidance Summary */}
                         {coach.about && (
                             <div className="space-y-1">
                                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
@@ -322,7 +350,7 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
                             </div>
                         )}
 
-                        {/* 6. Physical Location & Coordinates */}
+                        {/* 7. Location & Coordinates */}
                         <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-2xl space-y-2">
                             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                                 <MapPin size={12} className="text-[#3d3f96]" /> Operating Location
@@ -347,7 +375,7 @@ export default function ViewCoach({ isOpen, onClose, coachId }) {
                             )}
                         </div>
 
-                        {/* 7. Footer Timestamps */}
+                        {/* Footer Timestamps */}
                         <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 pt-2 border-t border-slate-100">
                             <span>ID: {coach._id}</span>
                             <span>Added: {new Date(coach.createdAt).toLocaleDateString()}</span>
