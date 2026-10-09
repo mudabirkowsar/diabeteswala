@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   UserCheck,
   Star,
@@ -13,7 +13,12 @@ import {
   Search,
   CheckCircle2,
   X,
-  Zap
+  Video,
+  Home,
+  Navigation,
+  GraduationCap,
+  Sparkles,
+  Info
 } from 'lucide-react';
 import UserAPI from '../../../../../services/UserAPI';
 
@@ -24,6 +29,8 @@ export default function ChooseCoachAndSlot({
   onToggleCoachCharge,
   selectedCoach,
   onCoachSelect,
+  consultationMode,
+  onConsultationModeChange,
   selectedSlot,
   onSlotSelect,
   userLocation,
@@ -32,15 +39,16 @@ export default function ChooseCoachAndSlot({
   const [coaches, setCoaches] = useState([]);
   const [loadingCoaches, setLoadingCoaches] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [coachTypeFilter, setCoachTypeFilter] = useState('Both'); // 'Both' | 'Diabetes Educator' | 'Diabetes Coach'
   const [showCoachModal, setShowCoachModal] = useState(false);
 
-  // Slot dates state
+  // Date and slot states
   const [availableDates, setAvailableDates] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
   const [slotsData, setSlotsData] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
-  // Format images safely
+  // Format image safely
   const getImageSrc = (imgPath) => {
     if (!imgPath) {
       return 'https://images.unsplash.com/photo-1594824813583-0599292c24ef?q=80&w=400&auto=format&fit=crop';
@@ -69,11 +77,12 @@ export default function ChooseCoachAndSlot({
     }
   }, []);
 
-  // Fetch Nearby Coaches using coordinates
+  // 1. Fetch Nearby Coaches with Online & Offline fees
   const fetchNearbyCoaches = useCallback(async () => {
     try {
       setLoadingCoaches(true);
       const payload = {
+        coachType: coachTypeFilter,
         search: searchQuery
       };
 
@@ -99,7 +108,7 @@ export default function ChooseCoachAndSlot({
     } finally {
       setLoadingCoaches(false);
     }
-  }, [searchQuery, userLocation, selectedCoach, onCoachSelect]);
+  }, [coachTypeFilter, searchQuery, userLocation, selectedCoach, onCoachSelect]);
 
   useEffect(() => {
     if (includeCoachCharge) {
@@ -107,7 +116,7 @@ export default function ChooseCoachAndSlot({
     }
   }, [includeCoachCharge, fetchNearbyCoaches]);
 
-  // Fetch available slots for target date
+  // 2. Fetch coach slots for the selected date
   const fetchCoachSlots = useCallback(async () => {
     if (!selectedCoach?._id || !selectedDate) return;
     try {
@@ -134,16 +143,33 @@ export default function ChooseCoachAndSlot({
     }
   }, [includeCoachCharge, selectedCoach, selectedDate, fetchCoachSlots]);
 
-  // Handle Coach selection
+  // Handle Coach selection from modal
   const handleSelectCoach = (coach) => {
     onCoachSelect(coach);
+    // If the coach does not support current consultation mode, fallback gracefully
+    if (consultationMode === 'Offline' && !coach.consultationModes?.isOfflineAvailable) {
+      onConsultationModeChange('Online');
+    }
     onSlotSelect(null);
     setShowCoachModal(false);
   };
 
+  // Compute Active Coach Fee based on consultation mode
+  const currentCoachFee = useMemo(() => {
+    if (!selectedCoach) return 299;
+    if (consultationMode === 'Offline') {
+      return (
+        selectedCoach.pricing?.totalEstimatedOfflineFee ||
+        selectedCoach.fees?.offline ||
+        (selectedCoach.pricing?.offlineBaseFee || 599) + (selectedCoach.pricing?.extraDistanceFee || 0)
+      );
+    }
+    return selectedCoach.pricing?.onlineFee || selectedCoach.fees?.online || selectedCoach.price || 299;
+  }, [selectedCoach, consultationMode]);
+
   return (
     <div className="space-y-3">
-      {/* 1. Main Toggle Card */}
+      {/* ================= 1. MAIN TOGGLE CARD ================= */}
       <div
         className={`rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 border transition-all ${
           includeCoachCharge
@@ -166,14 +192,14 @@ export default function ChooseCoachAndSlot({
                 </span>
               </div>
               <p className="text-[10px] sm:text-xs text-slate-500 leading-snug">
-                Verified educator nearby to guide sensor onboarding, glucose alarms, and diet control.
+                Personalized guidance on applying CGM sensors, continuous glucose alarms, and reversal counseling.
               </p>
             </div>
           </div>
 
           <div className="flex flex-col items-end gap-1 shrink-0">
             <span className="text-xs sm:text-base font-black text-slate-900">
-              {selectedCoach ? `+₹${selectedCoach.price}` : '+₹299'}
+              +₹{currentCoachFee}
             </span>
             <button
               type="button"
@@ -190,7 +216,79 @@ export default function ChooseCoachAndSlot({
           </div>
         </div>
 
-        {/* 2. Selected Coach Card & Change Action */}
+        {/* ================= 2. CONSULTATION MODE SELECTOR (ONLINE vs OFFLINE) ================= */}
+        {includeCoachCharge && selectedCoach && (
+          <div className="mt-3.5 pt-3.5 border-t border-slate-200/70 space-y-2.5">
+            <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-600 block">
+              Choose Consultation Type
+            </label>
+
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              {/* Online Mode */}
+              <button
+                type="button"
+                onClick={() => onConsultationModeChange('Online')}
+                disabled={!selectedCoach.consultationModes?.isOnlineAvailable}
+                className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                  consultationMode === 'Online'
+                    ? 'border-[#3d3f96] bg-indigo-50/70 ring-1 ring-[#3d3f96]'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
+                    <Video size={13} className="text-[#3d3f96]" /> Online Video Call
+                  </span>
+                  {consultationMode === 'Online' && <CheckCircle2 size={14} className="text-[#3d3f96]" />}
+                </div>
+                <span className="text-[10px] text-slate-500">Live Video Consultation</span>
+                <span className="text-xs font-black text-slate-900 mt-1">
+                  ₹{selectedCoach.pricing?.onlineFee || selectedCoach.fees?.online || selectedCoach.price || 299}
+                </span>
+              </button>
+
+              {/* Offline / Home Visit Mode */}
+              <button
+                type="button"
+                onClick={() => onConsultationModeChange('Offline')}
+                disabled={!selectedCoach.consultationModes?.isOfflineAvailable}
+                className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                  !selectedCoach.consultationModes?.isOfflineAvailable
+                    ? 'opacity-50 cursor-not-allowed bg-slate-50 border-slate-200'
+                    : consultationMode === 'Offline'
+                    ? 'border-[#3d3f96] bg-indigo-50/70 ring-1 ring-[#3d3f96]'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
+                    <Home size={13} className="text-rose-600" /> Home Visit
+                  </span>
+                  {consultationMode === 'Offline' && <CheckCircle2 size={14} className="text-[#3d3f96]" />}
+                </div>
+                <span className="text-[10px] text-slate-500">
+                  {selectedCoach.distanceDisplay ? `At doorstep (${selectedCoach.distanceDisplay})` : 'In-person doorstep visit'}
+                </span>
+                <span className="text-xs font-black text-slate-900 mt-1">
+                  ₹{selectedCoach.pricing?.totalEstimatedOfflineFee || selectedCoach.fees?.offline || 599}
+                </span>
+              </button>
+            </div>
+
+            {/* Offline Distance Surcharge Explanatory Pill */}
+            {consultationMode === 'Offline' && selectedCoach.pricing?.extraDistanceFee > 0 && (
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-600 bg-slate-50 p-2 rounded-xl border border-slate-200/80">
+                <Info size={12} className="text-[#3d3f96] shrink-0" />
+                <span>
+                  Includes <strong>₹{selectedCoach.pricing.offlineBaseFee}</strong> base visit fee +{' '}
+                  <strong>₹{selectedCoach.pricing.extraDistanceFee}</strong> travel surcharge (for {selectedCoach.distanceDisplay}).
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ================= 3. SELECTED COACH PROFILE STRIP ================= */}
         {includeCoachCharge && selectedCoach && (
           <div className="mt-3.5 pt-3 border-t border-slate-200/70">
             <div className="flex items-center justify-between p-2.5 sm:p-3 bg-white rounded-xl sm:rounded-2xl border border-indigo-100 gap-3">
@@ -203,9 +301,24 @@ export default function ChooseCoachAndSlot({
                   />
                 </div>
                 <div className="min-w-0">
-                  <h5 className="text-[11px] sm:text-xs font-extrabold text-slate-900 truncate">
-                    {selectedCoach.name}
-                  </h5>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <h5 className="text-[11px] sm:text-xs font-extrabold text-slate-900 truncate">
+                      {selectedCoach.name}
+                    </h5>
+                    {selectedCoach.coachType && (
+                      <span className="text-[8px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-semibold">
+                        {selectedCoach.coachType}
+                      </span>
+                    )}
+                  </div>
+
+                  {selectedCoach.qualification && (
+                    <p className="text-[9px] sm:text-[10px] text-slate-500 font-medium truncate flex items-center gap-1 mt-0.5">
+                      <GraduationCap size={10} className="text-slate-400 shrink-0" />
+                      <span>{selectedCoach.qualification}</span>
+                    </p>
+                  )}
+
                   <div className="flex items-center gap-2 text-[9px] sm:text-[10px] text-slate-500 mt-0.5">
                     {selectedCoach.distanceDisplay && (
                       <span className="text-emerald-700 font-bold flex items-center gap-0.5">
@@ -231,7 +344,7 @@ export default function ChooseCoachAndSlot({
           </div>
         )}
 
-        {/* 3. Slot Date Picker & Time Slots */}
+        {/* ================= 4. CALENDAR DATE PICKER & SLOTS ================= */}
         {includeCoachCharge && selectedCoach && (
           <div className="mt-3.5 pt-3 border-t border-slate-200/70 space-y-3">
             <div className="flex items-center justify-between">
@@ -270,7 +383,7 @@ export default function ChooseCoachAndSlot({
                 </label>
                 {selectedSlot && (
                   <span className="text-[9px] sm:text-[10px] font-bold text-[#3d3f96] bg-indigo-50 px-2 py-0.5 rounded">
-                    Selected: {selectedSlot.slotTime} {selectedSlot.extraFee > 0 ? `(+₹${selectedSlot.extraFee} Peak Fee)` : ''}
+                    Selected: {selectedSlot.slotTime} {selectedSlot.extraFee > 0 ? `(+₹${selectedSlot.extraFee} Peak)` : ''}
                   </span>
                 )}
               </div>
@@ -323,7 +436,7 @@ export default function ChooseCoachAndSlot({
         )}
       </div>
 
-      {/* 4. Coach Selection Modal (Nearby Local Coaches) */}
+      {/* ================= 5. COACH SELECTION MODAL ================= */}
       {showCoachModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
@@ -333,7 +446,7 @@ export default function ChooseCoachAndSlot({
                   Select Certified Diabetes Coach
                 </h3>
                 <p className="text-[10px] sm:text-xs text-slate-500">
-                  Coaches sorted nearest to your location
+                  Sorted nearest to your location
                 </p>
               </div>
               <button
@@ -345,12 +458,30 @@ export default function ChooseCoachAndSlot({
               </button>
             </div>
 
-            <div className="p-3 sm:p-4 border-b border-slate-100 bg-slate-50/50">
+            {/* Coach Type Filter Tabs & Search */}
+            <div className="p-3 sm:p-4 border-b border-slate-100 bg-slate-50/50 space-y-2.5">
+              <div className="flex items-center gap-1.5">
+                {['Both', 'Diabetes Educator', 'Diabetes Coach'].map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setCoachTypeFilter(type)}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                      coachTypeFilter === type
+                        ? 'bg-[#3d3f96] text-white'
+                        : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-3 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search by Coach name, city or language..."
+                  placeholder="Search by Coach name, qualification, or language..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#3d3f96]"
@@ -358,6 +489,7 @@ export default function ChooseCoachAndSlot({
               </div>
             </div>
 
+            {/* Coach List Scroll Area */}
             <div className="p-3 sm:p-4 overflow-y-auto space-y-2.5 flex-1">
               {loadingCoaches ? (
                 <div className="flex flex-col items-center justify-center py-10 gap-2 text-slate-400 text-xs">
@@ -369,6 +501,9 @@ export default function ChooseCoachAndSlot({
               ) : (
                 coaches.map((c) => {
                   const isSelected = selectedCoach?._id === c._id;
+                  const displayOnlineFee = c.pricing?.onlineFee || c.fees?.online || c.price || 299;
+                  const displayOfflineFee = c.pricing?.totalEstimatedOfflineFee || c.fees?.offline || 599;
+
                   return (
                     <div
                       key={c._id}
@@ -388,12 +523,23 @@ export default function ChooseCoachAndSlot({
                           />
                         </div>
                         <div className="min-w-0">
-                          <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 truncate">
-                            {c.name}
-                          </h4>
-                          <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">
-                            {c.about}
-                          </p>
+                          <div className="flex items-center gap-1.5">
+                            <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 truncate">
+                              {c.name}
+                            </h4>
+                            {c.coachType && (
+                              <span className="text-[8px] bg-slate-100 text-slate-600 px-1 py-0.2 rounded font-semibold">
+                                {c.coachType}
+                              </span>
+                            )}
+                          </div>
+
+                          {c.qualification && (
+                            <p className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                              {c.qualification}
+                            </p>
+                          )}
+
                           <div className="flex items-center gap-2 mt-1 text-[9px] sm:text-[10px] text-slate-400">
                             {c.distanceDisplay && (
                               <span className="text-emerald-700 font-bold flex items-center gap-0.5">
@@ -404,21 +550,25 @@ export default function ChooseCoachAndSlot({
                               <Star size={10} className="fill-amber-400 text-amber-400" />
                               {c.rating || 4.9}
                             </span>
-                            {c.languages && <span>• {c.languages.slice(0, 2).join(', ')}</span>}
                           </div>
                         </div>
                       </div>
 
-                      <div className="text-right shrink-0">
-                        <span className="text-xs sm:text-sm font-black text-slate-900 block">
-                          ₹{c.price}
-                        </span>
+                      <div className="text-right shrink-0 space-y-0.5">
+                        <div className="text-[10px] text-slate-500">
+                          Online: <strong className="text-slate-900">₹{displayOnlineFee}</strong>
+                        </div>
+                        {c.consultationModes?.isOfflineAvailable && (
+                          <div className="text-[10px] text-slate-500">
+                            Visit: <strong className="text-slate-900">₹{displayOfflineFee}</strong>
+                          </div>
+                        )}
                         {isSelected ? (
-                          <span className="text-[10px] font-bold text-[#3d3f96] flex items-center gap-0.5 justify-end mt-1">
+                          <span className="text-[10px] font-bold text-[#3d3f96] flex items-center gap-0.5 justify-end pt-0.5">
                             <CheckCircle2 size={12} /> Selected
                           </span>
                         ) : (
-                          <span className="text-[10px] font-bold text-slate-400 block mt-1">Select</span>
+                          <span className="text-[10px] font-bold text-slate-400 block pt-0.5">Select</span>
                         )}
                       </div>
                     </div>

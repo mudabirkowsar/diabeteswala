@@ -18,7 +18,10 @@ import {
   Activity,
   ShoppingBag,
   CheckCircle,
-  ArrowRight
+  ArrowRight,
+  Tag,
+  Video,
+  Home
 } from 'lucide-react';
 import UserAPI from '../../../../services/UserAPI';
 import { useNotification } from '../../../../context/NotificationContext';
@@ -59,7 +62,7 @@ export default function BuyProductCheckoutPage() {
   const productId = searchParams.get('productId');
   const { showNotification } = useNotification?.() || {};
 
-  // Retrieve Stored User Coordinates with exact default fallback
+  // Retrieve Stored User Coordinates with default fallback
   const getInitialCoords = () => {
     let lat = 30.698383813970036;
     let lng = 76.68573589283919;
@@ -92,9 +95,10 @@ export default function BuyProductCheckoutPage() {
   const [diabetesType, setDiabetesType] = useState('Type 2');
   const [hasUsedBefore, setHasUsedBefore] = useState(false);
 
-  // Coach & Slots Modular State
+  // Coach Consultation Modular State (Online vs Offline / Home Visit)
   const [includeCoachCharge, setIncludeCoachCharge] = useState(false);
   const [selectedCoach, setSelectedCoach] = useState(null);
+  const [consultationMode, setConsultationMode] = useState('Online'); // 'Online' | 'Offline'
   const [selectedSlot, setSelectedSlot] = useState(null);
 
   // Add-ons
@@ -133,7 +137,6 @@ export default function BuyProductCheckoutPage() {
       try {
         setPageLoading(true);
 
-        // Load Session Product
         let currentItem = null;
         if (typeof window !== 'undefined') {
           const stored = sessionStorage.getItem('cgm_checkout_item');
@@ -143,11 +146,9 @@ export default function BuyProductCheckoutPage() {
           }
         }
 
-        // Set user location from storage helper
         const coords = getInitialCoords();
         setUserLocation(coords);
 
-        // Fallback API Load if session is absent
         if (!currentItem && productId) {
           const res = await UserAPI.getUserCgmProductDetailsById(productId);
           if (res && res.data) {
@@ -168,12 +169,12 @@ export default function BuyProductCheckoutPage() {
               badge: item.badge,
               selectedVariant: defaultVar
                 ? {
-                  _id: defaultVar._id,
-                  displayName: defaultVar.packName || defaultVar.variantName || 'Standard',
-                  sellingPrice: defaultVar.sellingPrice,
-                  mrp: defaultVar.mrp,
-                  savingsAmount: defaultVar.savingsAmount
-                }
+                    _id: defaultVar._id,
+                    displayName: defaultVar.packName || defaultVar.variantName || 'Standard',
+                    sellingPrice: defaultVar.sellingPrice,
+                    mrp: defaultVar.mrp,
+                    savingsAmount: defaultVar.savingsAmount
+                  }
                 : null,
               quantity: 1,
               unitSellingPrice: defaultVar?.sellingPrice || item.sellingPrice,
@@ -187,7 +188,6 @@ export default function BuyProductCheckoutPage() {
           }
         }
 
-        // Fetch Addons
         const addonsRes = await UserAPI.getCgmAddOns();
         if (addonsRes && addonsRes.data && Array.isArray(addonsRes.data)) {
           setAvailableAddons(addonsRes.data);
@@ -205,7 +205,7 @@ export default function BuyProductCheckoutPage() {
     initializeCheckout();
   }, [productId, showNotification]);
 
-  // 2. Format Add-ons for Bill Calculation & Place Order
+  // 2. Format Add-ons
   const formattedAddonsPayload = useMemo(() => {
     return Object.entries(selectedAddons)
       .filter(([_, qty]) => qty > 0)
@@ -215,7 +215,7 @@ export default function BuyProductCheckoutPage() {
       }));
   }, [selectedAddons]);
 
-  // 3. Dynamic Live Bill Preview API
+  // 3. Dynamic Live Bill Preview API Call
   const calculateBill = useCallback(async () => {
     if (!checkoutItem?.productId) return;
     try {
@@ -227,6 +227,9 @@ export default function BuyProductCheckoutPage() {
         quantity: checkoutItem.quantity || 1,
         includeCoachCharge,
         coachChargeId: selectedCoach?._id || undefined,
+        consultationMode: includeCoachCharge ? consultationMode : undefined,
+        scheduledDate: selectedSlot?.date || undefined,
+        slotTime: selectedSlot?.slotTime || undefined,
         addons: formattedAddonsPayload
       };
 
@@ -239,7 +242,7 @@ export default function BuyProductCheckoutPage() {
     } finally {
       setCalculatingBill(false);
     }
-  }, [checkoutItem, includeCoachCharge, selectedCoach, formattedAddonsPayload]);
+  }, [checkoutItem, includeCoachCharge, selectedCoach, consultationMode, selectedSlot, formattedAddonsPayload]);
 
   useEffect(() => {
     if (checkoutItem) {
@@ -265,7 +268,7 @@ export default function BuyProductCheckoutPage() {
     });
   };
 
-  // Addons toggle & stepper
+  // Add-ons stepper
   const handleToggleAddon = (addonId) => {
     setSelectedAddons((prev) => {
       const current = prev[addonId] || 0;
@@ -290,6 +293,46 @@ export default function BuyProductCheckoutPage() {
       return { ...prev, [addonId]: next };
     });
   };
+
+  /* ========================================================================
+     EXACT MATHEMATICALLY VERIFIED BILL BREAKDOWN
+     Device Price + Coach Fee (Online / Offline) + Slot Extra Fee + Add-ons
+     ======================================================================== */
+  const deviceTotal = billSummary?.pricingBreakdown?.itemTotal ?? checkoutItem?.totalSellingPrice ?? 0;
+  const mrpTotal = billSummary?.pricingBreakdown?.mrpTotal ?? checkoutItem?.totalMrp ?? 0;
+  const instantDeviceSavings = mrpTotal > deviceTotal ? mrpTotal - deviceTotal : 0;
+
+  // Add-ons total
+  const addonsTotal = useMemo(() => {
+    if (billSummary?.pricingBreakdown?.addonsTotal !== undefined) {
+      return Number(billSummary.pricingBreakdown.addonsTotal);
+    }
+    return formattedAddonsPayload.reduce((sum, item) => {
+      const addon = availableAddons.find((a) => a._id === item.addonId);
+      return sum + (addon ? Number(addon.price) * item.quantity : 0);
+    }, 0);
+  }, [billSummary, formattedAddonsPayload, availableAddons]);
+
+  // Coach Fee based on consultationMode ('Online' vs 'Offline')
+  const coachBaseFee = useMemo(() => {
+    if (!includeCoachCharge || !selectedCoach) return 0;
+    if (consultationMode === 'Offline') {
+      return (
+        selectedCoach.pricing?.totalEstimatedOfflineFee ||
+        selectedCoach.fees?.offline ||
+        (selectedCoach.pricing?.offlineBaseFee || 599) + (selectedCoach.pricing?.extraDistanceFee || 0)
+      );
+    }
+    return selectedCoach.pricing?.onlineFee || selectedCoach.fees?.online || selectedCoach.price || 299;
+  }, [includeCoachCharge, selectedCoach, consultationMode]);
+
+  // Peak / Premium Slot Extra Fee
+  const slotExtraFee = includeCoachCharge && selectedSlot?.extraFee ? Number(selectedSlot.extraFee || 0) : 0;
+
+  // Final 100% Mathematically Correct Total Payable
+  const finalPayableAmount = useMemo(() => {
+    return deviceTotal + coachBaseFee + slotExtraFee + addonsTotal;
+  }, [deviceTotal, coachBaseFee, slotExtraFee, addonsTotal]);
 
   // 4. Place Order Handler (Razorpay Online & Cash on Delivery)
   const handlePlaceOrder = async (e) => {
@@ -320,23 +363,27 @@ export default function BuyProductCheckoutPage() {
             isDiabetic === 'no'
               ? 'General Wellness'
               : isDiabetic === 'pre-diabetic'
-                ? 'Pre-diabetic'
-                : diabetesType,
+              ? 'Pre-diabetic'
+              : diabetesType,
           hasUsedBefore: Boolean(hasUsedBefore)
         },
         includeCoachCharge,
         coachChargeId: selectedCoach?._id || undefined,
+        consultationDetails: includeCoachCharge && selectedCoach
+          ? {
+              coachId: selectedCoach._id,
+              consultationMode, // 'Online' | 'Offline'
+              scheduledDate: selectedSlot?.date || undefined,
+              slotTime: selectedSlot?.slotTime || undefined,
+              displayTime: selectedSlot?.displayTime || undefined,
+              coachFee: coachBaseFee,
+              slotExtraFee
+            }
+          : undefined,
         addons: formattedAddonsPayload,
         paymentMethod,
         deliveryAddress: selectedDeliveryAddress,
-        consultationSlot: selectedSlot
-          ? {
-            date: selectedSlot.date,
-            slotTime: selectedSlot.slotTime,
-            displayTime: selectedSlot.displayTime,
-            extraFee: selectedSlot.extraFee || 0
-          }
-          : undefined
+        totalAmount: finalPayableAmount
       };
 
       const res = await UserAPI.placeCgmOrder(orderPayload);
@@ -356,7 +403,7 @@ export default function BuyProductCheckoutPage() {
 
           const options = {
             key: res.key_id,
-            amount: res.amount,
+            amount: res.amount || finalPayableAmount * 100,
             currency: 'INR',
             name: 'DiabetesWala',
             description: `Order ${res.orderId}`,
@@ -457,15 +504,6 @@ export default function BuyProductCheckoutPage() {
     );
   }
 
-  // Active pricing values + Premium Slot Extra Fee Calculation
-  const basePayableAmount = billSummary?.pricingBreakdown?.totalPayable ?? checkoutItem.totalSellingPrice;
-  const slotExtraFee = includeCoachCharge && selectedSlot?.extraFee ? Number(selectedSlot.extraFee) : 0;
-  const finalPayableAmount = basePayableAmount + slotExtraFee;
-
-  const itemTotal = billSummary?.pricingBreakdown?.itemTotal ?? checkoutItem.totalSellingPrice;
-  const mrpTotal = billSummary?.pricingBreakdown?.mrpTotal ?? checkoutItem.totalMrp;
-  const savings =
-    billSummary?.pricingBreakdown?.deviceSavings ?? (mrpTotal && mrpTotal > itemTotal ? mrpTotal - itemTotal : 0);
   const isCgm = checkoutItem.productType === 'CGM' || checkoutItem.categoryName?.toLowerCase().includes('cgm');
 
   return (
@@ -498,10 +536,10 @@ export default function BuyProductCheckoutPage() {
       <main className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 pt-4 sm:pt-8">
         <form onSubmit={handlePlaceOrder}>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-8 items-start">
-
+            
             {/* ================= LEFT COLUMN: DETAILS & CUSTOMIZATIONS (7 COLS) ================= */}
             <div className="lg:col-span-7 space-y-3.5 sm:space-y-6">
-
+              
               {/* 1. PRODUCT SUMMARY CARD */}
               <div className="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 border border-slate-200/80 shadow-xs space-y-3 sm:space-y-4">
                 <div className="flex items-center justify-between pb-2 sm:pb-3 border-b border-slate-100">
@@ -577,7 +615,7 @@ export default function BuyProductCheckoutPage() {
                 </div>
               </div>
 
-              {/* 2. HEALTH & DIABETES PROFILE QUESTIONNAIRE */}
+              {/* 2. HEALTH PROFILE QUESTIONNAIRE */}
               <div className="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 border border-slate-200/80 shadow-xs space-y-3 sm:space-y-4">
                 <div className="flex items-center justify-between pb-1.5 sm:pb-2 border-b border-slate-100">
                   <div className="flex items-center gap-1.5 sm:gap-2">
@@ -603,10 +641,11 @@ export default function BuyProductCheckoutPage() {
                         key={opt.value}
                         type="button"
                         onClick={() => setIsDiabetic(opt.value)}
-                        className={`py-2 sm:py-2.5 px-1.5 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer text-center truncate ${isDiabetic === opt.value
+                        className={`py-2 sm:py-2.5 px-1.5 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer text-center truncate ${
+                          isDiabetic === opt.value
                             ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
                             : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                          }`}
+                        }`}
                       >
                         {opt.label}
                       </button>
@@ -644,20 +683,22 @@ export default function BuyProductCheckoutPage() {
                     <button
                       type="button"
                       onClick={() => setHasUsedBefore(true)}
-                      className={`py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer truncate ${hasUsedBefore === true
+                      className={`py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer truncate ${
+                        hasUsedBefore === true
                           ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
                           : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                        }`}
+                      }`}
                     >
                       Yes, Used Before
                     </button>
                     <button
                       type="button"
                       onClick={() => setHasUsedBefore(false)}
-                      className={`py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer truncate ${hasUsedBefore === false
+                      className={`py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer truncate ${
+                        hasUsedBefore === false
                           ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
                           : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                        }`}
+                      }`}
                     >
                       No, First-timer
                     </button>
@@ -665,12 +706,14 @@ export default function BuyProductCheckoutPage() {
                 </div>
               </div>
 
-              {/* 3. 1-ON-1 COACH AND TIME SLOTS COMPONENT */}
+              {/* 3. COACH AND TIME SLOTS (ONLINE & OFFLINE HOME VISIT) */}
               <ChooseCoachAndSlot
                 includeCoachCharge={includeCoachCharge}
                 onToggleCoachCharge={setIncludeCoachCharge}
                 selectedCoach={selectedCoach}
                 onCoachSelect={setSelectedCoach}
+                consultationMode={consultationMode}
+                onConsultationModeChange={setConsultationMode}
                 selectedSlot={selectedSlot}
                 onSlotSelect={setSelectedSlot}
                 userLocation={userLocation}
@@ -697,10 +740,11 @@ export default function BuyProductCheckoutPage() {
                       return (
                         <div
                           key={addon._id}
-                          className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all flex items-center justify-between gap-2.5 sm:gap-3 ${isAdded
+                          className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all flex items-center justify-between gap-2.5 sm:gap-3 ${
+                            isAdded
                               ? 'border-[#3d3f96] bg-indigo-50/30'
                               : 'border-slate-200/80 bg-white hover:border-slate-300'
-                            }`}
+                          }`}
                         >
                           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                             <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-slate-50 border border-slate-100 p-1 shrink-0 flex items-center justify-center overflow-hidden">
@@ -781,10 +825,11 @@ export default function BuyProductCheckoutPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                   <label
                     onClick={() => setPaymentMethod('Online')}
-                    className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${paymentMethod === 'Online'
+                    className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
+                      paymentMethod === 'Online'
                         ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 sm:ring-2 ring-[#3d3f96]/20'
                         : 'border-slate-200 bg-white hover:border-slate-300'
-                      }`}
+                    }`}
                   >
                     <div className="flex items-center gap-2.5 sm:gap-3">
                       <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-indigo-100 text-[#3d3f96] flex items-center justify-center shrink-0">
@@ -806,10 +851,11 @@ export default function BuyProductCheckoutPage() {
 
                   <label
                     onClick={() => setPaymentMethod('COD')}
-                    className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${paymentMethod === 'COD'
+                    className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
+                      paymentMethod === 'COD'
                         ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 sm:ring-2 ring-[#3d3f96]/20'
                         : 'border-slate-200 bg-white hover:border-slate-300'
-                      }`}
+                    }`}
                   >
                     <div className="flex items-center gap-2.5 sm:gap-3">
                       <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
@@ -834,7 +880,7 @@ export default function BuyProductCheckoutPage() {
 
             {/* ================= RIGHT COLUMN: FARE BREAKDOWN (5 COLS) ================= */}
             <div className="lg:col-span-5 lg:sticky lg:top-20 space-y-3 sm:space-y-4">
-
+              
               {/* Fare Summary Card */}
               <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-sm space-y-3 sm:space-y-4 relative">
                 <div className="flex items-center justify-between pb-1.5 sm:pb-2 border-b border-slate-100">
@@ -848,69 +894,86 @@ export default function BuyProductCheckoutPage() {
                   )}
                 </div>
 
-                <div className="space-y-2 sm:space-y-3 text-[11px] sm:text-xs">
-                  <div className="flex items-center justify-between text-slate-600">
-                    <span>
-                      Device Total ({checkoutItem.quantity} unit{checkoutItem.quantity > 1 ? 's' : ''})
+                {/* Instant Device Discount Banner */}
+                {instantDeviceSavings > 0 && (
+                  <div className="bg-emerald-50 border border-emerald-200/80 rounded-xl p-2.5 flex items-center justify-between text-emerald-800">
+                    <span className="text-[11px] font-bold flex items-center gap-1.5">
+                      <Tag size={13} className="text-emerald-600" />
+                      Instant Device Discount
                     </span>
-                    <span className="font-bold text-slate-900">
-                      ₹{itemTotal.toLocaleString('en-IN')}
+                    <span className="text-xs font-black text-emerald-700">
+                      -₹{instantDeviceSavings.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                )}
+
+                <div className="space-y-2 sm:space-y-2.5 text-[11px] sm:text-xs">
+                  {/* Line Item 1: Device Price */}
+                  <div className="flex items-center justify-between text-slate-700">
+                    <span>
+                      Device Price ({checkoutItem.quantity} unit{checkoutItem.quantity > 1 ? 's' : ''})
+                    </span>
+                    <span className="font-extrabold text-slate-900">
+                      ₹{deviceTotal.toLocaleString('en-IN')}
                     </span>
                   </div>
 
-                  {savings > 0 && (
-                    <div className="flex items-center justify-between text-emerald-600">
-                      <span>Instant Device Savings</span>
-                      <span className="font-bold">-₹{savings.toLocaleString('en-IN')}</span>
-                    </div>
-                  )}
-
-                  {/* Coach Base Fee */}
+                  {/* Line Item 2: Coach Consultation Fee (Online or Home Visit) */}
                   {includeCoachCharge && selectedCoach && (
-                    <div className="flex items-center justify-between text-slate-600">
-                      <span>
-                        1-on-1 Coach ({selectedCoach.name.split(' ')[0]})
+                    <div className="flex items-center justify-between text-slate-700">
+                      <span className="flex items-center gap-1">
+                        {consultationMode === 'Offline' ? (
+                          <Home size={12} className="text-rose-600" />
+                        ) : (
+                          <Video size={12} className="text-[#3d3f96]" />
+                        )}
+                        <span>
+                          1-on-1 Coach ({selectedCoach.name.split(' ')[0]} - {consultationMode === 'Offline' ? 'Home Visit' : 'Online'})
+                        </span>
                       </span>
-                      <span className="font-bold text-slate-900">
-                        +₹{selectedCoach.price}
+                      <span className="font-extrabold text-slate-900">
+                        +₹{coachBaseFee}
                       </span>
                     </div>
                   )}
 
-                  {/* Peak / Premium Slot Extra Fee Row */}
+                  {/* Line Item 3: Peak Slot Fee */}
                   {includeCoachCharge && slotExtraFee > 0 && (
-                    <div className="flex items-center justify-between text-amber-700 bg-amber-50/70 px-2 py-1 rounded-lg border border-amber-100">
-                      <span className="flex items-center gap-1 font-semibold">
+                    <div className="flex items-center justify-between text-amber-800 bg-amber-50/80 px-2 py-1 rounded-lg border border-amber-200/60">
+                      <span className="flex items-center gap-1 font-bold">
                         <span>Peak / Premium Slot Fee</span>
                         <span className="text-[8px] bg-amber-200 text-amber-900 px-1 py-0.2 rounded font-black uppercase">
                           Peak
                         </span>
                       </span>
-                      <span className="font-extrabold">+₹{slotExtraFee}</span>
+                      <span className="font-black">+₹{slotExtraFee}</span>
                     </div>
                   )}
 
-                  {billSummary?.pricingBreakdown?.addonsTotal > 0 && (
-                    <div className="flex items-center justify-between text-slate-600">
+                  {/* Line Item 4: Add-on Accessories */}
+                  {addonsTotal > 0 && (
+                    <div className="flex items-center justify-between text-slate-700">
                       <span>Add-on Accessories ({formattedAddonsPayload.length})</span>
-                      <span className="font-bold text-slate-900">
-                        +₹{billSummary.pricingBreakdown.addonsTotal}
+                      <span className="font-extrabold text-slate-900">
+                        +₹{addonsTotal}
                       </span>
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between text-slate-600">
+                  {/* Line Item 5: Shipping */}
+                  <div className="flex items-center justify-between text-slate-700">
                     <span>Express Insulated Shipping</span>
-                    <span className="font-bold text-emerald-600">FREE</span>
+                    <span className="font-extrabold text-emerald-600">FREE</span>
                   </div>
 
+                  {/* Total Payable Row (Sum of items) */}
                   <div className="pt-2 sm:pt-3 border-t border-slate-100 flex items-baseline justify-between">
                     <div>
                       <span className="text-xs sm:text-sm font-extrabold text-slate-900 block">Total Payable</span>
                       <span className="text-[9px] sm:text-[10px] text-slate-400">Inclusive of all taxes & GST</span>
                     </div>
                     <span className="text-lg sm:text-2xl font-black text-slate-900">
-                      ₹{finalPayableAmount?.toLocaleString('en-IN')}
+                      ₹{finalPayableAmount.toLocaleString('en-IN')}
                     </span>
                   </div>
                 </div>
@@ -931,7 +994,7 @@ export default function BuyProductCheckoutPage() {
                       <CreditCard size={16} />
                       <span>
                         {paymentMethod === 'Online' ? 'Pay Online via Razorpay' : 'Place Cash on Delivery Order'} • ₹
-                        {finalPayableAmount?.toLocaleString('en-IN')}
+                        {finalPayableAmount.toLocaleString('en-IN')}
                       </span>
                       <ArrowRight size={15} />
                     </>
@@ -965,11 +1028,11 @@ export default function BuyProductCheckoutPage() {
               <div className="flex flex-col pl-1">
                 <span className="text-[9px] uppercase font-bold text-slate-400">Total Payable</span>
                 <span className="text-base sm:text-lg font-black text-slate-900 leading-none">
-                  ₹{finalPayableAmount?.toLocaleString('en-IN')}
+                  ₹{finalPayableAmount.toLocaleString('en-IN')}
                 </span>
-                {slotExtraFee > 0 && (
-                  <span className="text-[8px] text-amber-700 font-bold mt-0.5">
-                    Includes ₹{slotExtraFee} Peak Slot Fee
+                {includeCoachCharge && (
+                  <span className="text-[8px] text-[#3d3f96] font-bold mt-0.5">
+                    Includes {consultationMode === 'Offline' ? 'Home Visit' : 'Online Coach'}
                   </span>
                 )}
               </div>
