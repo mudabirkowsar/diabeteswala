@@ -1195,6 +1195,20 @@ const AdminAPI = {
         const response = await authApi.delete(`/admin/cgm/coaches/delete/${id}`);
         return response.data;
     },
+
+    // --- 1. Admin Get All CGM & Glucometer Orders (Dashboard Table List) ---
+    getAdminCgmOrdersList: async (params) => {
+        // params (optional): { page: 1, limit: 10, search: 'HK-CGM-458265', status: 'Placed' | 'Confirmed' | 'Packed' | 'Shipped' | 'Delivered' | 'Cancelled', paymentStatus: 'Pending' | 'Paid' | 'Failed' | 'Refunded', paymentMethod: 'COD' | 'Online', productType: 'CGM' | 'Glucometer' }
+        const response = await authApi.get('/admin/cgm/orders/all', { params });
+        return response.data;
+    },
+
+    // --- 2. Admin Get Single CGM & Glucometer Order Details by ID / OrderId ---
+    getAdminCgmOrderDetailsById: async (id) => {
+        // id: Custom Order ID MongoDB ObjectId (_id)
+        const response = await authApi.get(`/admin/cgm/orders/detail/${id}`);
+        return response.data;
+    },
 }
 
 export default AdminAPI;

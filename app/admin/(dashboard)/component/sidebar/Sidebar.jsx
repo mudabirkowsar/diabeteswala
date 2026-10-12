@@ -496,6 +496,9 @@ export default function Sidebar({ sidebarOpen }) {
                                 <Link href="/admin/managecgmproducts/manageproducts" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/managecgmproducts/manageproducts") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/managecgmproducts/manageproducts") ? theme.primary : "#D1D5DB" }} /> Manage Products
                                 </Link>
+                                <Link href="/admin/managecgmproducts/cgmorders" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/managecgmproducts/cgmorders") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/managecgmproducts/cgmorders") ? theme.primary : "#D1D5DB" }} /> Manage Orders
+                                </Link>
                                 <Link href="/admin/managecgmproducts/managecoaches" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/managecgmproducts/managecoaches") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/managecgmproducts/managecoaches") ? theme.primary : "#D1D5DB" }} /> Manage Coaches
                                 </Link>
