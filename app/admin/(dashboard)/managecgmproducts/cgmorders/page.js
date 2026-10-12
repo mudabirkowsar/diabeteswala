@@ -175,7 +175,7 @@ export default function CgmOrdersPage() {
             {/* Filter & Search Bar */}
             <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-center">
-                    
+
                     {/* Search Field */}
                     <div className="relative md:col-span-5">
                         <Search className="absolute left-4 top-3 text-slate-400" size={16} />
@@ -231,11 +231,10 @@ export default function CgmOrdersPage() {
                             <button
                                 key={status}
                                 onClick={() => handleStatusChange(status)}
-                                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer border ${
-                                    isSelected
+                                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer border ${isSelected
                                         ? 'bg-[#3d3f96]/10 text-[#3d3f96] border-[#3d3f96]/30 font-black shadow-sm'
                                         : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
-                                }`}
+                                    }`}
                             >
                                 {status}
                             </button>
@@ -384,13 +383,12 @@ export default function CgmOrdersPage() {
                                                         ₹{order.totalAmount?.toLocaleString('en-IN') || 0}
                                                     </strong>
                                                     <div className="flex items-center gap-1">
-                                                        <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded ${
-                                                            order.paymentStatus === 'Paid'
+                                                        <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded ${order.paymentStatus === 'Paid'
                                                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                                                 : order.paymentStatus === 'Failed'
-                                                                ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                                                                : 'bg-amber-50 text-amber-700 border border-amber-200'
-                                                        }`}>
+                                                                    ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                            }`}>
                                                             {order.paymentStatus}
                                                         </span>
                                                         <span className="text-[10px] text-slate-400 font-bold flex items-center gap-0.5">

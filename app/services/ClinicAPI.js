@@ -331,6 +331,7 @@ const ClinicAPI = {
         const response = await authApi.delete(`/api/clinic/wards/delete/${wardId}`);
         return response.data;
     },
+    
 
     // ===================================================
     // --- CLINIC PORTAL - BOOKINGS & ADMISSIONS APIS ----

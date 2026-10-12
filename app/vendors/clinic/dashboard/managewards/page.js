@@ -20,7 +20,12 @@ import {
   FaCheck,
   FaWrench,
   FaBookmark,
-  FaShieldAlt
+  FaShieldAlt,
+  FaCalendarAlt,
+  FaPhoneAlt,
+  FaIdCard,
+  FaInfoCircle,
+  FaClock
 } from 'react-icons/fa';
 
 import ClinicAPI from '../../../../services/ClinicAPI';
@@ -57,9 +62,29 @@ export default function ClinicWardsSimplePage() {
   const [newBedCount, setNewBedCount] = useState(1);
   const [addingBeds, setAddingBeds] = useState(false);
 
+  // Bed Details Modal State
+  const [viewingBed, setViewingBed] = useState(null);
+
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3500);
+  };
+
+  // Helper date formatter
+  const formatDateTime = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      const d = new Date(dateString);
+      return d.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return dateString;
+    }
   };
 
   // --- 1. FETCH ALL WARDS ---
@@ -221,6 +246,9 @@ export default function ClinicWardsSimplePage() {
       const res = await ClinicAPI.updateClinicBedStatus({ bedId, status: newStatus });
       if (res?.success) {
         setBeds(prev => prev.map(b => b._id === bedId ? { ...b, status: newStatus } : b));
+        if (viewingBed && viewingBed._id === bedId) {
+          setViewingBed(prev => ({ ...prev, status: newStatus }));
+        }
         showToast(`Bed updated to ${newStatus}`);
         fetchWards();
       }
@@ -241,6 +269,9 @@ export default function ClinicWardsSimplePage() {
       const res = await ClinicAPI.deleteClinicBed(bed._id);
       if (res?.success) {
         setBeds(prev => prev.filter(b => b._id !== bed._id));
+        if (viewingBed && viewingBed._id === bed._id) {
+          setViewingBed(null);
+        }
         showToast(`Bed ${bed.bedNumber} removed`);
         fetchWards();
       }
@@ -631,7 +662,8 @@ export default function ClinicWardsSimplePage() {
                   return (
                     <div
                       key={bed._id}
-                      className={`p-3.5 rounded-xl border bg-white shadow-sm flex flex-col justify-between space-y-3 transition-all ${isOccupied
+                      onClick={() => setViewingBed(bed)}
+                      className={`p-3.5 rounded-xl border bg-white shadow-sm flex flex-col justify-between space-y-3 transition-all cursor-pointer hover:shadow-md hover:scale-[1.01] ${isOccupied
                         ? 'border-red-200 bg-gradient-to-b from-white to-red-50/20'
                         : isMaintenance
                           ? 'border-amber-200 bg-amber-50/10'
@@ -641,49 +673,75 @@ export default function ClinicWardsSimplePage() {
                         }`}
                     >
                       {/* Bed Top Info */}
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono font-black text-sm text-slate-900 tracking-tight">
-                          {bed.bedNumber}
-                        </span>
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono font-black text-sm text-slate-900 tracking-tight">
+                            {bed.bedNumber}
+                          </span>
 
-                        {!isOccupied && (
-                          <button
-                            onClick={() => handleDeleteBed(bed)}
-                            className="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
-                            title="Remove bed unit"
+                          {!isOccupied && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteBed(bed);
+                              }}
+                              className="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                              title="Remove bed unit"
+                            >
+                              <FaTrashAlt size={10} />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Daily Rate Info */}
+                        <div className="text-[11px] font-bold text-slate-500 mt-1">
+                          ₹{bed.pricePerDay || bed.dailyCharge} <span className="text-[9px] text-slate-400 font-normal">/day</span>
+                        </div>
+                      </div>
+
+                      {/* Patient Preview Pill if Assigned */}
+                      {bed.occupantInfo ? (
+                        <div className="bg-slate-100/90 rounded-md p-1.5 text-[10px] text-slate-700 font-bold flex items-center gap-1.5 border border-slate-200">
+                          <FaUserInjured size={10} className={isOccupied ? "text-red-600 shrink-0" : "text-[#3D3F96] shrink-0"} />
+                          <span className="truncate">{bed.occupantInfo.patientName}</span>
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-slate-400 italic">
+                          No active occupant
+                        </div>
+                      )}
+
+                      {/* Status Selector / Badge */}
+                      <div onClick={(e) => e.stopPropagation()}>
+                        {isOccupied ? (
+                          <div className="flex items-center justify-center gap-1.5 py-1 rounded-md bg-red-50 text-red-600 border border-red-200 text-[10px] font-black uppercase tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                            Occupied
+                          </div>
+                        ) : (
+                          <select
+                            value={bed.status}
+                            onChange={(e) => handleBedStatusChange(bed._id, e.target.value)}
+                            className={`w-full py-1 px-2 rounded-md text-[10px] font-black uppercase tracking-wider border outline-none cursor-pointer transition-all ${isMaintenance
+                              ? 'bg-amber-50 text-amber-800 border-amber-300'
+                              : isReserved
+                                ? 'bg-indigo-50 text-[#3D3F96] border-indigo-200'
+                                : 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                              }`}
                           >
-                            <FaTrashAlt size={10} />
-                          </button>
+                            <option value="Available">Available</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Reserved">Reserved</option>
+                          </select>
                         )}
                       </div>
 
-                      {/* Daily Rate Info */}
-                      <div className="text-[11px] font-bold text-slate-500">
-                        ₹{bed.pricePerDay} <span className="text-[9px] text-slate-400 font-normal">/day</span>
-                      </div>
-
-                      {/* Status Selector / Badge */}
-                      {isOccupied ? (
-                        <div className="flex items-center justify-center gap-1.5 py-1 rounded-md bg-red-50 text-red-600 border border-red-200 text-[10px] font-black uppercase tracking-wider">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                          Occupied
-                        </div>
-                      ) : (
-                        <select
-                          value={bed.status}
-                          onChange={(e) => handleBedStatusChange(bed._id, e.target.value)}
-                          className={`w-full py-1 px-2 rounded-md text-[10px] font-black uppercase tracking-wider border outline-none cursor-pointer transition-all ${isMaintenance
-                            ? 'bg-amber-50 text-amber-800 border-amber-300'
-                            : isReserved
-                              ? 'bg-indigo-50 text-[#3D3F96] border-indigo-200'
-                              : 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                            }`}
-                        >
-                          <option value="Available">Available</option>
-                          <option value="Maintenance">Maintenance</option>
-                          <option value="Reserved">Reserved</option>
-                        </select>
-                      )}
+                      <button
+                        onClick={() => setViewingBed(bed)}
+                        className="text-[10px] font-bold text-[#3D3F96] hover:underline flex items-center justify-center gap-1 pt-0.5"
+                      >
+                        <FaInfoCircle size={9} /> View Details
+                      </button>
                     </div>
                   );
                 })}
@@ -789,6 +847,218 @@ export default function ClinicWardsSimplePage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* BED DETAILS & OCCUPANT INFO MODAL                         */}
+      {/* ========================================================= */}
+      {viewingBed && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl border border-slate-200 overflow-hidden max-h-[92vh] flex flex-col">
+
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-indigo-50 text-[#3D3F96] rounded-xl">
+                  <FaBed size={18} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-black text-slate-900 tracking-tight font-mono">
+                      {viewingBed.bedNumber}
+                    </h3>
+                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${viewingBed.status === 'Occupied'
+                      ? 'bg-red-100 text-red-700 border border-red-200'
+                      : viewingBed.status === 'Reserved'
+                        ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
+                        : viewingBed.status === 'Maintenance'
+                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                          : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                      }`}>
+                      {viewingBed.status}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 font-medium">
+                    Ward: <span className="text-slate-600 font-bold">{selectedWard?.name}</span> ({selectedWard?.type})
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setViewingBed(null)}
+                className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 transition-colors"
+              >
+                <FaTimes size={14} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-5 text-xs font-medium text-slate-600">
+
+              {/* Bed Specs Summary Cards */}
+              <div className="grid grid-cols-3 gap-2.5">
+                <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Rate / Day</span>
+                  <div className="text-sm font-black text-slate-800 mt-0.5 flex items-center">
+                    <FaRupeeSign size={11} className="text-slate-400 mr-0.5" />
+                    {viewingBed.pricePerDay || viewingBed.dailyCharge || selectedWard?.pricePerDay}
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Bed Mongo ID</span>
+                  <div className="text-[11px] font-mono font-bold text-slate-700 mt-0.5 truncate" title={viewingBed._id || viewingBed.bedId}>
+                    {viewingBed._id || viewingBed.bedId}
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">State</span>
+                  <div className="text-[11px] font-bold text-slate-700 mt-0.5">
+                    {viewingBed.isOccupied ? 'Occupied' : viewingBed.isReserved ? 'Reserved' : viewingBed.isMaintenance ? 'Maintenance' : 'Available'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Live Occupant / Patient Information */}
+              {viewingBed.occupantInfo ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-slate-900 border-b border-slate-100 pb-2">
+                    <FaUserInjured className="text-[#3D3F96]" size={14} />
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                      Live Occupant & Admission Details
+                    </h4>
+                  </div>
+
+                  <div className="bg-indigo-50/40 rounded-xl p-4 border border-indigo-100 space-y-3.5">
+                    {/* Patient Name & Primary Badges */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-black text-slate-900">
+                          {viewingBed.occupantInfo.patientName}
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-semibold mt-0.5 flex items-center gap-2">
+                          <span>{viewingBed.occupantInfo.age} Yrs</span>
+                          <span>•</span>
+                          <span>{viewingBed.occupantInfo.gender}</span>
+                          <span>•</span>
+                          <span>Relation: {viewingBed.occupantInfo.relation || 'Self'}</span>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-indigo-100 text-[#3D3F96]">
+                          {viewingBed.occupantInfo.bookingType || 'Admission'}
+                        </span>
+                        {viewingBed.occupantInfo.appointmentStatus && (
+                          <div className="text-[10px] font-bold text-emerald-600 mt-1">
+                            {viewingBed.occupantInfo.appointmentStatus}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Booking Identifiers & Phone */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-indigo-100/70 text-xs">
+                      <div className="flex items-center gap-2 text-slate-700">
+                        <FaPhoneAlt size={11} className="text-indigo-400 shrink-0" />
+                        <span className="font-bold">{viewingBed.occupantInfo.phone || 'N/A'}</span>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-slate-700">
+                        <FaIdCard size={11} className="text-indigo-400 shrink-0" />
+                        <span className="text-[11px] font-mono">
+                          ID: <strong>{viewingBed.occupantInfo.bookingId || viewingBed.occupantInfo.appointmentId}</strong>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Reason for Visit */}
+                    {viewingBed.occupantInfo.reasonForVisit && (
+                      <div className="pt-2 border-t border-indigo-100/70">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                          Reason for Visit / Admission
+                        </span>
+                        <p className="text-xs font-semibold text-slate-800 bg-white/70 p-2 rounded-lg border border-indigo-100/50">
+                          {viewingBed.occupantInfo.reasonForVisit}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Stay Date Range */}
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-indigo-100/70">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
+                          <FaCalendarAlt size={9} /> Check-In (Start)
+                        </span>
+                        <span className="text-[11px] font-bold text-slate-800 block mt-0.5">
+                          {formatDateTime(viewingBed.occupantInfo.startDate)}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
+                          <FaClock size={9} /> Expected Check-Out (End)
+                        </span>
+                        <span className="text-[11px] font-bold text-slate-800 block mt-0.5">
+                          {formatDateTime(viewingBed.occupantInfo.endDate)}
+                        </span>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center space-y-2">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                    <FaBed size={16} />
+                  </div>
+                  <h4 className="text-xs font-black text-slate-700">No Patient Assigned</h4>
+                  <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
+                    This bed is currently marked as <strong className="text-slate-600">{viewingBed.status}</strong> and has no active occupant or daycare appointment.
+                  </p>
+                </div>
+              )}
+
+              {/* Status Management inside modal */}
+              {viewingBed.status !== 'Occupied' && (
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-500">Change Bed Status:</span>
+                  <select
+                    value={viewingBed.status}
+                    onChange={(e) => handleBedStatusChange(viewingBed._id, e.target.value)}
+                    className="py-1 px-3 rounded-lg text-xs font-bold border border-slate-200 outline-none bg-slate-50 focus:bg-white"
+                  >
+                    <option value="Available">Available</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Reserved">Reserved</option>
+                  </select>
+                </div>
+              )}
+
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+              {viewingBed.status !== 'Occupied' ? (
+                <button
+                  onClick={() => handleDeleteBed(viewingBed)}
+                  className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1.5"
+                >
+                  <FaTrashAlt size={10} /> Delete Bed
+                </button>
+              ) : <div />}
+
+              <button
+                onClick={() => setViewingBed(null)}
+                className="px-4 py-1.5 rounded-lg bg-[#3D3F96] hover:bg-[#2C2E75] text-white text-xs font-bold transition-all shadow-sm"
+              >
+                Close
+              </button>
+            </div>
+
           </div>
         </div>
       )}
