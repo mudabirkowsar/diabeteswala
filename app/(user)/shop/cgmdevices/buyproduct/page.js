@@ -21,7 +21,8 @@ import {
   ArrowRight,
   Tag,
   Video,
-  Home
+  Home,
+  Navigation
 } from 'lucide-react';
 import UserAPI from '../../../../services/UserAPI';
 import { useNotification } from '../../../../context/NotificationContext';
@@ -62,7 +63,7 @@ export default function BuyProductCheckoutPage() {
   const productId = searchParams.get('productId');
   const { showNotification } = useNotification?.() || {};
 
-  // Retrieve Stored User Coordinates with default fallback
+  // Retrieve Stored User Coordinates
   const getInitialCoords = () => {
     let lat = 30.698383813970036;
     let lng = 76.68573589283919;
@@ -169,12 +170,12 @@ export default function BuyProductCheckoutPage() {
               badge: item.badge,
               selectedVariant: defaultVar
                 ? {
-                    _id: defaultVar._id,
-                    displayName: defaultVar.packName || defaultVar.variantName || 'Standard',
-                    sellingPrice: defaultVar.sellingPrice,
-                    mrp: defaultVar.mrp,
-                    savingsAmount: defaultVar.savingsAmount
-                  }
+                  _id: defaultVar._id,
+                  displayName: defaultVar.packName || defaultVar.variantName || 'Standard',
+                  sellingPrice: defaultVar.sellingPrice,
+                  mrp: defaultVar.mrp,
+                  savingsAmount: defaultVar.savingsAmount
+                }
                 : null,
               quantity: 1,
               unitSellingPrice: defaultVar?.sellingPrice || item.sellingPrice,
@@ -215,21 +216,23 @@ export default function BuyProductCheckoutPage() {
       }));
   }, [selectedAddons]);
 
-  // 3. Dynamic Live Bill Preview API Call
+  // 3. Dynamic Live Bill Preview API Call (Matching Updated Spec)
   const calculateBill = useCallback(async () => {
     if (!checkoutItem?.productId) return;
     try {
       setCalculatingBill(true);
+      const coords = getInitialCoords();
 
       const billPayload = {
         deviceId: checkoutItem.productId,
         variantId: checkoutItem.selectedVariant?._id || undefined,
         quantity: checkoutItem.quantity || 1,
-        includeCoachCharge,
-        coachChargeId: selectedCoach?._id || undefined,
+        coachId: includeCoachCharge && selectedCoach?._id ? selectedCoach._id : undefined,
         consultationMode: includeCoachCharge ? consultationMode : undefined,
-        scheduledDate: selectedSlot?.date || undefined,
-        slotTime: selectedSlot?.slotTime || undefined,
+        userLat: coords.lat,
+        userLng: coords.lng,
+        scheduledDate: includeCoachCharge && selectedSlot?.date ? selectedSlot.date : undefined,
+        slotTime: includeCoachCharge && selectedSlot?.slotTime ? selectedSlot.slotTime : undefined,
         addons: formattedAddonsPayload
       };
 
@@ -296,45 +299,57 @@ export default function BuyProductCheckoutPage() {
 
   /* ========================================================================
      EXACT MATHEMATICALLY VERIFIED BILL BREAKDOWN
-     Device Price + Coach Fee (Online / Offline) + Slot Extra Fee + Add-ons
+     Directly syncs with backend's pricingBreakdown / coachConsultation object
      ======================================================================== */
-  const deviceTotal = billSummary?.pricingBreakdown?.itemTotal ?? checkoutItem?.totalSellingPrice ?? 0;
-  const mrpTotal = billSummary?.pricingBreakdown?.mrpTotal ?? checkoutItem?.totalMrp ?? 0;
+  const pricing = billSummary?.pricingBreakdown;
+  const coachConsultation = billSummary?.coachConsultation;
+
+  const deviceTotal = pricing?.itemTotal ?? checkoutItem?.totalSellingPrice ?? 0;
+  const mrpTotal = pricing?.mrpTotal ?? checkoutItem?.totalMrp ?? 0;
   const instantDeviceSavings = mrpTotal > deviceTotal ? mrpTotal - deviceTotal : 0;
 
-  // Add-ons total
+  // Addons Total
   const addonsTotal = useMemo(() => {
-    if (billSummary?.pricingBreakdown?.addonsTotal !== undefined) {
-      return Number(billSummary.pricingBreakdown.addonsTotal);
+    if (pricing?.addonsTotal !== undefined) {
+      return Number(pricing.addonsTotal);
     }
     return formattedAddonsPayload.reduce((sum, item) => {
       const addon = availableAddons.find((a) => a._id === item.addonId);
       return sum + (addon ? Number(addon.price) * item.quantity : 0);
     }, 0);
-  }, [billSummary, formattedAddonsPayload, availableAddons]);
+  }, [pricing, formattedAddonsPayload, availableAddons]);
 
-  // Coach Fee based on consultationMode ('Online' vs 'Offline')
+  // Coach breakdown from backend
   const coachBaseFee = useMemo(() => {
     if (!includeCoachCharge || !selectedCoach) return 0;
+    if (pricing?.coachBaseFee !== undefined) return Number(pricing.coachBaseFee);
     if (consultationMode === 'Offline') {
-      return (
-        selectedCoach.pricing?.totalEstimatedOfflineFee ||
-        selectedCoach.fees?.offline ||
-        (selectedCoach.pricing?.offlineBaseFee || 599) + (selectedCoach.pricing?.extraDistanceFee || 0)
-      );
+      return selectedCoach.pricing?.offlineBaseFee || selectedCoach.fees?.offline || 599;
     }
     return selectedCoach.pricing?.onlineFee || selectedCoach.fees?.online || selectedCoach.price || 299;
-  }, [includeCoachCharge, selectedCoach, consultationMode]);
+  }, [includeCoachCharge, selectedCoach, pricing, consultationMode]);
 
-  // Peak / Premium Slot Extra Fee
-  const slotExtraFee = includeCoachCharge && selectedSlot?.extraFee ? Number(selectedSlot.extraFee || 0) : 0;
+  const coachDistanceCharge = useMemo(() => {
+    if (!includeCoachCharge || consultationMode !== 'Offline') return 0;
+    if (pricing?.coachExtraDistanceCharge !== undefined) return Number(pricing.coachExtraDistanceCharge);
+    return selectedCoach?.pricing?.extraDistanceFee || 0;
+  }, [includeCoachCharge, consultationMode, pricing, selectedCoach]);
 
-  // Final 100% Mathematically Correct Total Payable
+  const coachPremiumSlotFee = useMemo(() => {
+    if (!includeCoachCharge) return 0;
+    if (pricing?.coachPremiumExtraFee !== undefined) return Number(pricing.coachPremiumExtraFee);
+    return selectedSlot?.extraFee ? Number(selectedSlot.extraFee) : 0;
+  }, [includeCoachCharge, pricing, selectedSlot]);
+
+  // Final Total Payable (Backend synced, mathematically accurate)
   const finalPayableAmount = useMemo(() => {
-    return deviceTotal + coachBaseFee + slotExtraFee + addonsTotal;
-  }, [deviceTotal, coachBaseFee, slotExtraFee, addonsTotal]);
+    if (pricing?.totalPayable !== undefined) {
+      return Number(pricing.totalPayable);
+    }
+    return deviceTotal + coachBaseFee + coachDistanceCharge + coachPremiumSlotFee + addonsTotal;
+  }, [pricing, deviceTotal, coachBaseFee, coachDistanceCharge, coachPremiumSlotFee, addonsTotal]);
 
-  // 4. Place Order Handler (Razorpay Online & Cash on Delivery)
+  // 4. Place Order Handler (POST /api/user/cgm/checkout/place-order)
   const handlePlaceOrder = async (e) => {
     if (e) e.preventDefault();
 
@@ -353,37 +368,30 @@ export default function BuyProductCheckoutPage() {
 
     try {
       setPlacingOrder(true);
+      const coords = getInitialCoords();
 
       const orderPayload = {
         deviceId: checkoutItem.productId,
         variantId: checkoutItem.selectedVariant?._id || undefined,
         quantity: checkoutItem.quantity || 1,
+        coachId: includeCoachCharge && selectedCoach?._id ? selectedCoach._id : undefined,
+        consultationMode: includeCoachCharge ? consultationMode : undefined,
+        userLat: coords.lat,
+        userLng: coords.lng,
+        scheduledDate: includeCoachCharge && selectedSlot?.date ? selectedSlot.date : undefined,
+        slotTime: includeCoachCharge && selectedSlot?.slotTime ? selectedSlot.slotTime : undefined,
+        addons: formattedAddonsPayload,
         diabetesProfile: {
           diabetesType:
             isDiabetic === 'no'
               ? 'General Wellness'
               : isDiabetic === 'pre-diabetic'
-              ? 'Pre-diabetic'
-              : diabetesType,
+                ? 'Pre-diabetic'
+                : diabetesType,
           hasUsedBefore: Boolean(hasUsedBefore)
         },
-        includeCoachCharge,
-        coachChargeId: selectedCoach?._id || undefined,
-        consultationDetails: includeCoachCharge && selectedCoach
-          ? {
-              coachId: selectedCoach._id,
-              consultationMode, // 'Online' | 'Offline'
-              scheduledDate: selectedSlot?.date || undefined,
-              slotTime: selectedSlot?.slotTime || undefined,
-              displayTime: selectedSlot?.displayTime || undefined,
-              coachFee: coachBaseFee,
-              slotExtraFee
-            }
-          : undefined,
-        addons: formattedAddonsPayload,
         paymentMethod,
-        deliveryAddress: selectedDeliveryAddress,
-        totalAmount: finalPayableAmount
+        deliveryAddress: selectedDeliveryAddress
       };
 
       const res = await UserAPI.placeCgmOrder(orderPayload);
@@ -536,10 +544,10 @@ export default function BuyProductCheckoutPage() {
       <main className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 pt-4 sm:pt-8">
         <form onSubmit={handlePlaceOrder}>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-8 items-start">
-            
+
             {/* ================= LEFT COLUMN: DETAILS & CUSTOMIZATIONS (7 COLS) ================= */}
             <div className="lg:col-span-7 space-y-3.5 sm:space-y-6">
-              
+
               {/* 1. PRODUCT SUMMARY CARD */}
               <div className="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 border border-slate-200/80 shadow-xs space-y-3 sm:space-y-4">
                 <div className="flex items-center justify-between pb-2 sm:pb-3 border-b border-slate-100">
@@ -641,11 +649,10 @@ export default function BuyProductCheckoutPage() {
                         key={opt.value}
                         type="button"
                         onClick={() => setIsDiabetic(opt.value)}
-                        className={`py-2 sm:py-2.5 px-1.5 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer text-center truncate ${
-                          isDiabetic === opt.value
+                        className={`py-2 sm:py-2.5 px-1.5 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer text-center truncate ${isDiabetic === opt.value
                             ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
                             : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                        }`}
+                          }`}
                       >
                         {opt.label}
                       </button>
@@ -683,22 +690,20 @@ export default function BuyProductCheckoutPage() {
                     <button
                       type="button"
                       onClick={() => setHasUsedBefore(true)}
-                      className={`py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer truncate ${
-                        hasUsedBefore === true
+                      className={`py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer truncate ${hasUsedBefore === true
                           ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
                           : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                      }`}
+                        }`}
                     >
                       Yes, Used Before
                     </button>
                     <button
                       type="button"
                       onClick={() => setHasUsedBefore(false)}
-                      className={`py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer truncate ${
-                        hasUsedBefore === false
+                      className={`py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer truncate ${hasUsedBefore === false
                           ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
                           : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                      }`}
+                        }`}
                     >
                       No, First-timer
                     </button>
@@ -740,11 +745,10 @@ export default function BuyProductCheckoutPage() {
                       return (
                         <div
                           key={addon._id}
-                          className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all flex items-center justify-between gap-2.5 sm:gap-3 ${
-                            isAdded
+                          className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all flex items-center justify-between gap-2.5 sm:gap-3 ${isAdded
                               ? 'border-[#3d3f96] bg-indigo-50/30'
                               : 'border-slate-200/80 bg-white hover:border-slate-300'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                             <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-slate-50 border border-slate-100 p-1 shrink-0 flex items-center justify-center overflow-hidden">
@@ -825,11 +829,10 @@ export default function BuyProductCheckoutPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                   <label
                     onClick={() => setPaymentMethod('Online')}
-                    className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
-                      paymentMethod === 'Online'
+                    className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${paymentMethod === 'Online'
                         ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 sm:ring-2 ring-[#3d3f96]/20'
                         : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-2.5 sm:gap-3">
                       <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-indigo-100 text-[#3d3f96] flex items-center justify-center shrink-0">
@@ -851,11 +854,10 @@ export default function BuyProductCheckoutPage() {
 
                   <label
                     onClick={() => setPaymentMethod('COD')}
-                    className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
-                      paymentMethod === 'COD'
+                    className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${paymentMethod === 'COD'
                         ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 sm:ring-2 ring-[#3d3f96]/20'
                         : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-2.5 sm:gap-3">
                       <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
@@ -880,7 +882,7 @@ export default function BuyProductCheckoutPage() {
 
             {/* ================= RIGHT COLUMN: FARE BREAKDOWN (5 COLS) ================= */}
             <div className="lg:col-span-5 lg:sticky lg:top-20 space-y-3 sm:space-y-4">
-              
+
               {/* Fare Summary Card */}
               <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-sm space-y-3 sm:space-y-4 relative">
                 <div className="flex items-center justify-between pb-1.5 sm:pb-2 border-b border-slate-100">
@@ -918,7 +920,7 @@ export default function BuyProductCheckoutPage() {
                     </span>
                   </div>
 
-                  {/* Line Item 2: Coach Consultation Fee (Online or Home Visit) */}
+                  {/* Line Item 2: Coach Base Fee */}
                   {includeCoachCharge && selectedCoach && (
                     <div className="flex items-center justify-between text-slate-700">
                       <span className="flex items-center gap-1">
@@ -937,8 +939,21 @@ export default function BuyProductCheckoutPage() {
                     </div>
                   )}
 
-                  {/* Line Item 3: Peak Slot Fee */}
-                  {includeCoachCharge && slotExtraFee > 0 && (
+                  {/* Line Item 3: Distance Travel Surcharge (If Offline and beyond free KM) */}
+                  {includeCoachCharge && consultationMode === 'Offline' && coachDistanceCharge > 0 && (
+                    <div className="flex items-center justify-between text-slate-700">
+                      <span className="flex items-center gap-1">
+                        <Navigation size={11} className="text-slate-400" />
+                        <span>Distance Travel Surcharge (Beyond Free KM)</span>
+                      </span>
+                      <span className="font-extrabold text-slate-900">
+                        +₹{coachDistanceCharge}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Line Item 4: Peak Slot Fee */}
+                  {includeCoachCharge && coachPremiumSlotFee > 0 && (
                     <div className="flex items-center justify-between text-amber-800 bg-amber-50/80 px-2 py-1 rounded-lg border border-amber-200/60">
                       <span className="flex items-center gap-1 font-bold">
                         <span>Peak / Premium Slot Fee</span>
@@ -946,11 +961,11 @@ export default function BuyProductCheckoutPage() {
                           Peak
                         </span>
                       </span>
-                      <span className="font-black">+₹{slotExtraFee}</span>
+                      <span className="font-black">+₹{coachPremiumSlotFee}</span>
                     </div>
                   )}
 
-                  {/* Line Item 4: Add-on Accessories */}
+                  {/* Line Item 5: Add-on Accessories */}
                   {addonsTotal > 0 && (
                     <div className="flex items-center justify-between text-slate-700">
                       <span>Add-on Accessories ({formattedAddonsPayload.length})</span>
@@ -960,13 +975,13 @@ export default function BuyProductCheckoutPage() {
                     </div>
                   )}
 
-                  {/* Line Item 5: Shipping */}
+                  {/* Line Item 6: Delivery */}
                   <div className="flex items-center justify-between text-slate-700">
                     <span>Express Insulated Shipping</span>
                     <span className="font-extrabold text-emerald-600">FREE</span>
                   </div>
 
-                  {/* Total Payable Row (Sum of items) */}
+                  {/* Total Payable Row (Exact sum of items) */}
                   <div className="pt-2 sm:pt-3 border-t border-slate-100 flex items-baseline justify-between">
                     <div>
                       <span className="text-xs sm:text-sm font-extrabold text-slate-900 block">Total Payable</span>
@@ -1113,7 +1128,7 @@ export default function BuyProductCheckoutPage() {
 
             <button
               type="button"
-              onClick={() => router.push('/shop')}
+              onClick={() => router.push('/shop/cgmdevices')}
               className="w-full py-2.5 sm:py-3.5 bg-[#3d3f96] hover:bg-slate-900 text-white rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
             >
               Continue Shopping

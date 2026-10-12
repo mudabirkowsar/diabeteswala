@@ -762,23 +762,23 @@ const UserAPI = {
         return response.data;
     },
 
-    // --- 1. Calculate CGM & Glucometer Bill / Checkout Preview ---
+// --- 1. Calculate CGM & Glucometer Bill / Checkout Preview (With Coach & Surcharge) ---
     calculateCgmOrderBill: async (data) => {
-        // data: { deviceId: "6ac4a2935bdb7103f2a81719", variantId: "6ac47ee6ed529727b5e8ffc6", quantity: 1, includeCoachCharge: true, coachChargeId: "6ac4d0ff2e447457af17d799", addons: [{ addonId: "6ac4d0ff2e447457af17d724", quantity: 1 }] }
+        // data: { deviceId: "6ac4a2935bdb7103f2a81719", variantId: "6ac47ee6ed529727b5e8ffc6", quantity: 1, coachId: "6ac5f22035b0cd0678eef501", consultationMode: "Offline", userLat: 30.7046, userLng: 76.7179, scheduledDate: "2026-10-12", slotTime: "18:00", addons: [{ addonId: "6ac4d0ff2e447457af17d724", quantity: 1 }] }
         const response = await authApi.post('/api/user/cgm/checkout/calculate-bill', data);
         return response.data;
     },
 
-    // --- 2. Place CGM & Glucometer Order (COD / Razorpay Online) ---
+    // --- 2. Place CGM & Glucometer Order (COD & Online Razorpay) ---
     placeCgmOrder: async (data) => {
-        // data: { deviceId: "6ac4a2935bdb7103f2a81719", variantId: "6ac47ee6ed529727b5e8ffc6", quantity: 1, diabetesProfile: { diabetesType: "Type 2", hasUsedBefore: false }, includeCoachCharge: true, addons: [{ addonId: "6ac4d0ff2e447457af17d724", quantity: 1 }], paymentMethod: "COD" | "Online", deliveryAddress: { name: "Mudabir Kowser", phone: "9876543210", houseNo: "Flat 402", sector: "Sector 62", landmark: "Near City Hospital", city: "Mohali", state: "Punjab", pincode: "160062", addressType: "Home" } }
+        // data: { deviceId: "6ac4a2935bdb7103f2a81719", variantId: "6ac47ee6ed529727b5e8ffc6", quantity: 1, coachId: "6ac5f22035b0cd0678eef501", consultationMode: "Offline", userLat: 30.7046, userLng: 76.7179, scheduledDate: "2026-10-12", slotTime: "18:00", addons: [{ addonId: "6ac4d0ff2e447457af17d724", quantity: 1 }], diabetesProfile: { diabetesType: "Type 2", hasUsedBefore: false }, paymentMethod: "COD" | "Online", deliveryAddress: { name: "Mudabir Kowsar", phone: "1234567890", houseNo: "Flat 102 Casa Homes", sector: "Sector 911", landmark: "Near Infosiv", city: "Mohali", state: "Punjab", pincode: "140301", addressType: "Home" } }
         const response = await authApi.post('/api/user/cgm/checkout/place-order', data);
         return response.data;
     },
 
     // --- 3. Verify CGM Order Razorpay Payment ---
     verifyCgmPayment: async (data) => {
-        // data: { orderId: "HK-CGM-104928", razorpayOrderId: "order_NzM102934812", razorpayPaymentId: "pay_NzM998877112", razorpaySignature: "9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d" }
+        // data: { orderId: "HK-CGM-105432", razorpayOrderId: "order_NzM992019283", razorpayPaymentId: "pay_NzM998877112", razorpaySignature: "9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d" }
         const response = await authApi.post('/api/user/cgm/checkout/verify-payment', data);
         return response.data;
     },
