@@ -22,7 +22,8 @@ import {
   Tag,
   Video,
   Home,
-  Navigation
+  Navigation,
+  Star
 } from 'lucide-react';
 import UserAPI from '../../../../services/UserAPI';
 import { useNotification } from '../../../../context/NotificationContext';
@@ -711,19 +712,45 @@ export default function BuyProductCheckoutPage() {
                 </div>
               </div>
 
-              {/* 3. COACH AND TIME SLOTS (ONLINE & OFFLINE HOME VISIT) */}
-              <ChooseCoachAndSlot
-                includeCoachCharge={includeCoachCharge}
-                onToggleCoachCharge={setIncludeCoachCharge}
-                selectedCoach={selectedCoach}
-                onCoachSelect={setSelectedCoach}
-                consultationMode={consultationMode}
-                onConsultationModeChange={setConsultationMode}
-                selectedSlot={selectedSlot}
-                onSlotSelect={setSelectedSlot}
-                userLocation={userLocation}
-                showNotification={showNotification}
-              />
+              {/* 3. COACH AND TIME SLOTS (ONLINE & OFFLINE HOME VISIT) - HIGH-VISIBILITY ATTRACTION CARD */}
+              <div className="relative group">
+                {/* Dynamic Ambient Background Glow */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 via-indigo-600 to-emerald-400 rounded-3xl sm:rounded-[32px] blur-sm opacity-60 group-hover:opacity-90 transition duration-500 animate-pulse pointer-events-none" />
+
+                <div className="relative bg-white rounded-2xl sm:rounded-3xl border-2 border-indigo-400/80 shadow-xl overflow-hidden">
+                  {/* Eye-catching Top Announcement Ribbon */}
+                  <div className="bg-gradient-to-r from-[#3d3f96] via-indigo-700 to-indigo-900 text-white px-3 sm:px-5 py-2 flex items-center justify-between shadow-xs">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <span className="flex h-2 w-2 relative">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span>
+                      </span>
+                      <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider flex items-center gap-1 text-amber-200">
+                        <Sparkles size={12} className="text-amber-300" /> Expert Coach Guidance
+                      </span>
+                    </div>
+                    <span className="text-[9px] sm:text-[10px] font-black uppercase bg-amber-400 text-indigo-950 px-2 py-0.5 rounded-full shadow-xs flex items-center gap-1">
+                      <Star size={9} fill="currentColor" /> Recommended for Best Results
+                    </span>
+                  </div>
+
+                  {/* Modular Component Content */}
+                  <div className="p-1 sm:p-2 bg-gradient-to-b from-indigo-50/40 via-white to-white">
+                    <ChooseCoachAndSlot
+                      includeCoachCharge={includeCoachCharge}
+                      onToggleCoachCharge={setIncludeCoachCharge}
+                      selectedCoach={selectedCoach}
+                      onCoachSelect={setSelectedCoach}
+                      consultationMode={consultationMode}
+                      onConsultationModeChange={setConsultationMode}
+                      selectedSlot={selectedSlot}
+                      onSlotSelect={setSelectedSlot}
+                      userLocation={userLocation}
+                      showNotification={showNotification}
+                    />
+                  </div>
+                </div>
+              </div>
 
               {/* 4. RECOMMENDED ACCESSORIES & ADD-ONS */}
               {availableAddons.length > 0 && (
