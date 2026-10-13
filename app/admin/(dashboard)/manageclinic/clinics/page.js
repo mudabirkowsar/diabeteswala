@@ -6,24 +6,23 @@ import {
     MapPin,
     Phone,
     Mail,
-    FileText,
-    CheckCircle2,
-    XCircle,
-    AlertCircle,
     ChevronLeft,
     ChevronRight,
     Loader2,
     ToggleLeft,
     ToggleRight,
     Eye,
-    X,
     RefreshCw,
-    Award
+    CheckCircle2,
+    XCircle
 } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
 
 // Import your API service functions
 import AdminAPI from '../../../../services/AdminAPI';
+
+// Import the newly created 360 Clinic Detail Component
+import ClinicDetail from './components/ClinicDetail';
 
 export default function ClinicManagementPage() {
     // --- Core States ---
@@ -39,14 +38,16 @@ export default function ClinicManagementPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
 
-    // --- Modal & Detail States ---
-    const [selectedClinic, setSelectedClinic] = useState(null);
+    // --- Detail Modal States ---
+    const [selectedClinicId, setSelectedClinicId] = useState(null);
+
+    // --- Verification Decision Modal States ---
+    const [decisionClinic, setDecisionClinic] = useState(null);
     const [showVerifyModal, setShowVerifyModal] = useState(false);
     const [verificationType, setVerificationType] = useState('Approved'); // 'Approved' or 'Rejected'
     const [rejectionReason, setRejectionReason] = useState('');
-    const [isImageZoomed, setIsImageZoomed] = useState(false);
 
-    // --- Base Server URL Helper for Images and Documents ---
+    // --- Base Server URL Helper for Images ---
     const BASE_SERVER_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 
     const getMediaUrl = (path) => {
@@ -58,7 +59,7 @@ export default function ClinicManagementPage() {
         return `${BASE_SERVER_URL}/${cleanPath}`;
     };
 
-    // Default placeholder image if clinic image fails to load
+    // Default placeholder image
     const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1631549916768-4119b255f926?q=80&w=150";
 
     // --- Fetch Clinics ---
@@ -89,7 +90,7 @@ export default function ClinicManagementPage() {
         }
     };
 
-    // Trigger search and filters resetting pagination to page 1
+    // Reset pagination to page 1 on filter/search change
     useEffect(() => {
         setCurrentPage(1);
     }, [search, status, isActive]);
@@ -111,7 +112,7 @@ export default function ClinicManagementPage() {
             const response = await AdminAPI.toggleClinicActive(id);
             if (response && response.success) {
                 toast.success(response.message || "Clinic status toggled.");
-                fetchClinics(); // Refresh view
+                fetchClinics();
             } else {
                 toast.error("Failed to update clinic directory status.");
             }
@@ -123,10 +124,18 @@ export default function ClinicManagementPage() {
         }
     };
 
+    // Open verification decision modal (called from table or from inside ClinicDetail)
+    const handleTriggerDecision = (clinic, type) => {
+        setDecisionClinic(clinic);
+        setVerificationType(type);
+        setRejectionReason('');
+        setShowVerifyModal(true);
+    };
+
     // --- Submit Verification Decision (Approve / Reject) ---
     const handleVerifySubmit = async (e) => {
         e.preventDefault();
-        if (!selectedClinic) return;
+        if (!decisionClinic) return;
 
         if (verificationType === 'Rejected' && !rejectionReason.trim()) {
             toast.error("Please enter a rejection reason.");
@@ -140,12 +149,13 @@ export default function ClinicManagementPage() {
                 ...(verificationType === 'Rejected' && { rejectionReason: rejectionReason.trim() })
             };
 
-            const response = await AdminAPI.approveRejectClinic(selectedClinic._id, payload);
+            const response = await AdminAPI.approveRejectClinic(decisionClinic._id, payload);
             if (response && response.success) {
                 toast.success(response.message || `Clinic verified as ${verificationType}.`);
                 setShowVerifyModal(false);
                 setRejectionReason('');
-                setSelectedClinic(null);
+                setDecisionClinic(null);
+                setSelectedClinicId(null); // Close detail modal if open
                 fetchClinics();
             } else {
                 toast.error("Failed to process verification.");
@@ -175,7 +185,9 @@ export default function ClinicManagementPage() {
                     <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
                         <Building2 className="text-[#3d3f96]" /> Clinic Management
                     </h1>
-                    <p className="text-slate-500 font-semibold text-xs mt-1">Review registrations, process approvals, and manage system access.</p>
+                    <p className="text-slate-500 font-semibold text-xs mt-1">
+                        Review registrations, process approvals, inspect 360° dossiers, and manage platform directory visibility.
+                    </p>
                 </div>
                 <button
                     onClick={fetchClinics}
@@ -185,10 +197,10 @@ export default function ClinicManagementPage() {
                     <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh List
                 </button>
             </div>
+
             {/* --- FILTER & SEARCH BAR --- */}
             <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm mb-6 flex flex-col gap-4">
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-
                     {/* Search Box */}
                     <div className="md:col-span-5 relative">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
@@ -224,7 +236,7 @@ export default function ClinicManagementPage() {
                             onChange={(e) => setIsActive(e.target.value)}
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold text-slate-500 outline-none focus:border-[#3d3f96] focus:bg-white transition-all cursor-pointer"
                         >
-                            <option value="">Visibility (All)</option>
+                            <option value="">Directory Visibility (All)</option>
                             <option value="true">Active Only</option>
                             <option value="false">Inactive Only</option>
                         </select>
@@ -239,7 +251,6 @@ export default function ClinicManagementPage() {
                             Reset
                         </button>
                     </div>
-
                 </div>
             </div>
 
@@ -262,13 +273,12 @@ export default function ClinicManagementPage() {
                                     <th className="text-left px-6 py-4">Location</th>
                                     <th className="text-center px-6 py-4">Verification</th>
                                     <th className="text-center px-6 py-4 w-28">Directory Status</th>
-                                    <th className="text-center px-6 py-4 w-28">Actions</th>
+                                    <th className="text-center px-6 py-4 w-28">360° Dossier</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
                                 {clinics.map((clinic, index) => (
                                     <tr key={clinic._id} className="hover:bg-slate-50/40 transition-colors duration-150">
-
                                         {/* Serial Number */}
                                         <td className="px-6 py-4 text-center font-bold text-slate-400 text-xs">
                                             {String((currentPage - 1) * 8 + index + 1).padStart(2, "0")}
@@ -288,23 +298,27 @@ export default function ClinicManagementPage() {
 
                                         {/* Clinic & Owner Identity */}
                                         <td className="px-6 py-4">
-                                            <h3 className="font-bold text-slate-800 tracking-tight leading-tight">{clinic.clinicName || "Unnamed Clinic"}</h3>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide mt-1.5">Owner: {clinic.name}</p>
+                                            <h3 className="font-bold text-slate-800 tracking-tight leading-tight">
+                                                {clinic.clinicName || "Unnamed Clinic"}
+                                            </h3>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide mt-1.5">
+                                                Owner: {clinic.name}
+                                            </p>
                                         </td>
 
-                                        {/* Contact details */}
+                                        {/* Contact Details */}
                                         <td className="px-6 py-4 space-y-1">
                                             <div className="flex items-center gap-1.5 text-xs text-slate-600 font-bold">
-                                                <Phone size={11} className="text-slate-350 shrink-0" />
+                                                <Phone size={11} className="text-slate-400 shrink-0" />
                                                 <span>{clinic.phoneNumber || "--"}</span>
                                             </div>
                                             <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-semibold truncate max-w-[200px]">
-                                                <Mail size={11} className="text-slate-350 shrink-0" />
+                                                <Mail size={11} className="text-slate-400 shrink-0" />
                                                 <span className="select-all">{clinic.email}</span>
                                             </div>
                                         </td>
 
-                                        {/* Location detail */}
+                                        {/* Location */}
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-1.5 text-xs text-slate-600 font-bold truncate max-w-[150px]">
                                                 <MapPin size={13} className="text-rose-500 shrink-0" />
@@ -314,11 +328,12 @@ export default function ClinicManagementPage() {
 
                                         {/* Verification Status */}
                                         <td className="px-6 py-4 text-center">
-                                            <span className={`inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md border ${clinic.Accountverify === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                            <span className={`inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md border ${
+                                                clinic.Accountverify === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
                                                 clinic.Accountverify === 'Pending' ? 'bg-amber-50 text-amber-700 border-amber-100 animate-pulse' :
-                                                    clinic.Accountverify === 'Rejected' ? 'bg-red-50 text-red-700 border-red-100' :
-                                                        'bg-slate-50 text-slate-500 border-slate-200'
-                                                }`}>
+                                                clinic.Accountverify === 'Rejected' ? 'bg-red-50 text-red-700 border-red-100' :
+                                                'bg-slate-50 text-slate-500 border-slate-200'
+                                            }`}>
                                                 {clinic.Accountverify}
                                             </span>
                                         </td>
@@ -329,7 +344,7 @@ export default function ClinicManagementPage() {
                                                 <button
                                                     onClick={() => handleToggleActive(clinic._id)}
                                                     disabled={actionLoading}
-                                                    className="focus:outline-none transition-colors duration-200"
+                                                    className="focus:outline-none transition-colors duration-200 cursor-pointer"
                                                     title={clinic.isActive ? "Set Inactive" : "Set Active"}
                                                 >
                                                     {clinic.isActive ? (
@@ -341,17 +356,16 @@ export default function ClinicManagementPage() {
                                             </div>
                                         </td>
 
-                                        {/* Action Panel (View / Inspect details) */}
+                                        {/* Action: Open 360 Clinic Dossier Modal */}
                                         <td className="px-6 py-4 text-center">
                                             <button
-                                                onClick={() => { setSelectedClinic(clinic); }}
-                                                className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200/60 transition-all inline-flex items-center justify-center"
-                                                title="Inspect Clinic Details"
+                                                onClick={() => setSelectedClinicId(clinic._id)}
+                                                className="p-2 rounded-xl bg-slate-50 hover:bg-indigo-50/70 text-slate-600 hover:text-[#3d3f96] border border-slate-200/60 transition-all inline-flex items-center justify-center cursor-pointer group"
+                                                title="Open 360° Clinic Dossier"
                                             >
-                                                <Eye size={14} />
+                                                <Eye size={15} className="group-hover:scale-110 transition-transform" />
                                             </button>
                                         </td>
-
                                     </tr>
                                 ))}
                             </tbody>
@@ -386,145 +400,34 @@ export default function ClinicManagementPage() {
                 </div>
             )}
 
-            {/* --- CLINIC DETAIL / INSPECTION MODAL (Includes approval/rejection decision buttons) --- */}
-            {selectedClinic && !showVerifyModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedClinic(null)} />
-
-                    <div className="bg-white rounded-[2.5rem] max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative z-10 border border-slate-100 max-h-[85vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                        <button onClick={() => setSelectedClinic(null)} className="absolute top-6 right-6 p-2 bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 rounded-full transition-all">
-                            <X size={18} />
-                        </button>
-
-                        <h2 className="text-xl font-black text-slate-800 tracking-tight mb-6">Clinic Credentials & Info</h2>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                            {/* Profile Image & General details */}
-                            <div className="space-y-4">
-                                <div className="h-40 w-full rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden relative cursor-zoom-in group">
-                                    <img
-                                        src={getMediaUrl(selectedClinic.image) || PLACEHOLDER_IMAGE}
-                                        alt={selectedClinic.clinicName}
-                                        onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
-                                        className="w-full h-full object-cover transition-transform group-hover:scale-[1.02]"
-                                        onClick={() => setIsImageZoomed(true)}
-                                    />
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-black uppercase text-slate-400">Clinic Name</p>
-                                    <p className="text-sm font-black text-slate-800 mt-0.5">{selectedClinic.clinicName || "Incomplete Details"}</p>
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-black uppercase text-slate-400">Email Address</p>
-                                    <p className="text-xs font-bold text-slate-700 mt-0.5 select-all">{selectedClinic.email}</p>
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-black uppercase text-slate-400">Phone Details</p>
-                                    <p className="text-xs font-bold text-slate-700 mt-0.5">{selectedClinic.phoneNumber || "--"}</p>
-                                </div>
-                            </div>
-
-                            {/* Registration and Licensing Documents */}
-                            <div className="space-y-4">
-                                <div>
-                                    <p className="text-[10px] font-black uppercase text-slate-400">Medical Council Name</p>
-                                    <p className="text-xs font-bold text-slate-700 mt-0.5">{selectedClinic.councilName || "Not Provided"}</p>
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-black uppercase text-slate-400">Council Registration Number</p>
-                                    <p className="text-xs font-bold text-slate-700 mt-0.5">{selectedClinic.councilNumber || "Not Provided"}</p>
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-black uppercase text-slate-400">Active Medical License Number</p>
-                                    <p className="text-xs font-bold text-slate-700 mt-0.5">{selectedClinic.licenseNumber || "Not Provided"}</p>
-                                </div>
-
-                                {/* Document Downloads / Previews */}
-                                <div className="pt-2">
-                                    <p className="text-[10px] font-black uppercase text-slate-400 mb-2">Attached Documents</p>
-                                    {selectedClinic.licenseDocument && selectedClinic.licenseDocument.length > 0 ? (
-                                        <a
-                                            href={getMediaUrl(selectedClinic.licenseDocument[0])}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-2 p-3 bg-indigo-50/50 hover:bg-indigo-50 border border-indigo-100/50 text-[#3d3f96] rounded-xl text-xs font-bold transition-all w-full justify-between group"
-                                        >
-                                            <span className="flex items-center gap-1.5"><FileText size={14} /> License Certificate Document</span>
-                                            <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-all" />
-                                        </a>
-                                    ) : (
-                                        <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-center text-xs font-semibold text-slate-400">
-                                            No licensing documents uploaded yet.
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                        </div>
-
-                        {/* Rejection Notification box inside inspector if status is Rejected */}
-                        {selectedClinic.Accountverify === 'Rejected' && selectedClinic.rejectionReason && (
-                            <div className="mt-6 p-4 bg-red-50/60 rounded-2xl border border-red-100/50 flex items-start gap-2 text-left">
-                                <AlertCircle size={14} className="text-red-500 shrink-0 mt-0.5" />
-                                <div>
-                                    <p className="text-[10px] font-black text-red-700 uppercase tracking-wide">Previously Stated Rejection Reason</p>
-                                    <p className="text-[12px] text-red-600 font-semibold mt-0.5">{selectedClinic.rejectionReason}</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Verification decision interface inside inspector (Hidden on main page) */}
-                        {selectedClinic.Accountverify !== 'Approved' && (
-                            <div className="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3">
-                                <button
-                                    onClick={() => { setVerificationType('Rejected'); setShowVerifyModal(true); }}
-                                    className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                                >
-                                    Reject Application
-                                </button>
-                                <button
-                                    onClick={() => { setVerificationType('Approved'); setShowVerifyModal(true); }}
-                                    className="px-5 py-2.5 bg-[#3d3f96] hover:bg-[#2d2f75] text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
-                                >
-                                    Approve Application
-                                </button>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Full-Screen Image Zoom View Overlay */}
-                    {isImageZoomed && (
-                        <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm">
-                            <button
-                                type="button"
-                                onClick={() => setIsImageZoomed(false)}
-                                className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all cursor-pointer"
-                            >
-                                <X size={24} />
-                            </button>
-                            <img
-                                src={getMediaUrl(selectedClinic.image) || PLACEHOLDER_IMAGE}
-                                alt={selectedClinic.clinicName}
-                                onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
-                                className="max-w-full max-h-[90vh] object-contain rounded-lg"
-                            />
-                        </div>
-                    )}
-                </div>
+            {/* --- 360° CLINIC DETAIL DOSSIER MODAL --- */}
+            {selectedClinicId && (
+                <ClinicDetail
+                    clinicId={selectedClinicId}
+                    onClose={() => setSelectedClinicId(null)}
+                    onActionSuccess={() => {
+                        fetchClinics();
+                        setSelectedClinicId(null);
+                    }}
+                    onTriggerDecision={handleTriggerDecision}
+                />
             )}
 
             {/* --- APPROVAL / REJECTION CONFIRMATION MODAL --- */}
-            {showVerifyModal && selectedClinic && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => { setShowVerifyModal(false); setRejectionReason(''); }} />
+            {showVerifyModal && decisionClinic && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+                    <div 
+                        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" 
+                        onClick={() => { setShowVerifyModal(false); setRejectionReason(''); }} 
+                    />
 
                     <form
                         onSubmit={handleVerifySubmit}
                         className="bg-white rounded-[2rem] max-w-md w-full p-6 shadow-2xl border border-slate-100 relative z-10 text-center"
                     >
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 mx-auto ${verificationType === 'Approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-[#EB333C]'
-                            }`}>
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 mx-auto ${
+                            verificationType === 'Approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-[#EB333C]'
+                        }`}>
                             {verificationType === 'Approved' ? <CheckCircle2 size={24} /> : <XCircle size={24} />}
                         </div>
 
@@ -533,20 +436,22 @@ export default function ClinicManagementPage() {
                         </h3>
                         <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
                             {verificationType === 'Approved'
-                                ? `Are you sure you want to verify and approve "${selectedClinic.clinicName || "this clinic"}"? This will allow them to host their doctors and receive orders.`
-                                : `Are you sure you want to reject the application for "${selectedClinic.clinicName || "this clinic"}"? This requires a mandatory rejection reason.`}
+                                ? `Are you sure you want to verify and approve "${decisionClinic.clinicName || "this clinic"}"? This activates their public profile and allows doctors to practice.`
+                                : `Are you sure you want to reject the application for "${decisionClinic.clinicName || "this clinic"}"? A specific rejection explanation is required.`}
                         </p>
 
-                        {/* Mandate Rejection Reason Field if rejecting */}
+                        {/* Rejection Reason textarea */}
                         {verificationType === 'Rejected' && (
                             <div className="mt-4 text-left space-y-1">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Rejection Reason</label>
+                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                                    Rejection Reason
+                                </label>
                                 <textarea
                                     rows={4}
-                                    placeholder="Enter specific reasons (e.g. licensing documents are blurred or expired)..."
+                                    placeholder="Enter specific reasons (e.g. invalid medical council registration or blurred license certificate)..."
                                     value={rejectionReason}
                                     onChange={(e) => setRejectionReason(e.target.value)}
-                                    className="w-full p-3 bg-slate-50 border border-slate-150 rounded-2xl text-xs font-semibold text-slate-700 outline-none focus:border-[#EB333C] focus:bg-white transition-all resize-none"
+                                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-700 outline-none focus:border-[#EB333C] focus:bg-white transition-all resize-none"
                                     required
                                 />
                             </div>
@@ -556,17 +461,18 @@ export default function ClinicManagementPage() {
                             <button
                                 type="button"
                                 onClick={() => { setShowVerifyModal(false); setRejectionReason(''); }}
-                                className="py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-[10px] uppercase tracking-wider transition-all cursor-pointer"
+                                className="py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-[10px] uppercase tracking-wider transition cursor-pointer"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={actionLoading}
-                                className={`py-3 text-white font-bold rounded-xl text-[10px] uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${verificationType === 'Approved'
-                                    ? 'bg-emerald-600 hover:bg-emerald-700'
-                                    : 'bg-[#EB333C] hover:bg-red-700'
-                                    }`}
+                                className={`py-3 text-white font-bold rounded-xl text-[10px] uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                                    verificationType === 'Approved'
+                                        ? 'bg-emerald-600 hover:bg-emerald-700'
+                                        : 'bg-[#EB333C] hover:bg-red-700'
+                                }`}
                             >
                                 {actionLoading ? (
                                     <Loader2 size={12} className="animate-spin" />
@@ -578,7 +484,6 @@ export default function ClinicManagementPage() {
                     </form>
                 </div>
             )}
-
         </main>
     );
 }

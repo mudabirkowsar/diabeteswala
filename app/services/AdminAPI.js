@@ -266,6 +266,11 @@ const AdminAPI = {
         return response.data;
     },
 
+    getClinicDetailAdmin: async(id) => {
+        const response = await authApi.get(`/api/admin/clinic/details/${id}`)
+        return response.data
+    },
+
     approveRejectClinic: async (id, payload) => {
         const response = await authApi.patch(`/api/admin/clinic/approve/${id}`, payload);
         return response.data;

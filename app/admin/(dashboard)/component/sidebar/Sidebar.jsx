@@ -414,9 +414,9 @@ export default function Sidebar({ sidebarOpen }) {
                                 <Link href="/admin/manageclinic/clinics" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/manageclinic/clinics") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/manageclinic/clinics") ? theme.primary : "#D1D5DB" }} /> Manage Clinics
                                 </Link>
-                                <Link href="/admin/manageclinic/createspecialists" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/manageclinic/createspecialists") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                {/* <Link href="/admin/manageclinic/createspecialists" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/manageclinic/createspecialists") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/manageclinic/createspecialists") ? theme.primary : "#D1D5DB" }} /> Create Specialists
-                                </Link>
+                                </Link> */}
                             </div>
                         )}
                     </>
