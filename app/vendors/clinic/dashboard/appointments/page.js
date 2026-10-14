@@ -43,6 +43,15 @@ const getMediaUrl = (path) => {
 
 const DOC_PLACEHOLDER = "https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=200&auto=format&fit=crop";
 
+// --- DATE HELPER TO GET TODAY'S YYYY-MM-DD FORMAT ---
+const getTodayYMD = () => {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 // --- DATE HELPER TO DETECT TODAY'S DATE ---
 const isToday = (dateVal) => {
   if (!dateVal) return false;
@@ -57,7 +66,7 @@ const isToday = (dateVal) => {
       );
     }
     // String matching fallback (YYYY-MM-DD or DD/MM/YYYY)
-    const todayYMD = today.toISOString().split('T')[0];
+    const todayYMD = getTodayYMD();
     const dd = String(today.getDate()).padStart(2, '0');
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const yyyy = today.getFullYear();
@@ -88,7 +97,15 @@ export default function ClinicBookingsDashboard() {
   const [selectedStatus, setSelectedStatus] = useState('ALL'); // 'ALL' | 'Confirmed' | 'Pending' | 'Completed' | 'Cancelled'
   const [selectedDoctorId, setSelectedDoctorId] = useState('ALL'); // 'ALL' | doctor _id or name
   const [searchQuery, setSearchQuery] = useState('');
-  const [showTodayOnly, setShowTodayOnly] = useState(false); // Toggle to filter by today's appointments
+
+  // --- DATE FILTER STATE ('today' | 'all' | 'YYYY-MM-DD') ---
+  // Defaults to 'today' as requested
+  const [dateFilter, setDateFilter] = useState('today');
+
+  // Helpers to identify active date filter
+  const isTodaySelected = dateFilter === 'today' || dateFilter === getTodayYMD();
+  const isAllDatesSelected = dateFilter === 'all';
+  const isCustomDate = !isTodaySelected && !isAllDatesSelected;
 
   // --- Dynamic Doctor List Registry ---
   const [availableDoctors, setAvailableDoctors] = useState([]);
@@ -106,16 +123,31 @@ export default function ClinicBookingsDashboard() {
         limit: 10
       };
 
-      if (activeTypeTab !== 'ALL') {
-        params.bookingType = activeTypeTab;
+      // API Date Specification (?date=all or ?date=YYYY-MM-DD)
+      if (dateFilter === 'all') {
+        params.date = 'all';
+      } else if (dateFilter === 'today') {
+        params.date = getTodayYMD();
+      } else if (dateFilter) {
+        params.date = dateFilter;
       }
+
+      // API Category Specification (OPD, IPD, EMERGENCY)
+      if (activeTypeTab !== 'ALL') {
+        const typeVal = activeTypeTab === 'Emergency' ? 'EMERGENCY' : activeTypeTab;
+        params.bookingType = typeVal;
+        params.type = typeVal;
+      }
+
       if (selectedStatus !== 'ALL') {
         params.status = selectedStatus;
       }
+
       if (selectedDoctorId !== 'ALL') {
         params.doctorId = selectedDoctorId;
         params.doctor = selectedDoctorId;
       }
+
       if (searchQuery.trim()) {
         params.search = searchQuery.trim();
       }
@@ -157,7 +189,7 @@ export default function ClinicBookingsDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [activeTypeTab, selectedStatus, selectedDoctorId, searchQuery]);
+  }, [activeTypeTab, selectedStatus, selectedDoctorId, searchQuery, dateFilter]);
 
   // Initial load & Filter change trigger
   useEffect(() => {
@@ -168,7 +200,7 @@ export default function ClinicBookingsDashboard() {
     return () => clearTimeout(handler);
   }, [fetchBookings]);
 
-  // Calculate Today's Appointments count (takes into account doctor filter if active)
+  // Calculate Today's Appointments count
   const todayAppointmentsCount = useMemo(() => {
     let list = bookings;
     if (selectedDoctorId !== 'ALL') {
@@ -177,15 +209,15 @@ export default function ClinicBookingsDashboard() {
         return docId === selectedDoctorId || b.doctor?.name === selectedDoctorId;
       });
     }
+    if (isTodaySelected) {
+      return pagination.totalDocs || list.length;
+    }
     return list.filter((b) => isToday(b.appointmentDate || b.date || b.createdAt)).length;
-  }, [bookings, selectedDoctorId]);
+  }, [bookings, selectedDoctorId, isTodaySelected, pagination.totalDocs]);
 
-  // Apply Today-only and Doctor filters client-side as well
+  // Client-side Doctor Filter Application
   const displayedBookings = useMemo(() => {
     let list = bookings;
-    if (showTodayOnly) {
-      list = list.filter((b) => isToday(b.appointmentDate || b.date || b.createdAt));
-    }
     if (selectedDoctorId !== 'ALL') {
       list = list.filter((b) => {
         const docId = b.doctor?._id || b.doctor?.id || b.doctor?.name;
@@ -193,7 +225,7 @@ export default function ClinicBookingsDashboard() {
       });
     }
     return list;
-  }, [bookings, showTodayOnly, selectedDoctorId]);
+  }, [bookings, selectedDoctorId]);
 
   // Handle open dossier modal
   const handleOpenDossier = (id) => {
@@ -270,7 +302,7 @@ export default function ClinicBookingsDashboard() {
   };
 
   return (
-    <div className="min-h-screen text-slate-800 max-w-[1600px] mx-auto space-y-8 antialiased select-none text-left">
+    <div className="min-h-screen text-slate-800 max-w-[1600px] mx-auto space-y-6 antialiased select-none text-left">
 
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
@@ -290,35 +322,34 @@ export default function ClinicBookingsDashboard() {
 
         {/* Right Section: Today's Appointments Counter + Refresh Action */}
         <div className="flex flex-wrap items-center gap-3 self-start lg:self-auto">
-          {/* Today's Appointments Stat Button / Counter */}
+          {/* Today's Appointments Stat Button / Quick Toggle */}
           <button
             type="button"
-            onClick={() => setShowTodayOnly(prev => !prev)}
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl border transition-all cursor-pointer shadow-xs ${
-              showTodayOnly
+            onClick={() => setDateFilter((prev) => (prev === 'today' ? 'all' : 'today'))}
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl border transition-all cursor-pointer shadow-xs ${isTodaySelected
                 ? 'bg-[#3d3f96] text-white border-[#3d3f96] shadow-md shadow-indigo-950/20 ring-2 ring-indigo-200'
                 : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200'
-            }`}
-            title="Click to filter by Today's Appointments"
+              }`}
+            title="Click to toggle Today's appointments"
           >
-            <div className={`p-2 rounded-xl ${showTodayOnly ? 'bg-white/20 text-white' : 'bg-indigo-50 text-[#3d3f96]'}`}>
+            <div className={`p-2 rounded-xl ${isTodaySelected ? 'bg-white/20 text-white' : 'bg-indigo-50 text-[#3d3f96]'}`}>
               <Calendar size={18} />
             </div>
             <div className="text-left">
               <div className="flex items-center gap-1.5">
-                <span className={`text-[10px] font-black uppercase tracking-wider block ${showTodayOnly ? 'text-indigo-200' : 'text-slate-400'}`}>
+                <span className={`text-[10px] font-black uppercase tracking-wider block ${isTodaySelected ? 'text-indigo-200' : 'text-slate-400'}`}>
                   Today Appointments
                 </span>
-                {todayAppointmentsCount > 0 && !showTodayOnly && (
+                {todayAppointmentsCount > 0 && !isTodaySelected && (
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 )}
               </div>
               <div className="flex items-baseline gap-2">
-                <span className={`text-xl font-black font-mono leading-none ${showTodayOnly ? 'text-white' : 'text-slate-900'}`}>
+                <span className={`text-xl font-black font-mono leading-none ${isTodaySelected ? 'text-white' : 'text-slate-900'}`}>
                   {todayAppointmentsCount}
                 </span>
-                <span className={`text-[10px] font-bold ${showTodayOnly ? 'text-indigo-200' : 'text-[#3d3f96]'}`}>
-                  {showTodayOnly ? 'Showing Only Today' : 'Scheduled Today'}
+                <span className={`text-[10px] font-bold ${isTodaySelected ? 'text-indigo-200' : 'text-[#3d3f96]'}`}>
+                  {isTodaySelected ? 'Showing Today' : 'Scheduled Today'}
                 </span>
               </div>
             </div>
@@ -336,12 +367,14 @@ export default function ClinicBookingsDashboard() {
         </div>
       </div>
 
-      {/* --- FILTER & SEARCH CONTROLS ROW --- */}
+      {/* --- REDESIGNED FILTER & SEARCH CONTROLS CARD --- */}
       <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-4">
 
-        {/* Row A: Category Tabs Switcher + Doctor Filter + Status Filter */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
-          <div className="inline-flex p-1 bg-slate-100/90 rounded-2xl border border-slate-200/70 gap-1 flex-wrap sm:flex-nowrap">
+        {/* ROW 1: Category Navigation Tabs (Left) & Unified Date Selector (Right) */}
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+
+          {/* Category Tabs */}
+          <div className="inline-flex p-1 bg-slate-100/90 rounded-2xl border border-slate-200/70 gap-1 overflow-x-auto max-w-full">
             {[
               { key: 'ALL', label: 'All Bookings', icon: <Layers size={14} /> },
               { key: 'OPD', label: 'OPD Appointments', icon: <Stethoscope size={14} /> },
@@ -354,7 +387,7 @@ export default function ClinicBookingsDashboard() {
                   key={tab.key}
                   type="button"
                   onClick={() => setActiveTypeTab(tab.key)}
-                  className={`flex items-center gap-2 px-4 py-2 text-xs font-black rounded-xl transition-all cursor-pointer whitespace-nowrap ${isSelected
+                  className={`flex items-center gap-2 px-3.5 py-2 text-xs font-black rounded-xl transition-all cursor-pointer whitespace-nowrap ${isSelected
                       ? tab.key === 'Emergency'
                         ? 'bg-red-500 text-white shadow-xs'
                         : 'bg-[#3d3f96] text-white shadow-md shadow-indigo-950/20'
@@ -368,79 +401,128 @@ export default function ClinicBookingsDashboard() {
             })}
           </div>
 
-          {/* Filters Collection (Doctor, Status & Today indicator) */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Active Today Indicator */}
-            {showTodayOnly && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-[#3d3f96] text-xs font-bold">
-                <Calendar size={12} />
-                Filtering: Today Only
+          {/* Date Segmented Control: Today | All Dates | Calendar Date Picker */}
+          <div className="inline-flex items-center p-1 bg-slate-100/90 rounded-2xl border border-slate-200/70 gap-1 self-start xl:self-auto flex-wrap sm:flex-nowrap">
+            {/* Today Button */}
+            <button
+              type="button"
+              onClick={() => setDateFilter('today')}
+              className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-black rounded-xl transition-all cursor-pointer whitespace-nowrap ${isTodaySelected
+                  ? 'bg-[#3d3f96] text-white shadow-md shadow-indigo-950/20'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                }`}
+            >
+              <Sparkles size={13} />
+              <span>Today</span>
+            </button>
+
+            {/* All Appointments Button */}
+            <button
+              type="button"
+              onClick={() => setDateFilter('all')}
+              className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-black rounded-xl transition-all cursor-pointer whitespace-nowrap ${isAllDatesSelected
+                  ? 'bg-[#3d3f96] text-white shadow-md shadow-indigo-950/20'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                }`}
+            >
+              <Layers size={13} />
+              <span>All Dates</span>
+            </button>
+
+            {/* Calendar Input Container */}
+            <div
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all ${isCustomDate
+                  ? 'bg-white border-[#3d3f96] ring-2 ring-indigo-100 text-[#3d3f96] shadow-xs'
+                  : 'bg-white/80 border-slate-200/90 hover:bg-white text-slate-700'
+                }`}
+            >
+              <Calendar size={13} className={isCustomDate ? "text-[#3d3f96]" : "text-slate-400"} />
+              <input
+                type="date"
+                value={isCustomDate ? dateFilter : ''}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setDateFilter(e.target.value);
+                  }
+                }}
+                className="bg-transparent text-xs font-bold text-slate-800 outline-none cursor-pointer"
+                title="Pick custom date"
+              />
+              {isCustomDate && (
                 <button
                   type="button"
-                  onClick={() => setShowTodayOnly(false)}
-                  className="hover:text-red-500 ml-1 cursor-pointer"
+                  onClick={() => setDateFilter('today')}
+                  className="text-slate-400 hover:text-rose-500 cursor-pointer p-0.5 rounded-md hover:bg-slate-100 transition-colors"
+                  title="Reset to Today"
                 >
                   <X size={12} />
                 </button>
-              </span>
-            )}
-
-            {/* --- DOCTOR FILTER DROPDOWN --- */}
-            <div className="flex items-center gap-2">
-              <Stethoscope size={14} className="text-[#3d3f96]" />
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Doctor:</span>
-              <select
-                value={selectedDoctorId}
-                onChange={(e) => setSelectedDoctorId(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 rounded-xl px-3 py-1.5 outline-none focus:border-[#3d3f96] cursor-pointer max-w-[190px] truncate"
-              >
-                <option value="ALL">All Doctors</option>
-                {availableDoctors.map((doc) => (
-                  <option key={doc.id} value={doc.id}>
-                    {doc.name} {doc.speciality ? `(${doc.speciality})` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* --- STATUS FILTER DROPDOWN --- */}
-            <div className="flex items-center gap-2">
-              <Filter size={14} className="text-slate-400" />
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Status:</span>
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 rounded-xl px-3 py-1.5 outline-none focus:border-[#3d3f96] cursor-pointer"
-              >
-                <option value="ALL">All Statuses</option>
-                <option value="Confirmed">Confirmed</option>
-                <option value="Pending">Pending</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
+              )}
             </div>
           </div>
+
         </div>
 
-        {/* Row B: Live Search Input Bar */}
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-          <input
-            type="text"
-            placeholder="Search by Booking ID (e.g. CLN-ORD), Patient Name, or Contact Phone Number..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs font-bold text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-[#3d3f96] focus:ring-1 focus:ring-[#3d3f96] transition-all"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+        {/* ROW 2: Live Search Bar (Flex-1) + Doctor Dropdown + Status Dropdown */}
+        <div className="flex flex-col sm:flex-row items-center gap-3 pt-0.5">
+
+          {/* Search Input Bar */}
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input
+              type="text"
+              placeholder="Search by Booking ID, Patient Name, or Contact Phone Number..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs font-bold text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-[#3d3f96] focus:ring-2 focus:ring-indigo-100 transition-all"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Doctor Filter Pill */}
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 rounded-2xl px-3 py-2 w-full sm:w-auto shrink-0">
+            <Stethoscope size={14} className="text-[#3d3f96]" />
+            <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Doctor:</span>
+            <select
+              value={selectedDoctorId}
+              onChange={(e) => setSelectedDoctorId(e.target.value)}
+              className="bg-transparent text-xs font-bold text-slate-800 outline-none cursor-pointer max-w-[170px] truncate"
             >
-              <X size={14} />
-            </button>
-          )}
+              <option value="ALL">All Doctors</option>
+              {availableDoctors.map((doc) => (
+                <option key={doc.id} value={doc.id}>
+                  {doc.name} {doc.speciality ? `(${doc.speciality})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Status Filter Pill */}
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 rounded-2xl px-3 py-2 w-full sm:w-auto shrink-0">
+            <Filter size={14} className="text-slate-400" />
+            <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Status:</span>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="bg-transparent text-xs font-bold text-slate-800 outline-none cursor-pointer"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="Confirmed">Confirmed</option>
+              <option value="Pending">Pending</option>
+              <option value="In-Progress">In-Progress</option>
+              <option value="Completed">Completed</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </div>
+
         </div>
 
       </div>
@@ -461,19 +543,23 @@ export default function ClinicBookingsDashboard() {
           <h3 className="text-base font-bold text-slate-800">
             {selectedDoctorId !== 'ALL'
               ? "No Appointments Found For Selected Doctor"
-              : showTodayOnly
+              : isTodaySelected
                 ? "No Appointments Found For Today"
-                : "No Clinic Records Found"}
+                : isCustomDate
+                  ? `No Appointments Found For ${dateFilter}`
+                  : "No Clinic Records Found"}
           </h3>
           <p className="text-xs text-slate-400 mt-1 max-w-sm font-medium">
             {selectedDoctorId !== 'ALL'
               ? "This doctor does not have any appointments matching the current date, type, or status filters."
-              : showTodayOnly
+              : isTodaySelected
                 ? "There are no appointments registered for today's date under the current filters."
-                : "No bookings match your current search criteria, category selection, or status filters."}
+                : isCustomDate
+                  ? `There are no appointments registered for date ${dateFilter} under the current filters.`
+                  : "No bookings match your current search criteria, category selection, or status filters."}
           </p>
 
-          <div className="flex items-center gap-2 mt-4">
+          <div className="flex items-center gap-2 mt-4 flex-wrap justify-center">
             {selectedDoctorId !== 'ALL' && (
               <button
                 type="button"
@@ -483,11 +569,20 @@ export default function ClinicBookingsDashboard() {
                 Clear Doctor Filter
               </button>
             )}
-            {showTodayOnly && (
+            {!isTodaySelected && (
               <button
                 type="button"
-                onClick={() => setShowTodayOnly(false)}
+                onClick={() => setDateFilter('today')}
                 className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-[#3d3f96] rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                Switch to Today
+              </button>
+            )}
+            {!isAllDatesSelected && (
+              <button
+                type="button"
+                onClick={() => setDateFilter('all')}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
               >
                 Show All Appointments
               </button>
@@ -505,9 +600,8 @@ export default function ClinicBookingsDashboard() {
               <div
                 key={item._id}
                 onClick={() => handleOpenDossier(item._id)}
-                className={`bg-white rounded-3xl border shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 overflow-hidden cursor-pointer group p-5 sm:p-6 flex flex-col justify-between gap-5 ${
-                  appointmentIsToday ? 'border-indigo-200/90 ring-1 ring-indigo-100' : 'border-slate-100'
-                }`}
+                className={`bg-white rounded-3xl border shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 overflow-hidden cursor-pointer group p-5 sm:p-6 flex flex-col justify-between gap-5 ${appointmentIsToday ? 'border-indigo-200/90 ring-1 ring-indigo-100' : 'border-slate-100'
+                  }`}
               >
                 {/* 1. Header Bar: Booking ID, Category Pill, Consultation Type, & Status */}
                 <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
@@ -577,9 +671,8 @@ export default function ClinicBookingsDashboard() {
                   </div>
 
                   {/* Schedule & Ward Info (4/12) */}
-                  <div className={`md:col-span-4 space-y-1.5 p-3 rounded-2xl border ${
-                    appointmentIsToday ? 'bg-indigo-50/50 border-indigo-100' : 'bg-slate-50/80 border-slate-100'
-                  }`}>
+                  <div className={`md:col-span-4 space-y-1.5 p-3 rounded-2xl border ${appointmentIsToday ? 'bg-indigo-50/50 border-indigo-100' : 'bg-slate-50/80 border-slate-100'
+                    }`}>
                     <div className="flex items-center justify-between text-xs font-bold text-slate-800 font-mono">
                       <span className="flex items-center gap-1.5">
                         <Calendar size={13} className={appointmentIsToday ? "text-indigo-600 shrink-0" : "text-[#3d3f96] shrink-0"} />
