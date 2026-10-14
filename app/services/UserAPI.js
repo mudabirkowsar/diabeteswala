@@ -814,5 +814,27 @@ const UserAPI = {
         return response.data;
     },
 
+    // --- 1. Get My CGM & Glucometer Orders (Order History & Cards) ---
+    getMyCgmOrders: async (params) => {
+        // params (optional): { page: 1, limit: 10, status: 'Placed' | 'Confirmed' | 'Packed' | 'Shipped' | 'Delivered' | 'Cancelled' }
+        const response = await authApi.get('/api/user/cgm/checkout/my-orders', { params });
+        return response.data;
+    },
+
+    // --- 2. Get Single CGM & Glucometer Order Details by ID / OrderId ---
+    getCgmOrderDetailsById: async (id) => {
+        // id: Custom Order ID (e.g. 'HK-CGM-458265') OR MongoDB ObjectId (_id)
+        const response = await authApi.get(`/api/user/cgm/checkout/order/${id}`);
+        return response.data;
+    },
+
+    // --- 3. Cancel CGM & Glucometer Order (With Optional Reason & Auto-Refund) ---
+    cancelCgmOrder: async (id, data = {}) => {
+        // id: Custom Order ID (e.g. 'HK-CGM-458265') OR MongoDB ObjectId (_id)
+        // data (optional): { cancelReason: "Ordered by mistake, want to purchase different pack." }
+        const response = await authApi.patch(`/api/user/cgm/checkout/order/cancel/${id}`, data);
+        return response.data;
+    },
+
 }
 export default UserAPI;

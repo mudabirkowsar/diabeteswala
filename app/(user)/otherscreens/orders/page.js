@@ -7,6 +7,7 @@ import { Utensils, Activity, Pill, ClipboardCheck } from 'lucide-react';
 import FoodOrders from './components/FoodOrders';
 import LabOrders from './components/LabOrders';
 import PharmacyOrders from './components/PharmacyOrders';
+import CgmOrders from './components/CgmOrders';
 
 export default function OrdersDashboardPage() {
   const [activeTab, setActiveTab] = useState('food'); // Default selected tab is 'food'
@@ -29,6 +30,12 @@ export default function OrdersDashboardPage() {
       name: 'Pharmacy Orders',
       icon: <Pill size={15} />,
       component: <PharmacyOrders />
+    },
+    {
+      id: 'cgm',
+      name: 'CGM Orders',
+      icon: <Pill size={15} />,
+      component: <CgmOrders />
     }
   ];
 
