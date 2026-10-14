@@ -651,8 +651,8 @@ export default function BuyProductCheckoutPage() {
                         type="button"
                         onClick={() => setIsDiabetic(opt.value)}
                         className={`py-2 sm:py-2.5 px-1.5 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer text-center truncate ${isDiabetic === opt.value
-                            ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
-                            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                          ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                           }`}
                       >
                         {opt.label}
@@ -692,8 +692,8 @@ export default function BuyProductCheckoutPage() {
                       type="button"
                       onClick={() => setHasUsedBefore(true)}
                       className={`py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer truncate ${hasUsedBefore === true
-                          ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
-                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                        ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                         }`}
                     >
                       Yes, Used Before
@@ -702,8 +702,8 @@ export default function BuyProductCheckoutPage() {
                       type="button"
                       onClick={() => setHasUsedBefore(false)}
                       className={`py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer truncate ${hasUsedBefore === false
-                          ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
-                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                        ? 'border-[#3d3f96] bg-indigo-50/70 text-[#3d3f96] ring-1 ring-[#3d3f96]'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                         }`}
                     >
                       No, First-timer
@@ -773,8 +773,8 @@ export default function BuyProductCheckoutPage() {
                         <div
                           key={addon._id}
                           className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all flex items-center justify-between gap-2.5 sm:gap-3 ${isAdded
-                              ? 'border-[#3d3f96] bg-indigo-50/30'
-                              : 'border-slate-200/80 bg-white hover:border-slate-300'
+                            ? 'border-[#3d3f96] bg-indigo-50/30'
+                            : 'border-slate-200/80 bg-white hover:border-slate-300'
                             }`}
                         >
                           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -857,8 +857,8 @@ export default function BuyProductCheckoutPage() {
                   <label
                     onClick={() => setPaymentMethod('Online')}
                     className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${paymentMethod === 'Online'
-                        ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 sm:ring-2 ring-[#3d3f96]/20'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
+                      ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 sm:ring-2 ring-[#3d3f96]/20'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
                       }`}
                   >
                     <div className="flex items-center gap-2.5 sm:gap-3">
@@ -882,8 +882,8 @@ export default function BuyProductCheckoutPage() {
                   <label
                     onClick={() => setPaymentMethod('COD')}
                     className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${paymentMethod === 'COD'
-                        ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 sm:ring-2 ring-[#3d3f96]/20'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
+                      ? 'border-[#3d3f96] bg-indigo-50/40 ring-1 sm:ring-2 ring-[#3d3f96]/20'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
                       }`}
                   >
                     <div className="flex items-center gap-2.5 sm:gap-3">
@@ -1155,10 +1155,10 @@ export default function BuyProductCheckoutPage() {
 
             <button
               type="button"
-              onClick={() => router.push('/shop/cgmdevices')}
+              onClick={() => router.push('/otherscreens/orders?tab=cgm')} // 👈 Add ?tab=cgm to your route
               className="w-full py-2.5 sm:py-3.5 bg-[#3d3f96] hover:bg-slate-900 text-white rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
             >
-              Continue Shopping
+              View CGM Orders
             </button>
           </div>
         </div>
