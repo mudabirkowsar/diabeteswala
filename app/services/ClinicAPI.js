@@ -55,6 +55,11 @@ const ClinicAPI = {
         const response = await authApi.get('/api/auth/clinic/profile');
         return response.data;
     },
+    
+    getClinicTopbarDetail: async () => {
+        const response = await authApi.get('/api/auth/clinic/less-info');
+        return response.data;
+    },
 
     updateClinicProfile: async (formData) => {
         const response = await authApi.put('/api/auth/clinic/profile/update', formData, {

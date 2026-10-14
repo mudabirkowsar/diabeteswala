@@ -6,26 +6,69 @@ import { HiMenuAlt2 } from "react-icons/hi";
 import { Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
+// Adjust relative path to your ClinicAPI service as needed
+import ClinicAPI from "../../../../../services/ClinicAPI";
+
+// --- BASE MEDIA HELPER ---
+const BASE_SERVER_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.3:5002";
+
+const getMediaUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith("http://") || path.startsWith("https://")) return path;
+    const cleanPath = path.startsWith("/") ? path.substring(1) : path;
+    return `${BASE_SERVER_URL}/${cleanPath}`;
+};
+
 const ClinicTopbar = ({ heading, toggleSidebar }) => {
     const [openProfile, setOpenProfile] = useState(false);
+    const [imgError, setImgError] = useState(false);
     const profileRef = useRef(null);
     const themeColor = "#3D3F96";
     const router = useRouter();
 
-    // Dynamic Clinic Vendor details based on your screenshot
-    const clinicData = {
-        name: "Diabetic 11",
-        email: "diabeticclinic@yopmail.com",
+    // Dynamic Clinic Vendor details state (defaults to fallback until fetched)
+    const [clinicData, setClinicData] = useState({
+        name: "",
+        clinicName: "",
+        email: "",
+        phone: "",
+        profileImage: "",
         role: "Clinic Vendor",
-        initial: "D"
-    };
+        initial: "C"
+    });
+
+    // Fetch dynamic clinic details on mount using getClinicTopbarDetail
+    useEffect(() => {
+        const fetchClinicInfo = async () => {
+            try {
+                const response = await ClinicAPI.getClinicTopbarDetail();
+                if (response && response.success && response.data) {
+                    const data = response.data;
+                    const displayName = data.clinicName || data.name || "Clinic Vendor";
+                    setClinicData({
+                        name: data.name || "",
+                        clinicName: data.clinicName || "",
+                        email: data.email || "",
+                        phone: data.phone || "",
+                        profileImage: data.profileImage || "",
+                        role: "Clinic Vendor",
+                        initial: displayName.trim().charAt(0).toUpperCase() || "C"
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching clinic topbar details:", error);
+            }
+        };
+
+        fetchClinicInfo();
+    }, []);
 
     const handleSignOut = () => {
         // Clear clinic token from localStorage
         localStorage.removeItem('clinicToken');
         // Redirect to login page or any other action
         window.location.href = '/authFiles/login'; // Adjust the path as needed
-    }
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -68,10 +111,10 @@ const ClinicTopbar = ({ heading, toggleSidebar }) => {
                     </div>
                 </div>
 
-                {/* CENTER IDENTITY SECTION */}
+                {/* CENTER IDENTITY SECTION - Displays Dynamic Clinic Name */}
                 <div className="absolute left-1/2 -translate-x-1/2 text-center hidden md:flex flex-col items-center">
                     <h3 className="text-base font-black text-gray-800 tracking-tight leading-none uppercase">
-                        {clinicData.name}
+                        {clinicData.clinicName || clinicData.name || "Clinic"}
                     </h3>
                     <div className="flex items-center gap-2 mt-1.5">
                         <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-emerald-500"></span>
@@ -93,8 +136,17 @@ const ClinicTopbar = ({ heading, toggleSidebar }) => {
                             onClick={() => setOpenProfile(!openProfile)}
                             className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-slate-900 text-white shadow-lg hover:scale-[1.02] active:scale-95 transition-all focus:outline-none"
                         >
-                            <div className="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-black text-white" style={{ backgroundColor: themeColor }}>
-                                {clinicData.initial}
+                            <div className="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-black text-white overflow-hidden" style={{ backgroundColor: themeColor }}>
+                                {clinicData.profileImage && !imgError ? (
+                                    <img
+                                        src={getMediaUrl(clinicData.profileImage)}
+                                        alt={clinicData.clinicName || "Clinic"}
+                                        className="w-full h-full object-cover"
+                                        onError={() => setImgError(true)}
+                                    />
+                                ) : (
+                                    clinicData.initial
+                                )}
                             </div>
                             <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">Account</span>
                         </button>
@@ -102,8 +154,17 @@ const ClinicTopbar = ({ heading, toggleSidebar }) => {
                         {openProfile && (
                             <div className="absolute right-0 mt-4 w-64 bg-white rounded-[1.5rem] shadow-2xl border border-gray-100 py-3 transition-all duration-200">
                                 <div className="px-6 py-3 border-b border-gray-50 mb-2">
-                                    <p className="text-xs font-black text-gray-800 truncate">{clinicData.name}</p>
-                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">{clinicData.email}</p>
+                                    <p className="text-xs font-black text-gray-800 truncate">
+                                        {clinicData.clinicName || clinicData.name || "Clinic Vendor"}
+                                    </p>
+                                    {clinicData.name && clinicData.clinicName && (
+                                        <p className="text-[10px] text-gray-500 font-semibold truncate mt-0.5">
+                                            {clinicData.name}
+                                        </p>
+                                    )}
+                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
+                                        {clinicData.email}
+                                    </p>
                                 </div>
                                 <button
                                     onClick={() => { router.push('/vendors/clinic/dashboard/profile'); setOpenProfile(false); }}
