@@ -1214,6 +1214,21 @@ const AdminAPI = {
         const response = await authApi.get(`/admin/cgm/orders/detail/${id}`);
         return response.data;
     },
+    
+    // --- 1. Admin Get CGM & Glucometer Refund Queue (Pending & Processed) ---
+    getAdminCgmRefundQueue: async (params) => {
+        // params (optional): { page: 1, limit: 10, search: 'HK-CGM-458265', refundStatus: 'Pending' | 'Processed' | 'Failed' | 'all' }
+        const response = await authApi.get('/admin/cgm/refunds/queue', { params });
+        return response.data;
+    },
+
+    // --- 2. Admin Process 100% Refund for Cancelled CGM Order (Razorpay Payout) ---
+    processAdminCgmRefund: async (id, data = {}) => {
+        // id: Custom Order ID (e.g. 'HK-CGM-458265') OR MongoDB ObjectId (_id)
+        // data (optional): { refundNote: "100% refund approved by Admin as user cancelled prior to dispatch." }
+        const response = await authApi.post(`/admin/cgm/refunds/process/${id}`, data);
+        return response.data;
+    },
 }
 
 export default AdminAPI;

@@ -18,13 +18,14 @@ import {
     User,
     Activity,
     AlertCircle,
-    Truck,
-    Info,
-    ExternalLink
+    ExternalLink,
+    RotateCcw,
+    X,
+    ShieldAlert
 } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
 
-// Update this import to where your API functions are declared
+// Admin API helper functions
 import AdminAPI from '../../../../../../services/AdminAPI';
 
 // Base media helper for images & PDFs
@@ -50,28 +51,71 @@ export default function CgmOrderDetailPage() {
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
+    // Refund Modal States
+    const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
+    const [refundNote, setRefundNote] = useState("100% refund approved by Admin as user cancelled prior to dispatch.");
+    const [processingRefund, setProcessingRefund] = useState(false);
+
+    const fetchOrderDetails = async () => {
         if (!id) return;
-
-        const fetchOrderDetails = async () => {
-            setLoading(true);
-            try {
-                const response = await AdminAPI.getAdminCgmOrderDetailsById(id);
-                if (response && response.success) {
-                    setOrder(response.data);
-                } else {
-                    toast.error(response?.message || "Order not found");
-                }
-            } catch (err) {
-                console.error("Error retrieving order details:", err);
-                toast.error(err.response?.data?.message || "Failed to load order details");
-            } finally {
-                setLoading(false);
+        setLoading(true);
+        try {
+            const response = await AdminAPI.getAdminCgmOrderDetailsById(id);
+            if (response && response.success) {
+                setOrder(response.data);
+            } else {
+                toast.error(response?.message || "Order not found");
             }
-        };
+        } catch (err) {
+            console.error("Error retrieving order details:", err);
+            toast.error(err.response?.data?.message || "Failed to load order details");
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchOrderDetails();
     }, [id]);
+
+    // Handle 100% Refund Process
+    const handleProcessRefund = async () => {
+        if (!order) return;
+
+        setProcessingRefund(true);
+        try {
+            const orderIdentifier = order.orderId || order._id;
+            const payload = {
+                refundNote: refundNote.trim() || undefined
+            };
+
+            const response = await AdminAPI.processAdminCgmRefund(orderIdentifier, payload);
+
+            if (response && response.success) {
+                toast.success(response.message || "100% refund processed successfully!");
+                setIsRefundModalOpen(false);
+
+                // Update order state locally or re-fetch details
+                if (response.refundDetails) {
+                    setOrder((prev) => ({
+                        ...prev,
+                        paymentStatus: response.paymentStatus || 'Refunded',
+                        refundDetails: response.refundDetails
+                    }));
+                } else {
+                    // Refetch updated details
+                    await fetchOrderDetails();
+                }
+            } else {
+                toast.error(response?.message || "Failed to process refund");
+            }
+        } catch (err) {
+            console.error("Refund processing error:", err);
+            toast.error(err.response?.data?.message || "Error occurred while processing refund.");
+        } finally {
+            setProcessingRefund(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -110,6 +154,12 @@ export default function CgmOrderDetailPage() {
     const address = order.deliveryAddress || {};
     const coach = order.coachConsultation || {};
     const bill = order.billSummary || {};
+    const refundDetails = order.refundDetails || {};
+
+    // Condition checks for cancellations and refunds
+    const isCancelled = order.status?.toLowerCase() === 'cancelled';
+    const isRefundProcessed = order.paymentStatus === 'Refunded' || refundDetails.refundStatus === 'Processed';
+    const refundAmount = refundDetails.refundAmount || bill.totalPayable || order.totalAmount || 0;
 
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6 antialiased text-slate-800 text-left">
@@ -131,11 +181,82 @@ export default function CgmOrderDetailPage() {
                             <span className="text-sm">{order.deliveryOtp}</span>
                         </div>
                     )}
-                    <span className="text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-xl border bg-slate-900 text-white">
+                    <span className={`text-xs font-black uppercase tracking-wider px-3.5 py-1.5 rounded-xl border ${
+                        isCancelled
+                            ? 'bg-rose-50 text-rose-600 border-rose-200'
+                            : 'bg-slate-900 text-white border-slate-900'
+                    }`}>
                         {order.status}
                     </span>
                 </div>
             </div>
+
+            {/* Cancelled Order & Refund Management Card */}
+            {isCancelled && (
+                <div className={`rounded-3xl p-6 border shadow-sm ${
+                    isRefundProcessed 
+                        ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950' 
+                        : 'bg-rose-50/70 border-rose-200 text-rose-950'
+                }`}>
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+                        <div className="space-y-1.5">
+                            <div className="flex items-center gap-2">
+                                {isRefundProcessed ? (
+                                    <CheckCircle2 className="text-emerald-600" size={20} />
+                                ) : (
+                                    <ShieldAlert className="text-rose-600" size={20} />
+                                )}
+                                <h3 className="text-base font-black tracking-tight">
+                                    {isRefundProcessed 
+                                        ? "100% Refund Completed" 
+                                        : "Order Cancelled — 100% Refund Pending"}
+                                </h3>
+                            </div>
+                            <p className="text-xs text-slate-600 max-w-2xl font-medium">
+                                {isRefundProcessed
+                                    ? `A full refund of ₹${refundAmount.toLocaleString('en-IN')} has been settled via Razorpay directly to the user's payment method.`
+                                    : `This order was cancelled before dispatch. The customer is eligible for a full 100% payout of ₹${refundAmount.toLocaleString('en-IN')} without penalties.`
+                                }
+                            </p>
+
+                            {/* Additional Refund Metadata if already processed */}
+                            {isRefundProcessed && (
+                                <div className="pt-2 flex flex-wrap gap-4 text-xs font-semibold text-emerald-900">
+                                    {refundDetails.razorpayRefundId && (
+                                        <div className="bg-emerald-100/80 px-2.5 py-1 rounded-lg">
+                                            <span className="font-bold text-[10px] uppercase text-emerald-700 block">Razorpay Refund ID</span>
+                                            <span className="font-mono text-xs">{refundDetails.razorpayRefundId}</span>
+                                        </div>
+                                    )}
+                                    {refundDetails.refundedAt && (
+                                        <div className="bg-emerald-100/80 px-2.5 py-1 rounded-lg">
+                                            <span className="font-bold text-[10px] uppercase text-emerald-700 block">Settled At</span>
+                                            <span>{new Date(refundDetails.refundedAt).toLocaleString('en-IN')}</span>
+                                        </div>
+                                    )}
+                                    {refundDetails.refundNote && (
+                                        <div className="bg-emerald-100/80 px-2.5 py-1 rounded-lg max-w-md">
+                                            <span className="font-bold text-[10px] uppercase text-emerald-700 block">Audit Note</span>
+                                            <span className="line-clamp-2">{refundDetails.refundNote}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Action Button: ONLY IF CANCELLED AND NOT YET PROCESSED */}
+                        {!isRefundProcessed && (
+                            <button
+                                type="button"
+                                onClick={() => setIsRefundModalOpen(true)}
+                                className="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs px-5 py-3 rounded-2xl shadow-sm transition active:scale-95 shrink-0 cursor-pointer"
+                            >
+                                <RotateCcw size={16} /> Process 100% Refund (₹{refundAmount.toLocaleString('en-IN')})
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Order Overview Header Card */}
             <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -171,7 +292,15 @@ export default function CgmOrderDetailPage() {
                     <div>
                         <span className="text-[10px] font-bold uppercase text-slate-400 block">Payment</span>
                         <p className="text-xs font-bold text-slate-800">
-                            {order.paymentMethod} • <span className={order.paymentStatus === 'Paid' ? 'text-emerald-600 font-black' : 'text-amber-600 font-black'}>{order.paymentStatus}</span>
+                            {order.paymentMethod} • <span className={
+                                order.paymentStatus === 'Paid' 
+                                    ? 'text-emerald-600 font-black' 
+                                    : order.paymentStatus === 'Refunded'
+                                    ? 'text-purple-600 font-black'
+                                    : 'text-amber-600 font-black'
+                            }>
+                                {order.paymentStatus}
+                            </span>
                         </p>
                         {order.transactionId && (
                             <span className="text-[9px] text-slate-400 font-mono block">Txn: {order.transactionId}</span>
@@ -523,7 +652,13 @@ export default function CgmOrderDetailPage() {
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-slate-400 font-bold">Payment Status:</span>
-                                <span className={`font-black ${order.paymentStatus === 'Paid' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                <span className={`font-black ${
+                                    order.paymentStatus === 'Paid' 
+                                        ? 'text-emerald-600' 
+                                        : order.paymentStatus === 'Refunded'
+                                        ? 'text-purple-600'
+                                        : 'text-amber-600'
+                                }`}>
                                     {order.paymentStatus}
                                 </span>
                             </div>
@@ -533,6 +668,96 @@ export default function CgmOrderDetailPage() {
                 </div>
 
             </div>
+
+            {/* PROCESS REFUND MODAL */}
+            {isRefundModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+                    <div className="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl border border-slate-200 space-y-5">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                            <div className="flex items-center gap-2 text-slate-900 font-black text-base">
+                                <RotateCcw size={18} className="text-rose-600" />
+                                Process 100% Refund
+                            </div>
+                            <button
+                                onClick={() => !processingRefund && setIsRefundModalOpen(false)}
+                                disabled={processingRefund}
+                                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* Order & Amount Details */}
+                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="text-slate-500 font-bold">Order ID:</span>
+                                <span className="font-mono font-black text-slate-900">{order.orderId}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="text-slate-500 font-bold">Customer:</span>
+                                <span className="font-bold text-slate-900">{customer.name || "Customer"}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="text-slate-500 font-bold">Transaction ID:</span>
+                                <span className="font-mono text-slate-700">{order.transactionId || "N/A"}</span>
+                            </div>
+                            <div className="border-t border-slate-200/80 pt-2 flex justify-between items-center">
+                                <span className="text-xs font-black text-slate-800">Refund Amount (100%):</span>
+                                <span className="font-mono font-black text-base text-rose-600">
+                                    ₹{refundAmount.toLocaleString('en-IN')}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Audit Note */}
+                        <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
+                                Audit Note / Reason (Optional)
+                            </label>
+                            <textarea
+                                value={refundNote}
+                                onChange={(e) => setRefundNote(e.target.value)}
+                                rows={3}
+                                placeholder="Enter an audit note for this refund payout..."
+                                className="w-full text-xs font-medium text-slate-800 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#3d3f96]/20 focus:border-[#3d3f96]"
+                            />
+                            <p className="text-[10px] text-slate-400 font-medium">
+                                This note will be recorded in the order tracking history and refund audit log.
+                            </p>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center justify-end gap-3 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => setIsRefundModalOpen(false)}
+                                disabled={processingRefund}
+                                className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleProcessRefund}
+                                disabled={processingRefund}
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black shadow-md transition disabled:opacity-50 cursor-pointer"
+                            >
+                                {processingRefund ? (
+                                    <>
+                                        <Loader2 size={14} className="animate-spin" />
+                                        Initiating Razorpay Refund...
+                                    </>
+                                ) : (
+                                    <>
+                                        <RotateCcw size={14} />
+                                        Confirm & Process Refund
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
