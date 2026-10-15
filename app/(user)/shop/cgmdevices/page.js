@@ -4,6 +4,7 @@ import PromoteCgm from './components/PromoteCgm'
 import StepsToUse from './components/StepsToUse'
 import CGMAdvertisement from './components/CGMAdvertisement'
 import CgmProducts from './components/CgmProducts'
+import ShowDiabetesCoach from '../../homePageComponents/commonComponents/ShowDiabetesCoach'
 
 function page() {
   return (
@@ -11,6 +12,7 @@ function page() {
     <Hero />
     <PromoteCgm />
     <CgmProducts />
+    <ShowDiabetesCoach />
     <StepsToUse />
     <CGMAdvertisement />
     </>

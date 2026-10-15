@@ -762,7 +762,7 @@ const UserAPI = {
         return response.data;
     },
 
-// --- 1. Calculate CGM & Glucometer Bill / Checkout Preview (With Coach & Surcharge) ---
+    // --- 1. Calculate CGM & Glucometer Bill / Checkout Preview (With Coach & Surcharge) ---
     calculateCgmOrderBill: async (data) => {
         // data: { deviceId: "6ac4a2935bdb7103f2a81719", variantId: "6ac47ee6ed529727b5e8ffc6", quantity: 1, coachId: "6ac5f22035b0cd0678eef501", consultationMode: "Offline", userLat: 30.7046, userLng: 76.7179, scheduledDate: "2026-10-12", slotTime: "18:00", addons: [{ addonId: "6ac4d0ff2e447457af17d724", quantity: 1 }] }
         const response = await authApi.post('/api/user/cgm/checkout/calculate-bill', data);
@@ -795,6 +795,11 @@ const UserAPI = {
     getNearbyDiabetesCoaches: async (data) => {
         // data: { userLat: 30.7046, userLng: 76.7179, city: "Mohali", search: "Ananya" }
         const response = await publicApi.post('/user/cgm/coaches/nearby', data);
+        return response.data;
+    },
+
+    getNearbyDiabetesCoacheDetail: async (id, data) => {
+        const response = await publicApi.get(`/user/cgm/coaches/get/${id}`, data);
         return response.data;
     },
 
