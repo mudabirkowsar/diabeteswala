@@ -447,10 +447,10 @@ const Navbar = () => {
                 <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${isComplete
-                        ? 'bg-emerald-500'
-                        : percentage >= 50
-                          ? 'bg-gradient-to-r from-[#3d3f96] to-indigo-500'
-                          : 'bg-amber-500'
+                      ? 'bg-emerald-500'
+                      : percentage >= 50
+                        ? 'bg-gradient-to-r from-[#3d3f96] to-indigo-500'
+                        : 'bg-amber-500'
                       }`}
                     style={{ width: `${percentage}%` }}
                   />
