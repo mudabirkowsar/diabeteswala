@@ -20,7 +20,7 @@ function ProfileCompletionModal() {
     const router = useRouter();
     const pathname = usePathname();
 
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(false); 
     const [statusData, setStatusData] = useState(null);
 
     const fetchStatus = async () => {
