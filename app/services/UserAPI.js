@@ -58,11 +58,17 @@ const UserAPI = {
         return response.data;
     },
 
+    // --- 1. Get User Profile Completion Status (Checklist & Percentage) ---
+    getUserProfileCompletionStatus: async () => {
+        const response = await authApi.get('/api/auth/user/profile-completion');
+        return response.data;
+    },
+
     updateUserProfile: async (formData) => {
         const response = await authApi.put('/api/auth/user/update', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
-            }, 
+            },
         });
         return response.data;
     },
