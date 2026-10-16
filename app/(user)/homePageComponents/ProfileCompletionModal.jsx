@@ -15,7 +15,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import UserAPI from '../../services/UserAPI';
 
-function ProfileCompletionModal() {
+function aProfileCompletionModal() {
     const { isLoggedIn } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
