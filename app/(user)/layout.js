@@ -4,8 +4,11 @@ import Footer from "./homePageComponents/Footer";
 import { NotificationProvider } from "../context/NotificationContext";
 import { AuthProvider } from "../context/AuthContext";
 import { CartProvider } from "../context/CartContext";
-import AmbulanceButton  from "../context/AmbulanceButton";
+import AmbulanceButton from "../context/AmbulanceButton";
 import Cart from "./otherscreens/carts/Cart";
+
+// Imported ProfileCompletionModal
+import ProfileCompletionModal from "./homePageComponents/ProfileCompletionModal";
 
 // This sets the name of your website in the browser tab
 export const metadata = {
@@ -22,6 +25,9 @@ export default function RootLayout({ children }) {
             <Navbar />
             <Cart />
 
+            {/* Profile Completion Trigger Modal */}
+            <ProfileCompletionModal />
+
             {/* Conditional Floating Ambulance Button */}
             <AmbulanceButton />
 
@@ -36,4 +42,4 @@ export default function RootLayout({ children }) {
       </NotificationProvider>
     </div>
   );
-}
+}a
