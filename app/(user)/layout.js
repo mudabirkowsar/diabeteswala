@@ -1,10 +1,11 @@
 import "../globals.css";
 import Navbar from "./homePageComponents/Navbar";
 import Footer from "./homePageComponents/Footer";
+import ProfileCompletionModal from "./homePageComponents/ProfileCompletionModal";
 import { NotificationProvider } from "../context/NotificationContext";
 import { AuthProvider } from "../context/AuthContext";
 import { CartProvider } from "../context/CartContext";
-import AmbulanceButton  from "../context/AmbulanceButton";
+import AmbulanceButton from "../context/AmbulanceButton";
 import Cart from "./otherscreens/carts/Cart";
 
 // This sets the name of your website in the browser tab
@@ -15,10 +16,15 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
+    // <html lang="en">
     <div className="min-h-screen flex flex-col bg-white relative selection:bg-rose-500 selection:text-white">
       <NotificationProvider>
         <AuthProvider>
-          <CartProvider> 
+          <CartProvider>
+            {/* Profile Incomplete Notification Modal */}
+            <ProfileCompletionModal />
+
+            {/* Navigation Header */}
             <Navbar />
             <Cart />
 
@@ -35,5 +41,6 @@ export default function RootLayout({ children }) {
         </AuthProvider>
       </NotificationProvider>
     </div>
+    // </html>
   );
 }
