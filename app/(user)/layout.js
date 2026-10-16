@@ -18,7 +18,7 @@ export default function RootLayout({ children }) {
     <div className="min-h-screen flex flex-col bg-white relative selection:bg-rose-500 selection:text-white">
       <NotificationProvider>
         <AuthProvider>
-          <CartProvider>
+          <CartProvider> 
             <Navbar />
             <Cart />
 
