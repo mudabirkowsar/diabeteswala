@@ -1,14 +1,14 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { 
-  HeartPulse, 
-  Activity, 
-  Info, 
-  X, 
-  Plus, 
-  Loader2, 
-  CheckCircle2, 
-  Dna, 
+import {
+  HeartPulse,
+  Activity,
+  Info,
+  X,
+  Plus,
+  Loader2,
+  CheckCircle2,
+  Dna,
   ClipboardList,
   Save,
   Circle
@@ -19,7 +19,7 @@ import UserAPI from '../../../../services/UserAPI';
 
 function FamilyHistoryAndAll() {
   const { showNotification } = useNotification();
-  
+
   const [loading, setLoading] = useState(true);
   const [btnLoading, setBtnLoading] = useState(false);
 
@@ -30,13 +30,13 @@ function FamilyHistoryAndAll() {
   const masterAllergies = ["Penicillin", "Aspirin", "Sulfa Drugs", "NSAIDs", "Lactose", "Gluten"];
 
   // --- User State Management ---
-  const [familyHistory, setFamilyHistory] = useState({ 
-    diseases: [], 
-    notes: '' 
+  const [familyHistory, setFamilyHistory] = useState({
+    diseases: [],
+    notes: ''
   });
-  const [medicalConditions, setMedicalConditions] = useState({ 
-    conditions: [], 
-    allergies: [] 
+  const [medicalConditions, setMedicalConditions] = useState({
+    conditions: [],
+    allergies: []
   });
 
   // 1. Fetch Data on Mount
@@ -76,7 +76,7 @@ function FamilyHistoryAndAll() {
   const toggleItem = (currentList, item, setter, stateKey, subKey) => {
     const list = [...currentList];
     const index = list.indexOf(item);
-    
+
     if (index > -1) {
       list.splice(index, 1); // Remove (False)
     } else {
@@ -117,7 +117,7 @@ function FamilyHistoryAndAll() {
 
   return (
     <div className="max-w-[1200px] mx-auto p-6 lg:p-10 antialiased">
-      
+
       {/* --- HEADER --- */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
         <div className="space-y-1">
@@ -131,7 +131,7 @@ function FamilyHistoryAndAll() {
           <p className="text-sm font-medium text-slate-500">Select applicable conditions from the lists below</p>
         </div>
 
-        <button 
+        <button
           onClick={handleSyncRecords}
           disabled={btnLoading}
           className="flex items-center justify-center gap-3 bg-[#3d3f96] text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-[#2d2f75] transition-all active:scale-95 disabled:opacity-50"
@@ -141,9 +141,9 @@ function FamilyHistoryAndAll() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
+
         {/* --- LEFT: FAMILY HISTORY --- */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-8"
@@ -155,8 +155,8 @@ function FamilyHistoryAndAll() {
             <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Genetic Profile</h3>
           </div>
 
-          <SelectionGrid 
-            label="Family Diseases" 
+          <SelectionGrid
+            label="Family Diseases"
             masterList={masterDiseases}
             selectedItems={familyHistory.diseases}
             onToggle={(item) => toggleItem(familyHistory.diseases, item, setFamilyHistory, 'familyHistory', 'diseases')}
@@ -164,9 +164,9 @@ function FamilyHistoryAndAll() {
 
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Detailed Genetic Notes</label>
-            <textarea 
+            <textarea
               value={familyHistory.notes}
-              onChange={(e) => setFamilyHistory({...familyHistory, notes: e.target.value})}
+              onChange={(e) => setFamilyHistory({ ...familyHistory, notes: e.target.value })}
               className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm font-medium outline-none focus:border-[#3d3f96] transition-all h-32 resize-none"
               placeholder="Provide details about family members' health history..."
             />
@@ -174,7 +174,7 @@ function FamilyHistoryAndAll() {
         </motion.div>
 
         {/* --- RIGHT: PERSONAL CONDITIONS --- */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -188,15 +188,15 @@ function FamilyHistoryAndAll() {
               <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Personal Health</h3>
             </div>
 
-            <SelectionGrid 
-              label="Current Conditions" 
+            <SelectionGrid
+              label="Current Conditions"
               masterList={masterConditions}
               selectedItems={medicalConditions.conditions}
               onToggle={(item) => toggleItem(medicalConditions.conditions, item, setMedicalConditions, 'medicalConditions', 'conditions')}
             />
 
-            <SelectionGrid 
-              label="Known Drug Allergies" 
+            <SelectionGrid
+              label="Known Drug Allergies"
               masterList={masterAllergies}
               selectedItems={medicalConditions.allergies}
               onToggle={(item) => toggleItem(medicalConditions.allergies, item, setMedicalConditions, 'medicalConditions', 'allergies')}
@@ -206,18 +206,18 @@ function FamilyHistoryAndAll() {
           {/* Info Box */}
           <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white relative overflow-hidden shadow-xl">
             <div className="absolute top-0 right-0 p-6 opacity-10">
-                <Activity size={80} />
+              <Activity size={80} />
             </div>
             <div className="relative z-10 flex items-start gap-4">
-                <div className="bg-white/10 p-2 rounded-lg text-blue-400">
-                    <Info size={20} />
-                </div>
-                <div>
-                    <h4 className="font-bold text-sm mb-1 uppercase tracking-wide">Selection Guide</h4>
-                    <p className="text-xs text-blue-100/60 leading-relaxed">
-                        Simply click on the conditions that apply to you. Selected items will be highlighted in blue. If a condition is not listed, you can add it in the notes section.
-                    </p>
-                </div>
+              <div className="bg-white/10 p-2 rounded-lg text-blue-400">
+                <Info size={20} />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm mb-1 uppercase tracking-wide">Selection Guide</h4>
+                <p className="text-xs text-blue-100/60 leading-relaxed">
+                  Simply click on the conditions that apply to you. Selected items will be highlighted in blue. If a condition is not listed, you can add it in the notes section.
+                </p>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -232,7 +232,7 @@ const SelectionGrid = ({ label, masterList = [], selectedItems = [], onToggle })
   return (
     <div className="space-y-4">
       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
-      
+
       <div className="grid grid-cols-2 gap-3">
         {masterList.map((item) => {
           const isSelected = selectedItems.includes(item);
@@ -241,11 +241,10 @@ const SelectionGrid = ({ label, masterList = [], selectedItems = [], onToggle })
               key={item}
               type="button"
               onClick={() => onToggle(item)}
-              className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-300 text-left ${
-                isSelected 
-                ? 'bg-blue-50 border-[#3d3f96] text-[#3d3f96] shadow-md shadow-blue-100' 
-                : 'bg-white border-slate-100 text-slate-500 hover:border-slate-200'
-              }`}
+              className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-300 text-left ${isSelected
+                  ? 'bg-blue-50 border-[#3d3f96] text-[#3d3f96] shadow-md shadow-blue-100'
+                  : 'bg-white border-slate-100 text-slate-500 hover:border-slate-200'
+                }`}
             >
               <span className="text-xs font-bold">{item}</span>
               {isSelected ? (

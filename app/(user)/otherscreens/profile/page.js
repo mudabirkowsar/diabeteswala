@@ -15,6 +15,7 @@ import UserAddress from './components/UserAddress';
 import EmergencyContacts from './components/EmergencyContacts';
 import FamilyMembers from './components/FamilyMembers';
 import FamilyHistoryAndAll from './components/FamilyHistoryAndAll';
+import DiseaseDetail from './components/DiseaseDetail';
 
 function Page() {
     // 1. State to track active tab
@@ -26,22 +27,23 @@ function Page() {
         { id: 'address', label: 'Address', icon: MapPin, component: <UserAddress /> },
         { id: 'emergency', label: 'Emergency', icon: Siren, component: <EmergencyContacts /> },
         { id: 'family', label: 'Family', icon: Users, component: <FamilyMembers /> },
-        { id: 'family-history', label: 'Family History', icon: Users, component: <FamilyHistoryAndAll />},
+        // { id: 'family-history', label: 'Family History', icon: Users, component: <FamilyHistoryAndAll />},
+        { id: 'disease-detail', label: 'Disease Detail', icon: Users, component: <DiseaseDetail />},
     ];
 
     return (
         <main className="min-h-screen bg-[#F8FAFC]">
-            <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-24 py-12">
+            <div className="max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-24 py-5 sm:py-8 lg:py-12">
                 
                 {/* --- TAB BAR --- */}
-                <div className="mb-10">
+                <div className="mb-6 sm:mb-10">
                     {/* Horizontally scrollable on mobile, wraps cleanly on desktop */}
-                    <div className="flex overflow-x-auto lg:flex-wrap lg:overflow-x-visible items-center gap-2 bg-white p-2 rounded-[2rem] border border-slate-100 shadow-sm [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] whitespace-nowrap">
+                    <div className="flex overflow-x-auto lg:flex-wrap lg:overflow-x-visible items-center gap-1.5 sm:gap-2 bg-white p-1.5 sm:p-2 rounded-2xl sm:rounded-[2rem] border border-slate-100 shadow-sm [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] whitespace-nowrap snap-x snap-mandatory">
                         {tabs.map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center gap-3 px-6 py-3.5 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all duration-350 relative shrink-0 ${
+                                className={`flex items-center gap-2 sm:gap-3 px-3.5 sm:px-6 py-2 sm:py-3.5 rounded-xl sm:rounded-[1.5rem] font-black text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest transition-all duration-350 relative shrink-0 snap-start ${
                                     activeTab === tab.id 
                                     ? 'text-white' 
                                     : 'text-slate-500 hover:text-[#EB333C] hover:bg-slate-50'
@@ -51,13 +53,13 @@ function Page() {
                                 {activeTab === tab.id && (
                                     <motion.div 
                                         layoutId="activeTab"
-                                        className="absolute inset-0 bg-gradient-to-r from-[#3d3f96] to-[#EB333C] rounded-[1.5rem] shadow-lg shadow-indigo-100"
+                                        className="absolute inset-0 bg-gradient-to-r from-[#3d3f96] to-[#EB333C] rounded-xl sm:rounded-[1.5rem] shadow-md sm:shadow-lg shadow-indigo-100"
                                         transition={{ type: 'spring', duration: 0.5 }}
                                     />
                                 )}
                                 
-                                <span className="relative z-10 flex items-center gap-2">
-                                    <tab.icon size={15} />
+                                <span className="relative z-10 flex items-center gap-1.5 sm:gap-2">
+                                    <tab.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                                     {tab.label}
                                 </span>
                             </button>
@@ -65,9 +67,9 @@ function Page() {
                     </div>
                     
                     {/* Breadcrumb indicator with updated accent color */}
-                    <div className="mt-4 flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">
+                    <div className="mt-2.5 sm:mt-4 flex items-center gap-1.5 sm:gap-2 text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 sm:ml-4">
                         <span>Account</span>
-                        <ChevronRight size={12} className="text-slate-300" />
+                        <ChevronRight size={10} className="text-slate-300 sm:w-3 sm:h-3" />
                         <span className="text-[#EB333C]">{activeTab.replace('-', ' ')}</span>
                     </div>
                 </div>

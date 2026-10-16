@@ -62,7 +62,7 @@ const UserAPI = {
         const response = await authApi.put('/api/auth/user/update', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
-            },
+            }, 
         });
         return response.data;
     },
