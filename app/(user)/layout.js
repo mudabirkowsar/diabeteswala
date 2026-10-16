@@ -26,7 +26,7 @@ export default function RootLayout({ children }) {
             <Cart />
 
             {/* Profile Completion Trigger Modal */}
-            <ProfileCompletionModal />
+            {/* <ProfileCompletionModal /> */}
 
             {/* Conditional Floating Ambulance Button */}
             <AmbulanceButton />
