@@ -73,11 +73,11 @@ export default function CoachDetailPage() {
           setSlotsLoading(true);
         }
 
-        const res = await UserAPI.getNearbyDiabetesCoacheDetail(id, selectedDate);
+        const res = await UserAPI.getUserDiabetesCoachById(id, { selectedDate });
 
         if (res && res.success && res.data) {
           setCoach(res.data);
-          setSelectedSlot(null); // Reset selection on date change
+          setSelectedSlot(null); // Reset slot selection on date change
         } else {
           setErrorMessage(res?.message || 'Failed to fetch coach profile');
         }
@@ -92,6 +92,41 @@ export default function CoachDetailPage() {
 
     fetchCoachData();
   }, [id, selectedDate]);
+
+  // Navigate to bookcoach with all premium slot parameters
+  const handleProceedToBook = () => {
+    if (!selectedSlot || !coach) return;
+
+    const basePrice = selectedMode === 'online' 
+      ? (coach.fees?.online || coach.price || 299) 
+      : (coach.fees?.offline || 599);
+
+    const extraFee = Number(selectedSlot?.extraFee) || 0;
+    const isPremium = Boolean(selectedSlot?.isPremium || extraFee > 0);
+    const finalPrice = basePrice + extraFee;
+
+    const queryParams = new URLSearchParams({
+      coachId: String(coach._id),
+      coachName: coach.name || '',
+      coachQualification: coach.qualification || '',
+      coachImage: coach.profileImage || '',
+      coachType: coach.coachType || '',
+      selectedDate: selectedDate,
+      slotTime: selectedSlot.slotTime || '',
+      displayTime: selectedSlot.displayTime || selectedSlot.slotTime || '',
+      category: selectedSlot.category || '',
+      consultationMode: selectedMode,
+      baseFee: String(basePrice),
+      extraFee: String(extraFee),
+      isPremium: String(isPremium),
+      totalFee: String(finalPrice),
+      city: coach.location?.city || '',
+      state: coach.location?.state || '',
+      address: coach.location?.address || ''
+    });
+
+    router.push(`/coach/bookcoach?${queryParams.toString()}`);
+  };
 
   if (loading) {
     return (
@@ -110,7 +145,7 @@ export default function CoachDetailPage() {
         <p className="text-sm text-slate-500 mt-1">{errorMessage || 'Coach profile could not be found.'}</p>
         <button
           onClick={() => router.back()}
-          className="mt-5 px-5 py-2.5 bg-[#3d3f96] text-white rounded-xl text-sm font-bold"
+          className="mt-5 px-5 py-2.5 bg-[#3d3f96] text-white rounded-xl text-sm font-bold cursor-pointer"
         >
           Go Back
         </button>
@@ -124,12 +159,13 @@ export default function CoachDetailPage() {
   const afternoonSlots = slots.filter((s) => s.category === 'Afternoon');
   const eveningSlots = slots.filter((s) => s.category === 'Evening');
 
-  // Calculate pricing based on mode and premium slots
+  // Pricing calculations
   const basePrice = selectedMode === 'online' 
     ? (coach.fees?.online || coach.price || 299) 
     : (coach.fees?.offline || 599);
 
-  const extraFee = selectedSlot?.extraFee || 0;
+  const extraFee = Number(selectedSlot?.extraFee) || 0;
+  const isPremium = Boolean(selectedSlot?.isPremium || extraFee > 0);
   const finalPrice = basePrice + extraFee;
 
   return (
@@ -139,7 +175,7 @@ export default function CoachDetailPage() {
         <div className="max-w-[1200px] mx-auto px-4 py-3 flex items-center justify-between">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors"
+            className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
           >
             <ArrowLeft size={16} /> Back to Coaches
           </button>
@@ -225,7 +261,7 @@ export default function CoachDetailPage() {
                       onClick={() => setSelectedMode('online')}
                       className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                         selectedMode === 'online'
-                          ? 'border-[#3d3f96] bg-indigo-50/50 shadow-sm'
+                          ? 'border-[#3d3f96] bg-indigo-50/50 shadow-sm ring-1 ring-[#3d3f96]'
                           : 'border-slate-200 bg-white hover:bg-slate-50'
                       }`}
                     >
@@ -243,7 +279,7 @@ export default function CoachDetailPage() {
                       onClick={() => setSelectedMode('offline')}
                       className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                         selectedMode === 'offline'
-                          ? 'border-[#3d3f96] bg-indigo-50/50 shadow-sm'
+                          ? 'border-[#3d3f96] bg-indigo-50/50 shadow-sm ring-1 ring-[#3d3f96]'
                           : 'border-slate-200 bg-white hover:bg-slate-50'
                       }`}
                     >
@@ -376,7 +412,7 @@ export default function CoachDetailPage() {
                 )}
               </div>
 
-              {/* Booking Checkout Summary Card */}
+              {/* Booking Checkout Summary Bar */}
               {selectedSlot && (
                 <div className="mt-8 pt-4 border-t border-slate-200 bg-slate-50 rounded-xl p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -391,20 +427,19 @@ export default function CoachDetailPage() {
                         <span className="text-lg font-extrabold text-[#3d3f96]">
                           ₹{finalPrice}
                         </span>
-                        {selectedSlot.isPremium && (
-                          <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                            Includes ₹{selectedSlot.extraFee} Prime Fee
+                        {isPremium && extraFee > 0 && (
+                          <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                            Includes +₹{extraFee} Prime Fee
                           </span>
                         )}
-                        <span className="text-xs text-slate-400">({selectedMode === 'online' ? 'Online Video' : 'In-Person'})</span>
+                        <span className="text-xs text-slate-400 capitalize">
+                          ({selectedMode === 'online' ? 'Online Video' : 'In-Person / Home'})
+                        </span>
                       </div>
                     </div>
 
                     <button
-                      onClick={() => {
-                        // Forward user to your payment / appointment confirmation flow
-                        alert(`Proceeding with booking for ${selectedDate} at ${selectedSlot.displayTime} with Total: ₹${finalPrice}`);
-                      }}
+                      onClick={handleProceedToBook}
                       className="bg-[#3d3f96] hover:bg-slate-900 text-white px-6 py-3 rounded-xl text-xs sm:text-sm font-bold tracking-wide transition-all shadow-md active:scale-95 cursor-pointer whitespace-nowrap"
                     >
                       Proceed to Book
@@ -422,9 +457,10 @@ export default function CoachDetailPage() {
   );
 }
 
-// Subcomponent: Slot Button
+// Subcomponent: Slot Button - ONLY shows extra price when applicable
 function SlotButton({ slot, isSelected, onSelect }) {
   const isAvailable = slot.isAvailable;
+  const hasExtraFee = (slot.isPremium || slot.extraFee > 0) && Number(slot.extraFee) > 0;
 
   return (
     <button
@@ -440,13 +476,28 @@ function SlotButton({ slot, isSelected, onSelect }) {
       }`}
     >
       <span className="text-xs font-bold">{slot.displayTime.split(' - ')[0]}</span>
-      <span className={`text-[10px] font-medium mt-0.5 ${isSelected ? 'text-indigo-100' : 'text-slate-500'}`}>
-        {slot.isPremium ? `₹${slot.totalPrice} (Prime)` : `₹${slot.basePrice}`}
-      </span>
 
-      {slot.isPremium && !isSelected && (
-        <span className="absolute -top-1.5 -right-1 bg-amber-500 text-white text-[8px] font-extrabold px-1 rounded-sm shadow-xs">
-          STAR
+      {hasExtraFee ? (
+        <span
+          className={`text-[10px] font-bold mt-0.5 ${
+            isSelected ? 'text-amber-200' : 'text-amber-600'
+          }`}
+        >
+          +₹{slot.extraFee} Prime
+        </span>
+      ) : (
+        <span
+          className={`text-[9px] font-medium mt-0.5 ${
+            isSelected ? 'text-indigo-200' : 'text-slate-400'
+          }`}
+        >
+          Standard
+        </span>
+      )}
+
+      {hasExtraFee && !isSelected && (
+        <span className="absolute -top-1.5 -right-1 bg-amber-500 text-white text-[7px] font-extrabold px-1 py-0.2 rounded-sm shadow-xs uppercase tracking-wider">
+          Prime
         </span>
       )}
     </button>

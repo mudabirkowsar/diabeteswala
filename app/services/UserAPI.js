@@ -804,11 +804,6 @@ const UserAPI = {
         return response.data;
     },
 
-    getNearbyDiabetesCoacheDetail: async (id, data) => {
-        const response = await publicApi.get(`/user/cgm/coaches/get/${id}`, data);
-        return response.data;
-    },
-
     // --- 2. Get Single Diabetes Coach Details by ID (With Optional Slots Preview) ---
     getUserDiabetesCoachById: async (id, params) => {
         // id: Coach unique ObjectID (_id)
@@ -844,6 +839,27 @@ const UserAPI = {
         // id: Custom Order ID (e.g. 'HK-CGM-458265') OR MongoDB ObjectId (_id)
         // data (optional): { cancelReason: "Ordered by mistake, want to purchase different pack." }
         const response = await authApi.patch(`/api/user/cgm/checkout/order/cancel/${id}`, data);
+        return response.data;
+    },
+
+    // --- 1. Calculate Diabetic Coach Booking Fare / Bill Preview ---
+    calculateDiabeticCoachFare: async (data) => {
+        // data: { coachId: "67b848c9031c2384f9821a10", consultationMode: "Offline" | "Online", scheduledDate: "2026-10-25", slotTime: "11:00 AM", userLat: 30.7046, userLng: 76.7179, locationType: "Hospital" | "Home" | "Online" | "Other", hospitalDetails: { hospitalName: "Max Super Speciality Hospital", floorNo: "3rd Floor", ward: "Cardiology Wing", bedNo: "Bed-304" }, bookingFor: "Self" | "Other", specialInstructions: "..." }
+        const response = await authApi.post('/api/user/coach-booking/calculate-bill', data);
+        return response.data;
+    },
+
+    // --- 2. Book Diabetic Coach (Order Creation & Slot Lock - COD / Online) ---
+    bookDiabeticCoach: async (data) => {
+        // data: { coachId: "67b848c9031c2384f9821a10", bookingFor: "Other" | "Self", patientDetails: { name: "Ramesh Verma", phone: "9876543210", gender: "Male", age: 62, relation: "Father", isDiabetic: true, diabetesType: "Type 2" }, consultationMode: "Offline" | "Online", scheduledDate: "2026-10-25", slotTime: "11:00 AM", locationType: "Hospital" | "Home" | "Online" | "Other", hospitalDetails: { hospitalName: "...", floorNo: "...", ward: "...", bedNo: "..." }, address: { name: "...", phone: "...", city: "Mohali", state: "Punjab", pincode: "160055", lat: 30.7046, lng: 76.7179 }, paymentMethod: "COD" | "Online", specialInstructions: "..." }
+        const response = await authApi.post('/api/user/coach-booking/book', data);
+        return response.data;
+    },
+
+    // --- 3. Verify Diabetic Coach Booking Razorpay Payment ---
+    verifyDiabeticCoachPayment: async (data) => {
+        // data: { bookingId: "DW-COACH-104929", razorpayOrderId: "order_COACH987654321", razorpayPaymentId: "pay_XYZ987654321", razorpaySignature: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" }
+        const response = await authApi.post('/api/user/coach-booking/verify-payment', data);
         return response.data;
     },
 
