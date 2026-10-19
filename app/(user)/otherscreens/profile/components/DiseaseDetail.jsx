@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNotification } from '../../../../context/NotificationContext'; // Adjust path if needed
+import UserAPI from '../../../../services/UserAPI';
 
 // Diabetic Type Options
 const DIABETIC_TYPES = [
@@ -36,7 +37,7 @@ const FAMILY_MEMBERS = [
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-function DiseaseDetail({ updateUserProfile }) {
+function DiseaseDetail() {
     const router = useRouter();
     const { showNotification } = useNotification();
     const [btnLoading, setBtnLoading] = useState(false);
@@ -110,7 +111,7 @@ function DiseaseDetail({ updateUserProfile }) {
             payload.append('caregiverDetails', JSON.stringify(formData.caregiverDetails));
             payload.append('partnerCode', formData.partnerCode);
 
-            const response = await updateUserProfile(payload);
+            const response = await UserAPI.updateUserProfile(payload);
 
             if (response.success) {
                 showNotification(response.message || 'Profile updated successfully!', 'success');

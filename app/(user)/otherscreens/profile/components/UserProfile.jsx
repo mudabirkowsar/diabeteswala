@@ -199,7 +199,7 @@ function UserProfile() {
 
             {/* Name & Status */}
             <div className="mb-1 sm:mb-3">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 sm:text-slate-900 md:text-white leading-tight">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 sm:text-slate-700 md:text-slate-700 leading-tight">
                 {profileData?.name}
               </h1>
               <div className="flex items-center justify-center sm:justify-start gap-2 mt-1 sm:mt-1.5 flex-wrap">
