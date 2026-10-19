@@ -1229,6 +1229,35 @@ const AdminAPI = {
         const response = await authApi.post(`/admin/cgm/refunds/process/${id}`, data);
         return response.data;
     },
+
+    // --- 1. Get Cancelled Diabetic Coach Bookings (Admin Panel) ---
+    getAdminCancelledCoachBookings: async (params) => {
+        // params (optional): { search: '', paymentMethod: 'COD' | 'Online', consultationMode: 'Online' | 'Offline', page: 1, limit: 10 }
+        const response = await authApi.get('/admin/cgm/coach-bookings/cancelled', { params });
+        return response.data;
+    },
+
+    // --- 2. Get All Coaches with Booking Stats (Step 1) ---
+    getAdminCoachesWithBookingStats: async (params) => {
+        // params (optional): { search: '', coachType: 'Diabetes Educator' | 'Diabetes Coach' | 'Both', city: 'Mohali', activeOnly: true, page: 1, limit: 10 }
+        const response = await authApi.get('/admin/cgm/coach-bookings/coaches', { params });
+        return response.data;
+    },
+
+    // --- 3. Get All Bookings of a Specific Coach (Step 2) ---
+    getAdminCoachBookingsByCoachId: async (coachId, params) => {
+        // coachId: Coach unique ObjectID (_id)
+        // params (optional): { status: 'Placed' | 'Confirmed' | 'In-Progress' | 'Completed' | 'Cancelled', search: '', consultationMode: 'Online' | 'Offline', locationType: 'Online' | 'Home' | 'Hospital' | 'Other', page: 1, limit: 10 }
+        const response = await authApi.get(`/admin/cgm/coach-bookings/coach/${coachId}/bookings`, { params });
+        return response.data;
+    },
+
+    // --- 4. Get Single Coach Booking Full Details by ID (Step 3) ---
+    getAdminCoachBookingDetailsById: async (id) => {
+        // id: Booking unique MongoDB ObjectId (_id) or Alphanumeric Booking ID (e.g. 'DW-COACH-104928')
+        const response = await authApi.get(`/admin/cgm/coach-bookings/booking/${id}`);
+        return response.data;
+    },
 }
 
 export default AdminAPI;
