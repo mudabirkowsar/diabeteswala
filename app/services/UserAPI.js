@@ -862,6 +862,27 @@ const UserAPI = {
         const response = await authApi.post('/api/user/coach-booking/verify-payment', data);
         return response.data;
     },
+    // --- 1. Get My Diabetic Coach Bookings List ---
+    getMyCoachBookings: async (params) => {
+        // params (optional): { status: 'Placed' | 'Confirmed' | 'In-Progress' | 'Completed' | 'Cancelled', page: 1, limit: 10 }
+        const response = await authApi.get('/api/user/coach-booking/my-bookings', { params });
+        return response.data;
+    },
+
+    // --- 2. Get Single Diabetic Coach Booking Details by ID / BookingId ---
+    getCoachBookingDetailsById: async (id) => {
+        // id: Booking MongoDB ObjectId (_id) or Alphanumeric Booking ID (e.g. 'DW-COACH-104928')
+        const response = await authApi.get(`/api/user/coach-booking/booking/${id}`);
+        return response.data;
+    },
+
+    // --- 3. Cancel Diabetic Coach Booking by User ---
+    cancelCoachBooking: async (id, data = {}) => {
+        // id: Booking MongoDB ObjectId (_id) or Alphanumeric Booking ID (e.g. 'DW-COACH-104928')
+        // data (optional): { cancelReason: "Patient is discharged from hospital earlier than scheduled." }
+        const response = await authApi.patch(`/api/user/coach-booking/cancel/${id}`, data);
+        return response.data;
+    },
 
 }
 export default UserAPI;
