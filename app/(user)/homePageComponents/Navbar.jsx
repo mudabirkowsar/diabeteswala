@@ -8,7 +8,7 @@ import {
   ClipboardList, UserCircle, LogIn, ShoppingBag, FileText,
   LayoutGrid, Package, Star, Sparkles,
   ChevronRight, MapPin, LocateFixed, Loader2, Pill,
-  CheckCircle2, AlertCircle, ArrowUpRight
+  CheckCircle2, AlertCircle, ArrowUpRight, CreditCard
 } from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
@@ -334,6 +334,19 @@ const Navbar = () => {
                   </div>
                 </button>
 
+                {/* Mobile View Profile Card Button */}
+                <Link
+                  href="/otherscreens/profilecard"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center justify-between w-full px-3 py-2.5 bg-gradient-to-r from-[#3d3f96] to-indigo-600 hover:from-[#2d2f75] hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm group"
+                >
+                  <div className="flex items-center gap-2">
+                    <CreditCard size={15} className="text-indigo-200 group-hover:text-white" />
+                    <span>View Your Profile Card</span>
+                  </div>
+                  <ChevronRight size={14} className="text-indigo-200 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+
                 {/* Mobile Profile Completion Card */}
                 {completionData && (
                   <Link
@@ -421,6 +434,19 @@ const Navbar = () => {
                 </Link>
               </div>
             </div>
+
+            {/* --- VIEW YOUR PROFILE CARD BUTTON --- */}
+            <Link
+              href="/otherscreens/profilecard"
+              onClick={() => setIsAccountSidebarOpen(false)}
+              className="flex items-center justify-between w-full px-3.5 py-2.5 bg-gradient-to-r from-[#3d3f96] to-indigo-600 hover:from-[#2d2f75] hover:to-indigo-700 text-white rounded-xl shadow-sm transition-all group"
+            >
+              <div className="flex items-center gap-2.5">
+                <CreditCard size={16} className="text-indigo-200 group-hover:text-white transition-colors" />
+                <span className="text-xs font-bold">View Your Profile Card</span>
+              </div>
+              <ChevronRight size={14} className="text-indigo-200 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
 
             {/* --- PROFILE COMPLETION CARD --- */}
             {completionData && (

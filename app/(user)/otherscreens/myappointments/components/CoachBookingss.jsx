@@ -171,7 +171,7 @@ export default function CoachBookingss() {
       </div>
 
       {/* Status Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+      {/* <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         {STATUS_TABS.map((tab) => {
           const isActive = selectedStatus === tab.value;
           return (
@@ -191,7 +191,7 @@ export default function CoachBookingss() {
             </button>
           );
         })}
-      </div>
+      </div> */}
 
       {/* Content List View */}
       {loading ? (

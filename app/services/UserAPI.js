@@ -57,6 +57,11 @@ const UserAPI = {
         const response = await authApi.get('/api/auth/user/profile');
         return response.data;
     },
+    // --- 1. Get User Profile Card Details ---
+    getUserProfileCard: async () => {
+        const response = await authApi.get('/api/auth/user/profile-card');
+        return response.data;
+    },
 
     // --- 1. Get User Profile Completion Status (Checklist & Percentage) ---
     getUserProfileCompletionStatus: async () => {
