@@ -101,7 +101,7 @@ const Hero = () => {
 
           {/* --- 2. LEFT CONTENT: DYNAMIC & PROFESSIONAL --- */}
           <div className="lg:col-span-8 xl:col-span-7 space-y-8">
-            
+
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentBg}
