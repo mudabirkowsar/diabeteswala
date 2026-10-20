@@ -12,7 +12,8 @@ import {
     FaTrophy,
     FaHandHoldingMedical,
     FaClock,
-    FaFileMedical
+    FaFileMedical,
+    FaPills
 } from "react-icons/fa";
 import Image from "next/image";
 
@@ -35,7 +36,7 @@ export default function ClinicSidebar({ sidebarOpen }) {
         { name: "Manage Bank Details", route: "/vendors/clinic/dashboard/managebank", icon: FaUniversity },
         // { name: "Clinic Doctors", route: "/vendors/clinic/dashboard/clinicdoctor", icon: FaUserMd },
         // { name: "Add New Doctor", route: "/vendors/clinic/dashboard/addDoctors", icon: FaUserMd },
-        { name: "Appointments", route: "/vendors/clinic/dashboard/appointments", icon: FaCalendarCheck },
+        { name: "Manage Medicine", route: "/vendors/pharmacy/dashboard/managemedicine", icon: FaPills },
         { name: "Achievements", route: "/vendors/clinic/dashboard/achievements", icon: FaTrophy },
         { name: "Services", route: "/vendors/clinic/dashboard/services", icon: FaHandHoldingMedical },
         { name: "Pharmacy Timings", route: "/vendors/pharmacy/dashboard/pharmacytiming", icon: FaClock },
