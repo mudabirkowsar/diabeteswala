@@ -232,26 +232,26 @@ export default function Sidebar({ sidebarOpen }) {
                                         <FaPills className="text-xs shrink-0" style={{ color: isActive("/admin/pharmacy/managepharmacy") ? theme.primary : "#9CA3AF" }} /> Manage Pharmacies
                                     </Link>
                                 )}
-                                {hasAccess() && (
+                                {/* {hasAccess() && (
                                     <Link href="/admin/pharmacy/approvemedicine" className={`p-2 px-3 rounded-lg text-xs transition-all duration-200 flex items-center gap-2 ${isActive("/admin/pharmacy/approvemedicine") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                         <FaPills className="text-xs shrink-0" style={{ color: isActive("/admin/pharmacy/approvemedicine") ? theme.primary : "#9CA3AF" }} /> Approve Medicine
                                     </Link>
-                                )}
+                                )} */}
                                 {hasAccess() && (
                                     <Link href="/admin/pharmacy/managemedicine" className={`p-2 px-3 rounded-lg text-xs transition-all duration-200 flex items-center gap-2 ${isActive("/admin/pharmacy/managemedicine") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                         <FaFlask className="text-xs shrink-0" style={{ color: isActive("/admin/pharmacy/managemedicine") ? theme.primary : "#9CA3AF" }} /> Manage Medicines
                                     </Link>
                                 )}
-                                {hasAccess() && (
+                                {/* {hasAccess() && (
                                     <Link href="/admin/pharmacy/deliverycharge" className={`p-2 px-3 rounded-lg text-xs transition-all duration-200 flex items-center gap-2 ${isActive("/admin/pharmacy/deliverycharge") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                         <FaUserMd className="text-xs shrink-0" style={{ color: isActive("/admin/pharmacy/deliverycharge") ? theme.primary : "#9CA3AF" }} /> Delivery Charges
                                     </Link>
-                                )}
-                                {hasAccess() && (
+                                )} */}
+                                {/* {hasAccess() && (
                                     <Link href="/admin/pharmacy/brandimage" className={`p-2 px-3 rounded-lg text-xs transition-all duration-200 flex items-center gap-2 ${isActive("/admin/pharmacy/brandimage") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                         <FaUserMd className="text-xs shrink-0" style={{ color: isActive("/admin/pharmacy/brandimage") ? theme.primary : "#9CA3AF" }} /> Brand Image
                                     </Link>
-                                )}
+                                )} */}
                             </div>
                         )}
                     </>
