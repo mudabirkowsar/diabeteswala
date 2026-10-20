@@ -38,7 +38,7 @@ export default function ClinicSidebar({ sidebarOpen }) {
         { name: "Appointments", route: "/vendors/clinic/dashboard/appointments", icon: FaCalendarCheck },
         { name: "Achievements", route: "/vendors/clinic/dashboard/achievements", icon: FaTrophy },
         { name: "Services", route: "/vendors/clinic/dashboard/services", icon: FaHandHoldingMedical },
-        // { name: "Clinic Timings", route: "/vendors/clinic/dashboard/clinictiming", icon: FaClock },
+        { name: "Pharmacy Timings", route: "/vendors/pharmacy/dashboard/pharmacytiming", icon: FaClock },
         { name: "Documents", route: "/vendors/clinic/dashboard/documents", icon: FaFileMedical },
     ];
 
