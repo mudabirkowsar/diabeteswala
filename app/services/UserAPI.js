@@ -286,11 +286,11 @@ const UserAPI = {
         const response = await publicApi.get(`/user/pharmacy/search-alternate`, {
             params: { name }
         });
-        return response.Data;
+        return response.data;
     },
     getSameCompositionMedicine: async (id) => {
         const response = await publicApi.get(`/user/pharmacy/medicine-details/${id}/substitutes`);
-        return response.Data;
+        return response.data;
     },
 
     getAllPharmacies: async (searchPayload) => {

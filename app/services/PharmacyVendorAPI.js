@@ -79,6 +79,60 @@ const PharmacyVendorAPI = {
         const response = await authApi.post('/provider/availability/unblock-slot', data);
         return response.data;
     },
+    // --- 1. Search Master Medicines (Global Database) ---
+    searchMasterMedicines: async (params) => {
+        // params (optional): { query: 'dolo', page: 1, limit: 10 }
+        const response = await authApi.get('/provider/pharmacy/inventory/getMaster', { params });
+        return response.data;
+    },
+
+    // --- 2. Get Master Medicine Full Details by ID ---
+    getMasterMedicineDetailsById: async (id) => {
+        // id: Master medicine unique ObjectID (_id)
+        const response = await authApi.get(`/provider/pharmacy/inventory/getMaster/details/${id}`);
+        return response.data;
+    },
+
+    // --- 3. Add Medicine Batch to Pharmacy Store Inventory ---
+    addMedicineToPharmacyInventory: async (data) => {
+        // data: { medicineId: "670a1e204b1234ef56789012", batch_number: "DL-2026-A1", vendor_price: 30, stock_quantity: 100, expiry_date: "2028-06-30" }
+        const response = await authApi.post('/provider/pharmacy/inventory/add', data);
+        return response.data;
+    },
+
+    // --- 4. Get My Pharmacy Inventory (All Items) ---
+    getMyPharmacyInventoryList: async () => {
+        const response = await authApi.get('/provider/pharmacy/inventory/my-list');
+        return response.data;
+    },
+
+    // --- 5. Get My Non-Prescription Pharmacy Inventory (OTC Items Only) ---
+    getMyPharmacyOtcInventoryList: async () => {
+        const response = await authApi.get('/provider/pharmacy/inventory/my-otc-list');
+        return response.data;
+    },
+
+    // --- 6. Update Pharmacy Inventory Item (Price & Stock) ---
+    updatePharmacyInventoryItem: async (id, data) => {
+        // id: MedicineInventory unique ObjectID (_id)
+        // data: { vendor_price: 32, stock_quantity: 50 }
+        const response = await authApi.put(`/provider/pharmacy/inventory/update/${id}`, data);
+        return response.data;
+    },
+
+    // --- 7. Delete Item from Pharmacy Inventory ---
+    deletePharmacyInventoryItem: async (id) => {
+        // id: MedicineInventory unique ObjectID (_id)
+        const response = await authApi.delete(`/provider/pharmacy/inventory/delete/${id}`);
+        return response.data;
+    },
+
+    // --- 8. Request New Medicine Add to Master Database ---
+    requestNewMedicineToMaster: async (data) => {
+        // data: { name: "Crocin 650 Advance Tablet", manufacturers: "GlaxoSmithKline Pharmaceuticals Ltd", salt_composition: "Paracetamol (650mg)", packaging: "strip of 15 tablets", mrp: "35.00", best_price: "31.50", description: "Used to relieve pain and reduce fever.", prescription_required: "No", image_url: ["https://example.com/crocin.jpg"] }
+        const response = await authApi.post('/provider/pharmacy/inventory/request-add', data);
+        return response.data;
+    },
 
 }
 
