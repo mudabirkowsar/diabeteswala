@@ -4,8 +4,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, ArrowRight, Pill, FileText, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-import { useAuth } from '../../../context/AuthContext'; // Adjust the path as necessary
-import { useCart } from '../../../context/CartContext'; // Adjust the path as necessary
+import { useAuth } from '../../../context/AuthContext'; // Adjust path if needed
+import { useCart } from '../../../context/CartContext'; // Adjust path if needed
 
 const menuVariants = {
     hidden: { opacity: 0, y: 30, scale: 0.95, pointerEvents: "none" },
@@ -30,7 +30,7 @@ const itemVariants = {
 };
 
 const Cart = () => {
-    const { isLoggedIn } = useAuth(); // Get login status from auth context
+    const { isLoggedIn } = useAuth();
     const {
         pharmacyCart,
         pharmacyCartTotal,
@@ -38,7 +38,7 @@ const Cart = () => {
         labCartTotal,
         foodCart,
         foodCartTotal
-    } = useCart(); // Get real-time cart states from context
+    } = useCart();
 
     const [isHovered, setIsHovered] = useState(false);
 
@@ -57,10 +57,9 @@ const Cart = () => {
     const aggregateTotal = pharmacyTotalVal + labTotalVal + foodTotalVal;
 
     // --- AUTH & EMPTY CHECK ---
-    // If user is not logged in OR the cart is completely empty, hide the floating component
     if (!isLoggedIn || totalItems === 0) return null;
 
-    // Build cart items dynamically. Only show sub-carts that currently contain items.
+    // Build cart items dynamically
     const cartOptions = [
         ...(pharmacyCount > 0 ? [{
             name: "Pharmacy Cart",
@@ -93,8 +92,12 @@ const Cart = () => {
     };
 
     return (
+        /* 
+           - bottom-20 (80px) on mobile lifts the floating trigger safely above the bottom tab bar
+           - sm:bottom-8 returns to the standard desktop margin
+        */
         <div
-            className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-[999] antialiased flex flex-col items-end gap-3 select-none"
+            className="fixed bottom-20 right-4 sm:bottom-8 sm:right-8 z-[45] antialiased flex flex-col items-end gap-3 select-none"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
@@ -158,7 +161,7 @@ const Cart = () => {
                         </p>
                     </div>
 
-                    {/* Icon Container (Mobile shows only this icon structure) */}
+                    {/* Icon Container (Mobile shows only this icon) */}
                     <div className="relative bg-white/10 sm:p-4 rounded-2xl transition-all duration-300">
                         <ShoppingBag size={22} className="sm:w-6 sm:h-6" strokeWidth={2.5} />
 

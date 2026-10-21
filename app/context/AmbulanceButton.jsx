@@ -7,21 +7,27 @@ import { Siren, ArrowRight } from "lucide-react";
 export default function AmbulanceButton() {
     const pathname = usePathname();
 
+    // Clean trimmed check to avoid whitespace match bugs
+    const currentPath = pathname?.trim();
+
     // Hide on the buy/checkout product page and ambulance page
     if (
-        pathname === "/shop/cgmdevices/buyproduct" ||
-        pathname === "/shop/cgmdevices/devicedetail" ||
-        pathname === " /doctor/doctordetail/" ||
-        pathname?.startsWith("/shop/cgmdevices/buyproduct") ||
-        pathname?.startsWith("/shop/cgmdevices/devicedetail") ||
-        pathname?.startsWith("/doctor/doctordetail") ||
-        pathname === "/ambulance"
+        currentPath === "/shop/cgmdevices/buyproduct" ||
+        currentPath === "/shop/cgmdevices/devicedetail" ||
+        currentPath === "/ambulance" ||
+        currentPath?.startsWith("/shop/cgmdevices/buyproduct") ||
+        currentPath?.startsWith("/shop/cgmdevices/devicedetail") ||
+        currentPath?.startsWith("/doctor/doctordetail")
     ) {
         return null;
     }
 
     return (
-        <div className="fixed bottom-4 left-3 sm:bottom-6 sm:left-6 z-50 group select-none">
+        /* 
+           - bottom-20 (5rem / 80px) lifts it above the mobile tab bar (~56px-60px height)
+           - sm:bottom-6 restores normal desktop placement 
+        */
+        <div className="fixed bottom-20 left-3 sm:bottom-6 sm:left-6 z-50 group select-none">
             {/* Outer Radiant Glow Rings */}
             <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 opacity-70 blur-md group-hover:opacity-100 group-hover:blur-lg transition-all duration-500 animate-pulse pointer-events-none" />
 

@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import UserAPI from '../../../../services/UserAPI'; // Adjust based on your folder structure
 import { useNotification } from '../../../../context/NotificationContext'; // Adjust based on your folder structure
-import { useCart } from '../../../../context/CartContext'; // Adjust based on your folder structure
 
 // Import Sellers List & Cart Controller Sub-Component
 import SellersAndCartSection from '../components/SellersAndCartSection'; // Adjust based on your folder structure
@@ -40,14 +39,6 @@ const ProductDetailPage = () => {
   const params = useParams();
   const router = useRouter();
   const { showNotification } = useNotification();
-  const { 
-    pharmacyCart, 
-    addToPharmacyCart, 
-    updatePharmacyItemQuantity, 
-    removePharmacyItem,
-    clearPharmacyCart,
-    loading: cartLoading 
-  } = useCart();
 
   const productId = params?.id;
 
@@ -223,15 +214,6 @@ const ProductDetailPage = () => {
   return (
     <main className="min-h-screen bg-[#f8fbff] py-10 antialiased">
       <div className="max-w-[1280px] mx-auto px-6 lg:px-12">
-
-        {/* --- BACK NAVIGATION BUTTON --- */}
-        <button
-          onClick={() => router.back()}
-          className="inline-flex items-center gap-2 text-[#3d3f96] hover:text-[#2d2f75] font-black text-xs uppercase tracking-wider mb-8 transition-colors select-none"
-        >
-          <ArrowLeft size={16} className="stroke-[2.5]" />
-          Back to Catalog
-        </button>
 
         {/* --- SECTION 1: PRIMARY PROFILE GRID --- */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-12">

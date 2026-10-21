@@ -15,9 +15,9 @@ import {
   Loader2,
   Store
 } from 'lucide-react';
-import { useCart } from '../../../../context/CartContext'; // Adjust path based on your folder structure
+import { useCart } from '../../../../context/CartContext';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.3:5002";
+const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 const CartPage = () => {
   const {
