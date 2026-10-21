@@ -34,6 +34,7 @@ const PharmacyVendorAPI = {
         const response = await publicApi.post('/api/auth/provider/register', pharmacyData);
         return response.data;
     },
+    
     uploadDocuments: async (formData) => {
         const response = await authApi.put('/api/auth/provider/upload-docs/pharmacy', formData, {
             headers: {
@@ -53,6 +54,7 @@ const PharmacyVendorAPI = {
         return response.data;
     },
 
+    //manage timing 
     // --- 1. Set / Configure Pharmacy Delivery Slots & Availability ---
     setPharmacyAvailabilitySlots: async (data) => {
         // data: { startTime: "10:00", endTime: "22:00", slotDuration: 60, morningSlots: true, afternoonSlots: true, eveningSlots: true, premiumSlots: [{ time: "21:00", extraFee: 40 }], unavailableSlots: ["14:00"], offDays: ["Sunday"], blockedDates: ["2026-10-25"] }
@@ -79,7 +81,9 @@ const PharmacyVendorAPI = {
         const response = await authApi.post('/provider/availability/unblock-slot', data);
         return response.data;
     },
-    // --- 1. Search Master Medicines (Global Database) ---
+
+    // manage medicines 
+    // --- 1. Search Master Medicines (Global Catalog) ---
     searchMasterMedicines: async (params) => {
         // params (optional): { query: 'dolo', page: 1, limit: 10 }
         const response = await authApi.get('/provider/pharmacy/inventory/getMaster', { params });
@@ -93,34 +97,34 @@ const PharmacyVendorAPI = {
         return response.data;
     },
 
-    // --- 3. Add Medicine Batch to Pharmacy Store Inventory ---
-    addMedicineToPharmacyInventory: async (data) => {
-        // data: { medicineId: "670a1e204b1234ef56789012", batch_number: "DL-2026-A1", vendor_price: 30, stock_quantity: 100, expiry_date: "2028-06-30" }
+    // --- 3. Add Medicine Batch to Store Inventory (With Compliance & Return/Replace Rules) ---
+    addMedicineBatchToPharmacyInventory: async (data) => {
+        // data: { medicineId: "670a1e204b1234ef56789012", batch_number: "DL-2026-B1", mrp: 33.56, vendor_price: 29.50, stock_quantity: 100, expiry_date: "2028-12-31", manufacturing_date: "2026-05-10", hsn_number: "30049099", packaging: "strip of 15 tablets", isReturnAllowed: true, isReplacementAllowed: true }
         const response = await authApi.post('/provider/pharmacy/inventory/add', data);
         return response.data;
     },
 
-    // --- 4. Get My Pharmacy Inventory (All Items) ---
+    // --- 4. Get My Pharmacy Inventory (All Batches with Master MRP) ---
     getMyPharmacyInventoryList: async () => {
         const response = await authApi.get('/provider/pharmacy/inventory/my-list');
         return response.data;
     },
 
-    // --- 5. Get My Non-Prescription Pharmacy Inventory (OTC Items Only) ---
+    // --- 5. Get My Non-Prescription Inventory (OTC Items Only) ---
     getMyPharmacyOtcInventoryList: async () => {
         const response = await authApi.get('/provider/pharmacy/inventory/my-otc-list');
         return response.data;
     },
 
-    // --- 6. Update Pharmacy Inventory Item (Price & Stock) ---
+    // --- 6. Update Inventory Item (Batch, Stock, MRP & Toggles) ---
     updatePharmacyInventoryItem: async (id, data) => {
         // id: MedicineInventory unique ObjectID (_id)
-        // data: { vendor_price: 32, stock_quantity: 50 }
+        // data (all optional): { vendor_price: 28.00, stock_quantity: 75, mrp: 33.56, batch_number: "DL-2026-B2", expiry_date: "2029-01-31", manufacturing_date: "2026-06-01", hsn_number: "30049099", isReturnAllowed: false, isReplacementAllowed: true }
         const response = await authApi.put(`/provider/pharmacy/inventory/update/${id}`, data);
         return response.data;
     },
 
-    // --- 7. Delete Item from Pharmacy Inventory ---
+    // --- 7. Delete Inventory Item (With Combo Offers Cascade Cleanup) ---
     deletePharmacyInventoryItem: async (id) => {
         // id: MedicineInventory unique ObjectID (_id)
         const response = await authApi.delete(`/provider/pharmacy/inventory/delete/${id}`);
@@ -133,6 +137,33 @@ const PharmacyVendorAPI = {
         const response = await authApi.post('/provider/pharmacy/inventory/request-add', data);
         return response.data;
     },
+
+    // --- 9. Request Admin to Increase Master Reference MRP ---
+    requestMasterMedicineMrpIncrease: async (data) => {
+        // data: { medicineId: "670a1e204b1234ef56789012", proposedMrp: 38.50, reason: "Manufacturer released updated batch with higher printed MRP." }
+        const response = await authApi.post('/provider/pharmacy/inventory/request-mrp-increase', data);
+        return response.data;
+    },
+
+    // --- 10. Request Admin to Add New HSN Code ---
+    requestNewHsnCode: async (data) => {
+        // data: { hsnCode: "30049080", description: "Antidiabetic herbal formulations", suggestedTaxPercent: 12, reason: "New Ayurvedic diabetes management syrup batch arrived." }
+        const response = await authApi.post('/provider/pharmacy/inventory/hsn-request/create', data);
+        return response.data;
+    },
+
+    getAllActiveHsnCodes: async () => {
+        const response = await publicApi.get('/admin/pharmacy/tax-config/hsn/list');
+        return response.data;
+    },
+
+    // --- 11. Get My Submitted HSN Requests History ---
+    getMyHsnRequestsHistory: async () => {
+        const response = await authApi.get('/provider/pharmacy/inventory/hsn-request/my-requests');
+        return response.data;
+    },
+
+
 
 }
 

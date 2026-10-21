@@ -6,7 +6,7 @@ import { HiMenuAlt2 } from "react-icons/hi";
 import { Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
-const ClinicTopbar = ({ heading, toggleSidebar }) => {
+const PharmacyTopbar = ({ heading, toggleSidebar }) => {
     const [openProfile, setOpenProfile] = useState(false);
     const profileRef = useRef(null);
     const themeColor = "#3D3F96";
@@ -106,7 +106,7 @@ const ClinicTopbar = ({ heading, toggleSidebar }) => {
                                     <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">{clinicData.email}</p>
                                 </div>
                                 <button
-                                    onClick={() => { router.push('/vendors/clinic/dashboard/profile'); setOpenProfile(false); }}
+                                    onClick={() => { router.push('/vendors/pharmacy/dashboard/profile'); setOpenProfile(false); }}
                                     className="w-full flex items-center gap-3 px-6 py-3 text-[10px] text-gray-600 hover:bg-gray-50 font-black uppercase tracking-widest transition-all text-left focus:outline-none"
                                 >
                                     <FaUserEdit className="text-[#3D3F96] text-sm" /> Edit Profile
@@ -126,4 +126,4 @@ const ClinicTopbar = ({ heading, toggleSidebar }) => {
     );
 };
 
-export default ClinicTopbar;
+export default PharmacyTopbar;

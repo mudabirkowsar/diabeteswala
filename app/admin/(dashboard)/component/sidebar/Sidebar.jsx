@@ -217,7 +217,7 @@ export default function Sidebar({ sidebarOpen }) {
                         >
                             {isParentActive("/admin/vendors") && <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-md" style={{ backgroundColor: theme.primary }} />}
                             <IconChip icon={FaStore} active={isParentActive("/admin/vendors")} />
-                            {isExpanded && <span className="truncate">Pharmacy Vendors</span>}
+                            {isExpanded && <span className="truncate">Pharmacy</span>}
                             {isExpanded && (
                                 openMenu === "vendors"
                                     ? <FaChevronDown className="ml-auto text-[11px] text-gray-400 transition-transform duration-200 rotate-90" />
@@ -242,11 +242,11 @@ export default function Sidebar({ sidebarOpen }) {
                                         <FaFlask className="text-xs shrink-0" style={{ color: isActive("/admin/pharmacy/managemedicine") ? theme.primary : "#9CA3AF" }} /> Manage Medicines
                                     </Link>
                                 )}
-                                {/* {hasAccess() && (
-                                    <Link href="/admin/pharmacy/deliverycharge" className={`p-2 px-3 rounded-lg text-xs transition-all duration-200 flex items-center gap-2 ${isActive("/admin/pharmacy/deliverycharge") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
-                                        <FaUserMd className="text-xs shrink-0" style={{ color: isActive("/admin/pharmacy/deliverycharge") ? theme.primary : "#9CA3AF" }} /> Delivery Charges
+                                {hasAccess() && (
+                                    <Link href="/admin/pharmacy/managehsn" className={`p-2 px-3 rounded-lg text-xs transition-all duration-200 flex items-center gap-2 ${isActive("/admin/pharmacy/managehsn") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                        <FaUserMd className="text-xs shrink-0" style={{ color: isActive("/admin/pharmacy/managehsn") ? theme.primary : "#9CA3AF" }} /> Manage HSN
                                     </Link>
-                                )} */}
+                                )}
                                 {/* {hasAccess() && (
                                     <Link href="/admin/pharmacy/brandimage" className={`p-2 px-3 rounded-lg text-xs transition-all duration-200 flex items-center gap-2 ${isActive("/admin/pharmacy/brandimage") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                         <FaUserMd className="text-xs shrink-0" style={{ color: isActive("/admin/pharmacy/brandimage") ? theme.primary : "#9CA3AF" }} /> Brand Image

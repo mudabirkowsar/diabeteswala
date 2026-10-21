@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 // Dynamic imports matching your Clinic folder structure exactly
 import Sidebar from "./components/sidebar/Sidebar";
-import Topbar from "./components/topbar/ClinicTopbar";
+import Topbar from "./components/topbar/PharmacyTopbar";
 
 export default function ClinicVendorLayout({ children }) {
   // Managing the sidebar minimize state from the topbar button

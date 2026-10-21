@@ -266,7 +266,7 @@ const AdminAPI = {
         return response.data;
     },
 
-    getClinicDetailAdmin: async(id) => {
+    getClinicDetailAdmin: async (id) => {
         const response = await authApi.get(`/api/admin/clinic/details/${id}`)
         return response.data
     },
@@ -366,6 +366,36 @@ const AdminAPI = {
 
     deleteMedicine: async (id) => {
         const response = await authApi.delete(`/admin/pharmacy/medicine/delete/${id}`);
+        return response.data;
+    },
+
+    //Manage HSN
+    // --- 1. Admin Create HSN Code Master Entry ---
+    createAdminHsnMasterEntry: async (data) => {
+        // data: { hsnCode: "30049099", description: "Medicaments consisting of mixed or unmixed products for therapeutic uses", totalGstPercent: 12 }
+        const response = await authApi.post('/admin/pharmacy/tax-config/hsn/create', data);
+        return response.data;
+    },
+
+    // --- 2. Get All Active HSN Codes (Public / Dropdown List) ---
+    getAllActiveHsnCodes: async () => {
+        const response = await authApi.get('/admin/pharmacy/tax-config/hsn/list');
+        return response.data;
+    },
+
+    // --- 3. Admin Get All Pharmacy HSN Requests List ---
+    getAdminPharmacyHsnRequests: async (params) => {
+        // params (optional): { status: 'Pending' | 'Approved' | 'Rejected' }
+        const response = await authApi.get('/admin/pharmacy/tax-config/hsn-requests/list', { params });
+        return response.data;
+    },
+
+    // --- 4. Admin Review Pharmacy HSN Request (Approve / Reject) ---
+    reviewAdminPharmacyHsnRequest: async (requestId, data) => {
+        // requestId: HsnRequest unique ObjectID (_id)
+        // data (Approve): { action: "Approved", finalTaxPercent: 12 }
+        // data (Reject): { action: "Rejected", rejectionReason: "Incorrect HSN code format for this category." }
+        const response = await authApi.put(`/admin/pharmacy/tax-config/hsn-requests/action/${requestId}`, data);
         return response.data;
     },
 
@@ -1214,7 +1244,7 @@ const AdminAPI = {
         const response = await authApi.get(`/admin/cgm/orders/detail/${id}`);
         return response.data;
     },
-    
+
     // --- 1. Admin Get CGM & Glucometer Refund Queue (Pending & Processed) ---
     getAdminCgmRefundQueue: async (params) => {
         // params (optional): { page: 1, limit: 10, search: 'HK-CGM-458265', refundStatus: 'Pending' | 'Processed' | 'Failed' | 'all' }
