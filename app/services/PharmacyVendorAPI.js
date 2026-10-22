@@ -106,6 +106,7 @@ const PharmacyVendorAPI = {
         return response.data;
     },
 
+    
     //manage timing 
     // --- 1. Set / Configure Pharmacy Delivery Slots & Availability ---
     setPharmacyAvailabilitySlots: async (data) => {

@@ -3,19 +3,17 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Store,
-    ChevronRight,
     Search,
     Star,
     LayoutGrid,
     Info,
     Clock,
     Truck,
-    Loader2,
     AlertCircle
 } from 'lucide-react';
 import AllMedicines from './components/AllMedicines';
-import PharmacyDetail from './components/PharmacyDetail'; // Adjust path if needed
-import UserAPI from '../../../services/UserAPI'; // Adjust path based on your structure
+import PharmacyDetail from './components/PharmacyDetail';
+import UserAPI from '../../../services/UserAPI';
 
 const PharmacyPage = () => {
     const [pharmacies, setPharmacies] = useState([]);
@@ -34,7 +32,7 @@ const PharmacyPage = () => {
                 setError(false);
                 let lat = null;
                 let lng = null;
-                // Get coordinates from localStorage
+
                 if (typeof window !== "undefined") {
                     const savedCords = localStorage.getItem("userCoords");
                     if (savedCords) {
@@ -42,23 +40,18 @@ const PharmacyPage = () => {
                             const parsed = JSON.parse(savedCords);
                             lat = parsed.lat;
                             lng = parsed.lng;
-                            console.log("Latitude:", lat);
-                            console.log("Longitude:", lng);
                         } catch (e) {
-                            console.error(
-                                "Error reading stored user coordinates:",
-                                e
-                            );
+                            console.error("Error reading stored user coordinates:", e);
                         }
                     }
                 }
-                // Send exact coordinates to backend
+
                 const searchPayload = {
                     lat: lat,
                     lng: lng,
                     search: "",
                 };
-                console.log("Payload:", searchPayload);
+
                 const response = await UserAPI.getAllPharmacies(searchPayload);
                 if (response?.success) {
                     setPharmacies(response.data || []);
@@ -76,16 +69,12 @@ const PharmacyPage = () => {
         fetchPharmacies();
     }, []);
 
-    // Helper to format/sanitize node backslash upload paths and prefix the base URL
     const getPharmacyImage = (ph) => {
-        const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+        const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.3:5002";
 
         if (ph.profileImage) {
-            // Replace backslashes with forward slashes
             let cleanPath = ph.profileImage.replace(/\\/g, '/');
-            // Remove 'public/' prefix from path if returned by backend
             cleanPath = cleanPath.replace(/^public\//, '');
-            // Prevent double-slashes by ensuring path doesn't start with a slash
             if (cleanPath.startsWith('/')) {
                 cleanPath = cleanPath.substring(1);
             }
@@ -101,11 +90,9 @@ const PharmacyPage = () => {
             return `${BASE_URL}/${cleanPath}`;
         }
 
-        // Return static high-quality fallback image if none exist
         return "https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=400&auto=format&fit=crop";
     };
 
-    // Stable mock ratings mapping for clean layout aesthetics
     const getPharmacyRating = (index) => {
         const ratings = [4.9, 4.8, 4.7, 4.6];
         return ratings[index % ratings.length];
@@ -126,7 +113,7 @@ const PharmacyPage = () => {
                         <div className="flex flex-wrap items-center gap-3 mt-2">
                             <p className="text-slate-500 font-medium text-sm">
                                 {selectedPharmacy
-                                    ? `Browsing products from ${selectedPharmacy.city || selectedPharmacy.state}`
+                                    ? `Browsing products from ${selectedPharmacy.city || selectedPharmacy.state || 'store'}`
                                     : "Order genuine medicines from verified partners"}
                             </p>
                             {selectedPharmacy && (
@@ -254,7 +241,7 @@ const PharmacyPage = () => {
                                         {/* Divider */}
                                         <div className={`h-[1px] w-full ${isSelected ? 'bg-white/15' : 'bg-slate-100'}`} />
 
-                                        {/* Simplified Metadata Block */}
+                                        {/* Metadata Block */}
                                         <div className="space-y-1 w-full text-[11px]">
                                             <div className="flex items-center gap-2">
                                                 <Clock size={12} className={isSelected ? "text-indigo-200" : "text-slate-400"} />

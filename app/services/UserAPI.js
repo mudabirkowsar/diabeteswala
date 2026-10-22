@@ -317,6 +317,12 @@ const UserAPI = {
         const response = await publicApi.get('/user/pharmacy/categories');
         return response.data;
     },
+    getPharmacyStoreMedicinesCatalog: async (pharmacyId, params) => {
+        // pharmacyId: Pharmacy store unique ObjectID (_id)
+        // params (optional): { page: 1 }
+        const response = await publicApi.get(`/user/medicine/pharmacies/${pharmacyId}`, { params });
+        return response.data;
+    },
 
 
 
