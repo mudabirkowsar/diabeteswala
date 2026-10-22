@@ -32,15 +32,15 @@ export default function ClinicSidebar({ sidebarOpen }) {
     // Menu list exactly as shown in your screen layout
     const menuItems = [
         { name: "Dashboard", route: "/vendors/clinic/dashboard", icon: FaTachometerAlt },
-        { name: "Revenue", route: "/vendors/clinic/dashboard/revenue", icon: FaRupeeSign },
-        { name: "Manage Bank Details", route: "/vendors/clinic/dashboard/managebank", icon: FaUniversity },
-        // { name: "Add New Doctor", route: "/vendors/clinic/dashboard/addDoctors", icon: FaUserMd },
+        // { name: "Revenue", route: "/vendors/clinic/dashboard/revenue", icon: FaRupeeSign },
+        // { name: "Manage Bank Details", route: "/vendors/clinic/dashboard/managebank", icon: FaUniversity },
         { name: "Manage Medicine", route: "/vendors/pharmacy/dashboard/managemedicine", icon: FaPills },
-        { name: "Achievements", route: "/vendors/clinic/dashboard/achievements", icon: FaTrophy },
-        { name: "Services", route: "/vendors/clinic/dashboard/services", icon: FaHandHoldingMedical },
+        { name: "Manage Drivers", route: "/vendors/pharmacy/dashboard/managedrivers", icon: FaUserMd },
+        // { name: "Achievements", route: "/vendors/clinic/dashboard/achievements", icon: FaTrophy },
+        // { name: "Services", route: "/vendors/clinic/dashboard/services", icon: FaHandHoldingMedical },
         { name: "Pharmacy Timings", route: "/vendors/pharmacy/dashboard/pharmacytiming", icon: FaClock },
         { name: "Manage Coupon", route: "/vendors/pharmacy/dashboard/managecoupon", icon: FaUserMd },
-        { name: "Documents", route: "/vendors/clinic/dashboard/documents", icon: FaFileMedical },
+        // { name: "Documents", route: "/vendors/clinic/dashboard/documents", icon: FaFileMedical },
     ];
 
     const isActive = (route) => pathname === route;

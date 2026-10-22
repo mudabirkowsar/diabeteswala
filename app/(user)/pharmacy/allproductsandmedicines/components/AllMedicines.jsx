@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Plus, Star, Info, AlertCircle, Pill, ShieldCheck, Loader2 } from 'lucide-react';
+import { Plus, Star, Info, AlertCircle, Pill, ShieldCheck, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import UserAPI from '../../../../services/UserAPI'; // Adjust relative path as needed
 import { useNotification } from '../../../../context/NotificationContext'; // Adjust path as needed
@@ -83,7 +83,13 @@ const AllMedicines = ({ pharmacyId, searchQuery }) => {
         if (res && res.success) {
           const fetchedData = res.data || [];
           setProducts((prev) => (page === 1 ? fetchedData : [...prev, ...fetchedData]));
-          setHasMore(res.currentPage < res.totalPages);
+          
+          // Support both res.pagination and root-level pagination keys
+          if (res.pagination) {
+            setHasMore(res.pagination.hasNextPage ?? (res.pagination.currentPage < res.pagination.totalPages));
+          } else {
+            setHasMore(res.currentPage < res.totalPages);
+          }
         } else {
           setError(true);
         }
@@ -103,7 +109,9 @@ const AllMedicines = ({ pharmacyId, searchQuery }) => {
 
   // Handle Client-Side Search Query Filtering on Retrieved Products
   const filteredProducts = products.filter((product) => {
-    const matchesPharmacy = pharmacyId ? product.pharmacyId === pharmacyId : true;
+    const matchesPharmacy = pharmacyId 
+      ? (product.pharmacyId === pharmacyId || product.cheapestSeller?.pharmacyId === pharmacyId)
+      : true;
 
     const searchLower = searchQuery ? searchQuery.toLowerCase() : "";
     const matchesSearch = !searchQuery ||
@@ -130,6 +138,7 @@ const AllMedicines = ({ pharmacyId, searchQuery }) => {
     }
     return "Tablet";
   };
+
   // Click handler to redirect to specific details page
   const handleCardClick = (product) => {
     const productId = product._id || product.Id;
@@ -147,8 +156,8 @@ const AllMedicines = ({ pharmacyId, searchQuery }) => {
           <button
             onClick={() => setSelectedCategory(null)}
             className={`px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all duration-300 shrink-0 border whitespace-nowrap ${!selectedCategory
-                ? 'bg-[#3d3f96] text-white border-[#3d3f96] shadow-lg shadow-indigo-100/60'
-                : 'bg-white text-slate-600 border-slate-100 hover:bg-slate-50'
+              ? 'bg-[#3d3f96] text-white border-[#3d3f96] shadow-lg shadow-indigo-100/60'
+              : 'bg-white text-slate-600 border-slate-100 hover:bg-slate-50'
               }`}
           >
             All Medicines
@@ -159,8 +168,8 @@ const AllMedicines = ({ pharmacyId, searchQuery }) => {
               key={cat.name}
               onClick={() => setSelectedCategory(cat.name)}
               className={`px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all duration-300 shrink-0 border whitespace-nowrap flex items-center gap-2 ${selectedCategory === cat.name
-                  ? 'bg-[#3d3f96] text-white border-[#3d3f96] shadow-lg shadow-indigo-100/60'
-                  : 'bg-white text-slate-600 border-slate-100 hover:bg-slate-50'
+                ? 'bg-[#3d3f96] text-white border-[#3d3f96] shadow-lg shadow-indigo-100/60'
+                : 'bg-white text-slate-600 border-slate-100 hover:bg-slate-50'
                 }`}
             >
               <span>{cat.name}</span>
@@ -195,16 +204,22 @@ const AllMedicines = ({ pharmacyId, searchQuery }) => {
         <div className="space-y-10">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {filteredProducts.map((product, index) => {
-              const hasRx = product.prescription_required === "YES";
+              const hasRx = product.prescription_required === "YES" || product.isRxRequired === true;
               const currentImg = getProductImage(product, index);
               const formFactor = getFormFactor(product);
               const displayDiscount = product.discont_percent || `${product.discountPercentage}% OFF`;
+              
+              // Resolve stock and availability from response
+              const stock = product.cheapestSeller?.stock ?? product.stock;
+              const isAvailable = product.isAvailable !== false && (stock === undefined || stock > 0);
 
               return (
                 <div
                   key={product._id || product.Id || index}
                   onClick={() => handleCardClick(product)}
-                  className="bg-white rounded-[1.5rem] sm:rounded-[2.5rem] border border-slate-100 p-1.5 sm:p-2 shadow-sm hover:shadow-xl transition-all duration-500 group flex flex-col justify-between overflow-hidden cursor-pointer"
+                  className={`bg-white rounded-[1.5rem] sm:rounded-[2.5rem] border border-slate-100 p-1.5 sm:p-2 shadow-sm transition-all duration-500 group flex flex-col justify-between overflow-hidden cursor-pointer ${
+                    !isAvailable ? 'opacity-75 bg-slate-50/70 hover:opacity-90' : 'hover:shadow-xl'
+                  }`}
                 >
                   <div>
                     {/* Product Image Area */}
@@ -212,13 +227,25 @@ const AllMedicines = ({ pharmacyId, searchQuery }) => {
                       <img
                         src={currentImg}
                         alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        className={`w-full h-full object-cover transition-transform duration-700 ${
+                          !isAvailable ? 'filter blur-[1.5px] grayscale-[30%]' : 'group-hover:scale-110'
+                        }`}
                         loading="lazy"
                       />
 
+                      {/* Rx Required Badge */}
                       {hasRx && (
-                        <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-amber-500 text-white text-[8px] sm:text-[9px] font-black px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md sm:rounded-lg shadow-lg flex items-center gap-1">
+                        <div className="absolute top-2 left-2 sm:top-4 sm:left-4 z-10 bg-amber-500 text-white text-[8px] sm:text-[9px] font-black px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md sm:rounded-lg shadow-lg flex items-center gap-1">
                           <AlertCircle size={8} className="sm:w-2.5 sm:h-2.5" /> RX REQUIRED
+                        </div>
+                      )}
+
+                      {/* Out of Stock Blur Overlay Badge */}
+                      {!isAvailable && (
+                        <div className="absolute inset-0 bg-slate-900/35 backdrop-blur-[2px] flex items-center justify-center p-2 z-10">
+                          <span className="bg-rose-500 text-white text-[9px] sm:text-[11px] font-black px-3 py-1 rounded-lg shadow-md uppercase tracking-wider">
+                            Out of Stock
+                          </span>
                         </div>
                       )}
                     </div>
@@ -241,9 +268,22 @@ const AllMedicines = ({ pharmacyId, searchQuery }) => {
                       <p className="text-[8px] sm:text-[10px] text-slate-500 font-medium mt-1 truncate">
                         Active: {product.salt_composition || "OTC Formulation"}
                       </p>
-                      <p className="text-[8px] sm:text-[10px] text-slate-400 font-bold mt-0.5">
-                        Pack: {product.packaging || "1 unit"}
-                      </p>
+                      
+                      <div className="flex items-center justify-between mt-0.5">
+                        <p className="text-[8px] sm:text-[10px] text-slate-400 font-bold truncate">
+                          Pack: {product.packaging || "1 unit"}
+                        </p>
+
+                        {/* Stock & Availability Tag */}
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span className={`w-1.5 h-1.5 rounded-full ${isAvailable ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                          <span className={`text-[8px] sm:text-[9.5px] font-bold ${isAvailable ? 'text-emerald-600' : 'text-rose-500'}`}>
+                            {isAvailable 
+                              ? (stock !== undefined ? `In Stock (${stock})` : 'In Stock') 
+                              : 'Unavailable'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -257,9 +297,9 @@ const AllMedicines = ({ pharmacyId, searchQuery }) => {
                           <p className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Price</p>
                           <div className="flex items-baseline gap-1.5">
                             <span className="text-base sm:text-xl font-black text-slate-900 leading-none">
-                              ₹{product.best_price}
+                              ₹{product.best_price || product.minPrice}
                             </span>
-                            {parseFloat(product.mrp) > parseFloat(product.best_price) && (
+                            {parseFloat(product.mrp) > parseFloat(product.best_price || product.minPrice) && (
                               <span className="text-[9px] sm:text-[11px] text-slate-400 line-through font-bold">
                                 ₹{product.mrp}
                               </span>
@@ -280,7 +320,11 @@ const AllMedicines = ({ pharmacyId, searchQuery }) => {
                           e.stopPropagation();
                           handleCardClick(product);
                         }}
-                        className="mt-4 w-full py-2 sm:py-3 px-4 bg-gradient-to-r from-[#3d3f96] to-[#5a5dbd] hover:from-[#2d2f75] hover:to-[#4a4d9e] text-white text-[10px] sm:text-xs font-bold rounded-xl sm:rounded-2xl shadow-md shadow-indigo-100/50 hover:shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                        className={`mt-4 w-full py-2 sm:py-3 px-4 text-white text-[10px] sm:text-xs font-bold rounded-xl sm:rounded-2xl shadow-md transition-all flex items-center justify-center gap-1.5 ${
+                          isAvailable
+                            ? 'bg-gradient-to-r from-[#3d3f96] to-[#5a5dbd] hover:from-[#2d2f75] hover:to-[#4a4d9e] shadow-indigo-100/50 hover:shadow-lg active:scale-95'
+                            : 'bg-slate-400 hover:bg-slate-500 shadow-slate-100'
+                        }`}
                       >
                         <Info size={14} className="sm:w-3.5 sm:h-3.5" />
                         <span>View Details</span>
