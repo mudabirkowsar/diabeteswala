@@ -3,30 +3,56 @@
 import React, { useState, useRef, useEffect } from "react";
 import { FaUserEdit, FaSignOutAlt, FaUser } from "react-icons/fa";
 import { HiMenuAlt2 } from "react-icons/hi";
-import { Toaster } from "react-hot-toast";
+import { Toaster, toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
+// Adjust the import path according to where PharmacyAPI.js is located in your project
+import PharmacyAPI from "../../../../../services/PharmacyVendorAPI";
 
 const PharmacyTopbar = ({ heading, toggleSidebar }) => {
     const [openProfile, setOpenProfile] = useState(false);
+    const [profileData, setProfileData] = useState(null);
+    const [loading, setLoading] = useState(true);
+
     const profileRef = useRef(null);
     const themeColor = "#3D3F96";
     const router = useRouter();
 
-    // Dynamic Clinic Vendor details based on your screenshot
-    const clinicData = {
-        name: "Diabetes Pharmacy",
-        email: "diabeticpharmacy@yopmail.com",
-        role: "Pharmacy Vendor",
-        initial: "D"
-    };
+    // Fetch Pharmacy Basic Profile using PharmacyAPI
+    useEffect(() => {
+        const fetchPharmacyProfile = async () => {
+            try {
+                setLoading(true);
+                const response = await PharmacyAPI.getPharmacyBasicProfile();
+
+                if (response?.success && response?.data) {
+                    setProfileData(response.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch pharmacy profile:", error);
+                // Optional: toast.error("Could not load profile details");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPharmacyProfile();
+    }, []);
+
+    // Derived values with fallbacks
+    const name = profileData?.name || "Pharmacy";
+    const email = profileData?.email || "No email available";
+    const role = profileData?.role ? `${profileData.role} Vendor` : "Pharmacy Vendor";
+    const initial = name.charAt(0).toUpperCase();
+    const profileImage = profileData?.profileImage || null;
 
     const handleSignOut = () => {
-        // Clear clinic token from localStorage
-        localStorage.removeItem('pharmacyToken');
-        // Redirect to login page or any other action
-        window.location.href = '/authFiles/login';
-    }
+        // Clear pharmacy token from localStorage
+        localStorage.removeItem("pharmacyToken");
+        // Redirect to login page
+        window.location.href = "/authFiles/login";
+    };
 
+    // Close dropdown when clicked outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (profileRef.current && !profileRef.current.contains(event.target)) {
@@ -43,7 +69,7 @@ const PharmacyTopbar = ({ heading, toggleSidebar }) => {
     const formattedDate = new Date().toLocaleDateString("en-US", {
         year: "numeric",
         month: "numeric",
-        day: "numeric"
+        day: "numeric",
     });
 
     return (
@@ -51,7 +77,6 @@ const PharmacyTopbar = ({ heading, toggleSidebar }) => {
             <Toaster position="top-right" />
 
             <div className="flex items-center justify-between relative">
-
                 {/* LEFT SECTION - Toggle Button & Dynamic Headings */}
                 <div className="flex items-center gap-4 min-w-[220px]">
                     <button
@@ -70,15 +95,24 @@ const PharmacyTopbar = ({ heading, toggleSidebar }) => {
 
                 {/* CENTER IDENTITY SECTION */}
                 <div className="absolute left-1/2 -translate-x-1/2 text-center hidden md:flex flex-col items-center">
-                    <h3 className="text-base font-black text-gray-800 tracking-tight leading-none uppercase">
-                        {clinicData.name}
-                    </h3>
-                    <div className="flex items-center gap-2 mt-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-emerald-500"></span>
-                        <p className="text-[10px] font-black uppercase tracking-[0.25em]" style={{ color: themeColor }}>
-                            {clinicData.role}
-                        </p>
-                    </div>
+                    {loading ? (
+                        <div className="flex flex-col items-center gap-1.5 animate-pulse">
+                            <div className="h-4 w-36 bg-gray-200 rounded"></div>
+                            <div className="h-2.5 w-24 bg-gray-200 rounded"></div>
+                        </div>
+                    ) : (
+                        <>
+                            <h3 className="text-base font-black text-gray-800 tracking-tight leading-none uppercase">
+                                {name}
+                            </h3>
+                            <div className="flex items-center gap-2 mt-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-emerald-500"></span>
+                                <p className="text-[10px] font-black uppercase tracking-[0.25em]" style={{ color: themeColor }}>
+                                    {role}
+                                </p>
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 {/* RIGHT SECTION - Date & Profile menu */}
@@ -93,8 +127,22 @@ const PharmacyTopbar = ({ heading, toggleSidebar }) => {
                             onClick={() => setOpenProfile(!openProfile)}
                             className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-slate-900 text-white shadow-lg hover:scale-[1.02] active:scale-95 transition-all focus:outline-none"
                         >
-                            <div className="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-black text-white" style={{ backgroundColor: themeColor }}>
-                                {clinicData.initial}
+                            <div
+                                className="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-black text-white overflow-hidden"
+                                style={{ backgroundColor: themeColor }}
+                            >
+                                {profileImage ? (
+                                    <img
+                                        src={profileImage.startsWith("http") ? profileImage : `/${profileImage}`}
+                                        alt={name}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            e.currentTarget.style.display = 'none';
+                                        }}
+                                    />
+                                ) : (
+                                    initial
+                                )}
                             </div>
                             <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">Account</span>
                         </button>
@@ -102,14 +150,21 @@ const PharmacyTopbar = ({ heading, toggleSidebar }) => {
                         {openProfile && (
                             <div className="absolute right-0 mt-4 w-64 bg-white rounded-[1.5rem] shadow-2xl border border-gray-100 py-3 transition-all duration-200">
                                 <div className="px-6 py-3 border-b border-gray-50 mb-2">
-                                    <p className="text-xs font-black text-gray-800 truncate">{clinicData.name}</p>
-                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">{clinicData.email}</p>
+                                    <p className="text-xs font-black text-gray-800 truncate">
+                                        {loading ? "Loading..." : name}
+                                    </p>
+                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-0.5 truncate">
+                                        {loading ? "..." : email}
+                                    </p>
                                 </div>
                                 <button
-                                    onClick={() => { router.push('/vendors/pharmacy/dashboard/profile'); setOpenProfile(false); }}
+                                    onClick={() => {
+                                        router.push("/vendors/pharmacy/dashboard/profile");
+                                        setOpenProfile(false);
+                                    }}
                                     className="w-full flex items-center gap-3 px-6 py-3 text-[10px] text-gray-600 hover:bg-gray-50 font-black uppercase tracking-widest transition-all text-left focus:outline-none"
                                 >
-                                    <FaUserEdit className="text-[#3D3F96] text-sm" /> Edit Profile
+                                    <FaUserEdit className="text-[#3D3F96] text-sm" /> View/Edit Profile
                                 </button>
                                 <button
                                     onClick={handleSignOut}

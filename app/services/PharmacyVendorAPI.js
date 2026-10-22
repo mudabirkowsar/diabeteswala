@@ -54,6 +54,11 @@ const PharmacyVendorAPI = {
         const response = await authApi.get('/provider/pharmacy/profile');
         return response.data;
     },
+    // --- 1. Get Pharmacy Basic Profile ---
+    getPharmacyBasicProfile: async () => {
+        const response = await authApi.get('/provider/pharmacy/profile/basic');
+        return response.data;
+    },
 
     // --- 2. Update Pharmacy Provider Profile (Multipart Form-Data) ---
     updatePharmacyProfile: async (formData) => {
@@ -106,7 +111,7 @@ const PharmacyVendorAPI = {
         return response.data;
     },
 
-    
+
     //manage timing 
     // --- 1. Set / Configure Pharmacy Delivery Slots & Availability ---
     setPharmacyAvailabilitySlots: async (data) => {
