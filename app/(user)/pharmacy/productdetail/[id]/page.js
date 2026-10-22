@@ -444,7 +444,7 @@ const ProductDetailPage = () => {
         {/* --- SECTION 4: STANDALONE CLINICALLY DESIGNED ALTERNATIVE BRANDS LIST --- */}
         {alternativeBrands.length > 0 && (
           <div className="mt-8 bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.015)] p-6 md:p-8 space-y-6">
-            
+
             {/* Section Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-5 border-b border-slate-100">
               <div>
@@ -497,8 +497,8 @@ const ProductDetailPage = () => {
                         {brand.tag && (
                           <div className="flex items-center sm:justify-end">
                             <span className={`inline-flex items-center gap-1.5 text-[9px] md:text-[10px] font-extrabold px-2.5 py-1 rounded-xl shadow-sm border ${isCostlier
-                                ? 'text-rose-600 bg-rose-50/60 border-rose-100/50'
-                                : 'text-emerald-700 bg-emerald-50/80 border-emerald-100/50'
+                              ? 'text-rose-600 bg-rose-50/60 border-rose-100/50'
+                              : 'text-emerald-700 bg-emerald-50/80 border-emerald-100/50'
                               }`}>
                               <span className={`w-1 h-1 rounded-full ${isCostlier ? 'bg-rose-500' : 'bg-emerald-500'}`} />
                               {brand.tag}

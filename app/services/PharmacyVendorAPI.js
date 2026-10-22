@@ -34,7 +34,7 @@ const PharmacyVendorAPI = {
         const response = await publicApi.post('/api/auth/provider/register', pharmacyData);
         return response.data;
     },
-    
+
     uploadDocuments: async (formData) => {
         const response = await authApi.put('/api/auth/provider/upload-docs/pharmacy', formData, {
             headers: {
@@ -49,8 +49,18 @@ const PharmacyVendorAPI = {
         return response.data;
     },
 
+    // --- 1. Get Pharmacy Provider Profile ---
     getPharmacyProfile: async () => {
-        const response = await authApi.get('/api/auth/provider/profile');
+        const response = await authApi.get('/provider/pharmacy/profile');
+        return response.data;
+    },
+
+    // --- 2. Update Pharmacy Provider Profile (Multipart Form-Data) ---
+    updatePharmacyProfile: async (formData) => {
+        // formData: FormData object containing optional text fields (name, about, address, city, state, country, lat, lng, cinNumber, gstNumber, tanNumber, panNumber, drugLicenseNumber, foodLicenseNumber, issuingAuthority, drugLicenseType, isHomeDeliveryAvailable, isRapidServiceAvailable, isInsuranceAccepted, acceptedInsurances, is24x7) and file attachments ('profileImage', 'signatureImage', 'drugLicenses', 'pharmacyImages')
+        const response = await authApi.put('/provider/pharmacy/profile/update', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
         return response.data;
     },
 
