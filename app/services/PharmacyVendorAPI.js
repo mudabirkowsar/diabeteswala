@@ -64,6 +64,48 @@ const PharmacyVendorAPI = {
         return response.data;
     },
 
+    //manage coupon
+    // --- 1. Create Provider Coupon ---
+    createProviderCoupon: async (data) => {
+        // data: { couponName: "PHARMA15", discountPercentage: 15, maxDiscount: 200, minOrderAmount: 500, maxUsagePerUser: 2, startDate: "2026-11-01", expiryDate: "2026-12-31" }
+        const response = await authApi.post('/provider/coupons/add', data);
+        return response.data;
+    },
+
+    // --- 2. Get All Provider Coupons (Registry) ---
+    getProviderCouponsList: async () => {
+        const response = await authApi.get('/provider/coupons/list');
+        return response.data;
+    },
+
+    // --- 3. Toggle Provider Coupon Active/Inactive Status ---
+    toggleProviderCouponStatus: async (id) => {
+        // id: Coupon unique ObjectID (_id)
+        const response = await authApi.patch(`/provider/coupons/toggle/${id}`);
+        return response.data;
+    },
+
+    // --- 4. Update Provider Coupon ---
+    updateProviderCoupon: async (id, data) => {
+        // id: Coupon unique ObjectID (_id)
+        // data (all optional): { discountPercentage: 20, maxDiscount: 250, minOrderAmount: 600, expiryDate: "2027-01-31", couponName: "...", maxUsagePerUser: 2, startDate: "...", isActive: true }
+        const response = await authApi.put(`/provider/coupons/update/${id}`, data);
+        return response.data;
+    },
+
+    // --- 5. Delete Provider Coupon ---
+    deleteProviderCoupon: async (id) => {
+        // id: Coupon unique ObjectID (_id)
+        const response = await authApi.delete(`/provider/coupons/delete/${id}`);
+        return response.data;
+    },
+
+    // --- 6. Get Coupon Vendor Types Enum (Public Helper) ---
+    getProviderCouponVendorTypes: async () => {
+        const response = await publicApi.get('/provider/coupons/enum-types');
+        return response.data;
+    },
+
     //manage timing 
     // --- 1. Set / Configure Pharmacy Delivery Slots & Availability ---
     setPharmacyAvailabilitySlots: async (data) => {

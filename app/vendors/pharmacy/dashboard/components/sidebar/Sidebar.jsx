@@ -34,12 +34,12 @@ export default function ClinicSidebar({ sidebarOpen }) {
         { name: "Dashboard", route: "/vendors/clinic/dashboard", icon: FaTachometerAlt },
         { name: "Revenue", route: "/vendors/clinic/dashboard/revenue", icon: FaRupeeSign },
         { name: "Manage Bank Details", route: "/vendors/clinic/dashboard/managebank", icon: FaUniversity },
-        // { name: "Clinic Doctors", route: "/vendors/clinic/dashboard/clinicdoctor", icon: FaUserMd },
         // { name: "Add New Doctor", route: "/vendors/clinic/dashboard/addDoctors", icon: FaUserMd },
         { name: "Manage Medicine", route: "/vendors/pharmacy/dashboard/managemedicine", icon: FaPills },
         { name: "Achievements", route: "/vendors/clinic/dashboard/achievements", icon: FaTrophy },
         { name: "Services", route: "/vendors/clinic/dashboard/services", icon: FaHandHoldingMedical },
         { name: "Pharmacy Timings", route: "/vendors/pharmacy/dashboard/pharmacytiming", icon: FaClock },
+        { name: "Manage Coupon", route: "/vendors/pharmacy/dashboard/managecoupon", icon: FaUserMd },
         { name: "Documents", route: "/vendors/clinic/dashboard/documents", icon: FaFileMedical },
     ];
 

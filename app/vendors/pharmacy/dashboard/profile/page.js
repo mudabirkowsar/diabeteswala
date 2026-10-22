@@ -354,7 +354,7 @@ export default function PharmacyProfilePage() {
       <main className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-6 antialiased">
         <Loader2 className="animate-spin text-[#3d3f96] mb-3" size={36} />
         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-          Loading Pharmacy Provider Profile...
+          Loading  Your Profile
         </p>
       </main>
     );
