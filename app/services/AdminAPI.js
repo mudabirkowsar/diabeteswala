@@ -398,6 +398,42 @@ const AdminAPI = {
         const response = await authApi.put(`/admin/pharmacy/tax-config/hsn-requests/action/${requestId}`, data);
         return response.data;
     },
+    //hike/medicine
+    // --- 1. Get All Pending Pharmacy Medicine Requests (Admin Panel) ---
+    getAdminPendingMedicineRequests: async () => {
+        const response = await authApi.get('/admin/pharmacy/medicine/requests/pending');
+        return response.data;
+    },
+
+    // --- 2. Approve Pharmacy Medicine Request ---
+    approveAdminMedicineRequest: async (requestId) => {
+        // requestId: MasterRequest unique ObjectID (_id)
+        const response = await authApi.put(`/admin/pharmacy/medicine/requests/approve/${requestId}`);
+        return response.data;
+    },
+
+    // --- 3. Reject Pharmacy Medicine Request ---
+    rejectAdminMedicineRequest: async (requestId, data = {}) => {
+        // requestId: MasterRequest unique ObjectID (_id)
+        // data (optional): { adminComment: "This medicine already exists under the name 'Acivir-400 DT'. Please check the master catalog before requesting." }
+        const response = await authApi.put(`/admin/pharmacy/medicine/requests/reject/${requestId}`, data);
+        return response.data;
+    },
+    // --- 1. Get All Pharmacy Medicine & MRP Increase Requests (List & Filter) ---
+    getAdminMedicineAndMrpRequests: async (params) => {
+        // params (optional): { status: 'Pending' | 'Approved' | 'Rejected', page: 1, limit: 20 }
+        const response = await authApi.get('/admin/pharmacy/medicine/increase/requests', { params });
+        return response.data;
+    },
+
+    // --- 2. Handle Pharmacy Medicine & MRP Increase Request Action (Approve / Reject) ---
+    handleAdminMedicineAndMrpRequestAction: async (requestId, data) => {
+        // requestId: MasterRequest unique ObjectID (_id)
+        // data (Approve): { action: "Approved", adminComment: "Verified against physical manufacturer batch pricing." }
+        // data (Reject): { action: "Rejected", adminComment: "Proposed MRP exceeds standard government limit." }
+        const response = await authApi.post(`/admin/pharmacy/medicine/increase/requests/${requestId}`, data);
+        return response.data;
+    },
 
     // ============================================
     // --- FOOD PARTNER APPROVAL WORKFLOW APIS ----

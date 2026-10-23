@@ -286,7 +286,7 @@ export default function PharmacyManagementPage() {
                                     <th className="text-center px-6 py-4 w-24">Profile</th>
                                     <th className="text-left px-6 py-4">Pharmacy Identity</th>
                                     <th className="text-left px-6 py-4">Contact Details</th>
-                                    <th className="text-left px-6 py-4">Location</th>
+                                    {/* <th className="text-left px-6 py-4">Location</th> */}
                                     <th className="text-center px-6 py-4">Verification</th>
                                     <th className="text-center px-6 py-4 w-28">Directory Status</th>
                                     <th className="text-center px-6 py-4 w-28">Actions</th>
@@ -334,12 +334,12 @@ export default function PharmacyManagementPage() {
                                         </td>
 
                                         {/* Location */}
-                                        <td className="px-6 py-4">
+                                        {/* <td className="px-6 py-4">
                                             <div className="flex items-center gap-1.5 text-xs text-slate-600 font-bold truncate max-w-[150px]">
                                                 <MapPin size={13} className="text-rose-500 shrink-0" />
                                                 <span>{pharmacy.city ? `${pharmacy.city}, ${pharmacy.state}` : "Unspecified"}</span>
                                             </div>
-                                        </td>
+                                        </td> */}
 
                                         {/* Verification Status */}
                                         <td className="px-6 py-4 text-center">
