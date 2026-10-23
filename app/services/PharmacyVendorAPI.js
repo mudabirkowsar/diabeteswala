@@ -221,6 +221,63 @@ const PharmacyVendorAPI = {
         return response.data;
     },
 
+    //manage driver
+
+    // --- 1. Register / Add Pharmacy Delivery Driver (Multipart Form-Data) ---
+    addPharmacyDriver: async (formData) => {
+        // formData: FormData object containing text fields ('name', 'phone', 'username', 'password', 'vehicleType', 'vehicleNumber', 'aadhaarNumber', 'address') and file attachments ('profilePic', 'license', 'rcImage', 'certificate')
+        const response = await authApi.post('/provider/driver/add', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
+
+    // --- 2. Get All Pharmacy Drivers (List with Pagination) ---
+    getPharmacyDriversList: async (params) => {
+        // params (optional): { page: 1 }
+        const response = await authApi.get('/provider/driver/list', { params });
+        return response.data;
+    },
+
+    // --- 3. Search Pharmacy Drivers ---
+    searchPharmacyDrivers: async (data) => {
+        // data: { query: "Ramesh" }
+        const response = await authApi.post('/provider/driver/search', data);
+        return response.data;
+    },
+
+    // --- 4. Get Single Pharmacy Driver Details by ID ---
+    getPharmacyDriverDetailsById: async (id) => {
+        // id: Driver unique ObjectID (_id)
+        const response = await authApi.get(`/provider/driver/details/${id}`);
+        return response.data;
+    },
+
+    // --- 5. Update Pharmacy Driver Information (Multipart Form-Data) ---
+    updatePharmacyDriver: async (id, formData) => {
+        // id: Driver unique ObjectID (_id)
+        // formData: FormData object with optional updated text fields ('name', 'vehicleNumber', 'vehicleType', 'address') and replacement files ('profilePic', 'license')
+        const response = await authApi.put(`/provider/driver/update/${id}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
+
+    // --- 6. Toggle Pharmacy Driver Status (Available / Busy / Offline) ---
+    togglePharmacyDriverStatus: async (id, data) => {
+        // id: Driver unique ObjectID (_id)
+        // data: { status: "Available" | "Busy" | "Offline" }
+        const response = await authApi.patch(`/provider/driver/status/${id}`, data);
+        return response.data;
+    },
+
+    // --- 7. Delete Pharmacy Driver ---
+    deletePharmacyDriver: async (id) => {
+        // id: Driver unique ObjectID (_id)
+        const response = await authApi.delete(`/provider/driver/delete/${id}`);
+        return response.data;
+    },
+
 
 
 }
