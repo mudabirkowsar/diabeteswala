@@ -13,7 +13,8 @@ import {
     FaHandHoldingMedical,
     FaClock,
     FaFileMedical,
-    FaPills
+    FaPills,
+    FaCoins
 } from "react-icons/fa";
 import Image from "next/image";
 
@@ -40,7 +41,7 @@ export default function ClinicSidebar({ sidebarOpen }) {
         // { name: "Services", route: "/vendors/clinic/dashboard/services", icon: FaHandHoldingMedical },
         { name: "Pharmacy Timings", route: "/vendors/pharmacy/dashboard/pharmacytiming", icon: FaClock },
         { name: "Manage Coupon", route: "/vendors/pharmacy/dashboard/managecoupon", icon: FaUserMd },
-        // { name: "Documents", route: "/vendors/clinic/dashboard/documents", icon: FaFileMedical },
+        { name: "Manage Charges", route: "/vendors/pharmacy/dashboard/managedeliverycharges", icon: FaCoins },
     ];
 
     const isActive = (route) => pathname === route;

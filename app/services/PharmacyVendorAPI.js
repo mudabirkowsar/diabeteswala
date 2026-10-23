@@ -278,6 +278,26 @@ const PharmacyVendorAPI = {
         return response.data;
     },
 
+    // --- 1. Save / Create Store Delivery Charges (Pharmacy & Lab) ---
+    saveStoreDeliveryCharges: async (data) => {
+        // data: { fixedPrice: 40, fixedDistance: 5, pricePerKM: 10, fastDeliveryExtra: 25, isRapidAvailable: true, packagingCharge: 15, freeDeliveryThreshold: 500, taxPercentage: 5, city: "Noida", state: "Uttar Pradesh" }
+        const response = await authApi.post('/provider/delivery-charges/store/save', data);
+        return response.data;
+    },
+
+    // --- 2. Update Store Delivery Charges (Partial Update) ---
+    updateStoreDeliveryCharges: async (data) => {
+        // data (optional fields): { fixedPrice: 35, freeDeliveryThreshold: 450, isRapidAvailable: false, pricePerKM: 10, packagingCharge: 15 }
+        const response = await authApi.put('/provider/delivery-charges/store/update', data);
+        return response.data;
+    },
+
+    // --- 3. Get Store Delivery Charges Settings ---
+    getMyStoreDeliveryCharges: async () => {
+        const response = await authApi.get('/provider/delivery-charges/store/my-charges');
+        return response.data;
+    },
+
 
 
 }
