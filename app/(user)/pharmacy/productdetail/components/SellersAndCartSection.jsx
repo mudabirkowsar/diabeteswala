@@ -11,7 +11,12 @@ import {
     Trash2,
     ShoppingBag,
     AlertTriangle,
-    X
+    X,
+    Calendar,
+    Layers,
+    RotateCcw,
+    Check,
+    CheckCircle2
 } from 'lucide-react';
 import { useCart } from '../../../../context/CartContext'; // Adjust based on your folder structure
 import { useNotification } from '../../../../context/NotificationContext'; // Adjust based on your folder structure
@@ -181,22 +186,22 @@ const SellersAndCartSection = ({
 
     return (
         <>
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-                {/* Left: Pixel-Matched Pharmacy Sellers List */}
-                <div className="lg:col-span-7 bg-white rounded-[2.5rem] border border-slate-100 p-6 shadow-sm">
-                    <div className="flex items-center justify-between mb-6 px-1">
-                        <div className="flex items-center gap-2.5">
-                            <Store size={18} className="text-slate-600" />
-                            <h2 className="text-lg font-black text-slate-800 tracking-tight">Available Sellers</h2>
+                {/* Left: Pixel-Matched Pharmacy Sellers List (7 Cols) */}
+                <div className="lg:col-span-7 bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-sm">
+                    <div className="flex items-center justify-between mb-5 px-1">
+                        <div className="flex items-center gap-2">
+                            <Store size={18} className="text-[#3d3f96]" />
+                            <h2 className="text-base font-bold text-slate-900 tracking-tight">Available Sellers Near You</h2>
                         </div>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                            {sellers.length} Near You
+                        <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg uppercase tracking-wider">
+                            {sellers.length} {sellers.length === 1 ? 'Seller' : 'Sellers'}
                         </span>
                     </div>
 
                     {sellers.length > 0 ? (
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                             {sellers.map((seller) => {
                                 const isSelected = selectedSeller?.pharmacyId === seller.pharmacyId;
                                 const itemDiscount = seller.discount || 0;
@@ -208,110 +213,158 @@ const SellersAndCartSection = ({
                                             setSelectedSeller(seller);
                                             setGlobalQuantity(1); // Reset qty stepper back to 1 on selection
                                         }}
-                                        className={`w-full flex items-center justify-between p-4 rounded-3xl transition-all duration-300 border cursor-pointer ${isSelected
-                                                ? 'border-emerald-500 bg-white shadow-sm ring-1 ring-emerald-500/20'
-                                                : 'border-slate-100 bg-white hover:border-slate-200 shadow-sm'
-                                            }`}
+                                        className={`w-full p-4 rounded-2xl transition-all duration-200 border cursor-pointer relative ${
+                                            isSelected
+                                                ? 'border-[#3d3f96] bg-indigo-50/20 shadow-sm ring-1 ring-[#3d3f96]'
+                                                : 'border-slate-200/70 bg-white hover:border-slate-300'
+                                        }`}
                                     >
-                                        {/* Left Logo and Address Info */}
-                                        <div className="flex items-center">
-                                            <div className="w-12 h-12 rounded-2xl overflow-hidden shrink-0 border border-slate-100 bg-slate-50 flex items-center justify-center">
-                                                <img
-                                                    src={getSanitizedImageUrl(seller.image)}
-                                                    alt={seller.name}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            </div>
-                                            <div className="flex flex-col items-start ml-4 text-left min-w-0">
-                                                <p className="font-black text-sm text-slate-800 truncate leading-snug">
-                                                    {seller.name}
-                                                </p>
-                                                <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-400 mt-1 truncate">
-                                                    <MapPin size={10} className="text-emerald-500 fill-emerald-50 shrink-0" />
-                                                    <span>{seller.distance} km • {seller.address}</span>
+                                        <div className="flex items-center justify-between gap-3">
+                                            {/* Store Logo & Details */}
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-slate-100 bg-slate-50 flex items-center justify-center p-1">
+                                                    <img
+                                                        src={getSanitizedImageUrl(seller.image)}
+                                                        alt={seller.name}
+                                                        className="w-full h-full object-cover rounded-lg"
+                                                    />
                                                 </div>
+                                                <div className="flex flex-col min-w-0">
+                                                    <div className="flex items-center gap-2 truncate">
+                                                        <p className="font-bold text-sm text-slate-900 truncate">
+                                                            {seller.name}
+                                                        </p>
+                                                        {seller.isOpen && (
+                                                            <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 shrink-0">
+                                                                {seller.isOpen}
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium mt-0.5 truncate">
+                                                        <MapPin size={11} className="text-emerald-500 shrink-0" />
+                                                        <span className="truncate">{seller.address}</span>
+                                                        {seller.distance && seller.distance !== "N/A" && (
+                                                            <span>• {seller.distance} km</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Price and Discount */}
+                                            <div className="flex flex-col items-end shrink-0">
+                                                <div className="flex items-baseline gap-1.5">
+                                                    <span className="font-extrabold text-base text-slate-900 leading-none">
+                                                        ₹{seller.price}
+                                                    </span>
+                                                    {seller.mrp && seller.mrp > seller.price && (
+                                                        <span className="text-[11px] font-semibold text-slate-400 line-through">
+                                                            ₹{seller.mrp}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {itemDiscount > 0 && (
+                                                    <span className="text-[9px] font-bold bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded mt-1 uppercase">
+                                                        {itemDiscount}% OFF
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
 
-                                        {/* Right Pricing details */}
-                                        <div className="flex flex-col items-end shrink-0">
-                                            <p className="font-black text-base text-slate-900 leading-none">
-                                                ₹{seller.price}
-                                            </p>
-                                            {itemDiscount > 0 && (
-                                                <span className="text-[10px] font-black bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-lg mt-1 tracking-wide select-none">
-                                                    {itemDiscount}% OFF
+                                        {/* Bottom Meta Tags: Expiry, Batch, Return, Stock */}
+                                        <div className="flex flex-wrap items-center gap-2 mt-3 pt-2.5 border-t border-slate-100 text-[11px] font-semibold text-slate-500">
+                                            {seller.exp_formatted && (
+                                                <span className="flex items-center gap-1">
+                                                    <Calendar size={11} className="text-slate-400" /> Exp: {seller.exp_formatted}
                                                 </span>
                                             )}
+                                            {seller.batch_number && (
+                                                <>
+                                                    <span className="text-slate-200">•</span>
+                                                    <span className="flex items-center gap-1">
+                                                        <Layers size={11} className="text-slate-400" /> Batch: {seller.batch_number}
+                                                    </span>
+                                                </>
+                                            )}
+                                            <span className="text-slate-200">•</span>
+                                            <span className={seller.isReturnAllowed ? "text-emerald-600" : "text-slate-400"}>
+                                                {seller.isReturnAllowed ? "Returnable" : "Non-Returnable"}
+                                            </span>
+                                            <span className="text-slate-200">•</span>
+                                            <span className="text-slate-600 font-bold">
+                                                Stock: {seller.stock_quantity ?? seller.stock}
+                                            </span>
                                         </div>
                                     </div>
                                 );
                             })}
                         </div>
                     ) : (
-                        <div className="bg-slate-50 border-2 border-dashed border-slate-100 p-8 text-center rounded-[2rem]">
-                            <p className="text-sm font-bold text-slate-500">This medicine is currently out of stock near you.</p>
+                        <div className="bg-slate-50 border border-dashed border-slate-200 p-8 text-center rounded-2xl">
+                            <Store className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                            <p className="text-xs font-bold text-slate-600">No partner pharmacies have this item in stock nearby.</p>
+                            <p className="text-[11px] text-slate-400 mt-0.5">Please check alternative brands listed below.</p>
                         </div>
                     )}
                 </div>
 
-                {/* Right: Unified Single Cart Controller Section */}
-                <div className="lg:col-span-5 bg-white rounded-[2.5rem] border border-slate-100 p-6 shadow-sm space-y-5">
-                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2.5">
-                        Order Settings
+                {/* Right: Cart Controller Section (5 Cols) */}
+                <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-sm space-y-4">
+                    <p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider border-b border-slate-100 pb-2.5">
+                        Fulfillment Summary
                     </p>
 
                     {selectedSeller ? (
-                        <div className="space-y-5">
-                            {/* Selected Store Details Card */}
-                            <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100/60">
-                                <p className="text-[10px] font-black text-indigo-700/80 uppercase tracking-wider">
-                                    Active Selected Seller
-                                </p>
-                                <p className="text-sm font-black text-slate-800 mt-1">{selectedSeller.name}</p>
-                                <p className="text-[11px] text-slate-400 font-bold mt-0.5">{selectedSeller.address}</p>
+                        <div className="space-y-4">
+                            {/* Selected Store Card */}
+                            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                <span className="text-[10px] font-bold text-[#3d3f96] uppercase tracking-wider bg-indigo-50 px-2 py-0.5 rounded">
+                                    Selected Pharmacy
+                                </span>
+                                <p className="text-sm font-bold text-slate-900 mt-2">{selectedSeller.name}</p>
+                                <p className="text-xs text-slate-400 font-medium mt-0.5">{selectedSeller.address}</p>
 
-                                <div className="flex justify-between items-center mt-3.5 pt-3.5 border-t border-slate-100">
-                                    <span className="text-xs text-slate-500 font-bold flex items-center gap-1">
-                                        <Truck size={12} className="text-[#3d3f96]" />
-                                        {selectedSeller.isHomeDelivery ? "Home Delivery" : "Store Pickup Only"}
+                                <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-200/70">
+                                    <span className="text-xs text-slate-600 font-medium flex items-center gap-1.5">
+                                        <Truck size={13} className="text-[#3d3f96]" />
+                                        {selectedSeller.isHomeDelivery ? "Home Delivery" : "Store Pickup"}
                                     </span>
-                                    <span className="text-[11px] text-slate-400 font-bold">
-                                        Stock: {selectedSeller.stock} available
+                                    <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                                        {selectedSeller.stock} Available
                                     </span>
                                 </div>
                             </div>
 
-                            {/* Dynamic Price Calculation Summary */}
+                            {/* Price Subtotal Calculation Box */}
                             <div className="flex justify-between items-end bg-[#3d3f96]/5 border border-[#3d3f96]/10 p-4 rounded-2xl">
                                 <div>
-                                    <span className="text-[10px] text-[#3d3f96] font-black uppercase tracking-wider">
-                                        Subtotal Amount
+                                    <span className="text-[10px] text-[#3d3f96] font-bold uppercase tracking-wider">
+                                        Order Subtotal
                                     </span>
-                                    <p className="text-2xl font-black text-slate-900 mt-1 leading-none">
+                                    <p className="text-2xl font-extrabold text-slate-900 mt-0.5 leading-none">
                                         ₹{selectedSeller.price * currentQuantity}
                                     </p>
                                 </div>
-                                <span className="text-[11px] font-bold text-slate-400">
-                                    ₹{selectedSeller.price} × {currentQuantity} strip{currentQuantity > 1 ? 's' : ''}
+                                <span className="text-xs font-semibold text-slate-500 bg-white px-2.5 py-1 rounded-lg border border-slate-100">
+                                    ₹{selectedSeller.price} × {currentQuantity} unit{currentQuantity > 1 ? 's' : ''}
                                 </span>
                             </div>
 
-                            {/* Stepper & Add To Cart Horizontal Block */}
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                {/* Stepper controls */}
-                                <div className="flex items-center justify-between border border-[#3d3f96]/20 rounded-2xl p-1 bg-indigo-50/20 w-full sm:w-max shrink-0">
+                            {/* Stepper & CTA Action Block */}
+                            <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+                                {/* Quantity Stepper */}
+                                <div className="flex items-center justify-between border border-slate-200 rounded-xl p-1 bg-slate-50 w-full sm:w-max shrink-0">
                                     <button
                                         onClick={handleDecrement}
                                         disabled={cartLoading || (!isInCart && currentQuantity <= 1)}
-                                        className="p-3 bg-white text-[#3d3f96] hover:bg-indigo-50 rounded-xl shadow-sm transition-all disabled:opacity-50"
+                                        className="p-2.5 bg-white text-slate-700 hover:text-[#3d3f96] rounded-lg shadow-sm transition-all disabled:opacity-40"
                                     >
-                                        <Minus size={14} className="stroke-[2.5]" />
+                                        <Minus size={13} className="stroke-[2.5]" />
                                     </button>
 
-                                    <span className="text-sm font-black text-slate-800 px-5 select-none min-w-[2.5rem] text-center">
+                                    <span className="text-xs font-bold text-slate-800 px-4 select-none min-w-[2.2rem] text-center">
                                         {cartLoading ? (
-                                            <Loader2 size={14} className="animate-spin text-[#3d3f96] inline-block" />
+                                            <Loader2 size={13} className="animate-spin text-[#3d3f96] inline-block" />
                                         ) : (
                                             currentQuantity
                                         )}
@@ -320,37 +373,37 @@ const SellersAndCartSection = ({
                                     <button
                                         onClick={handleIncrement}
                                         disabled={cartLoading || currentQuantity >= selectedSeller.stock}
-                                        className="p-3 bg-white text-[#3d3f96] hover:bg-indigo-50 rounded-xl shadow-sm transition-all disabled:opacity-50"
+                                        className="p-2.5 bg-white text-slate-700 hover:text-[#3d3f96] rounded-lg shadow-sm transition-all disabled:opacity-40"
                                     >
-                                        <Plus size={14} className="stroke-[2.5]" />
+                                        <Plus size={13} className="stroke-[2.5]" />
                                     </button>
                                 </div>
 
-                                {/* Toggle CTA Action */}
+                                {/* Call to action button */}
                                 {isInCart ? (
                                     <button
                                         onClick={handleRemoveFromCart}
                                         disabled={cartLoading}
-                                        className="w-full flex-1 py-4 bg-rose-500 hover:bg-rose-600 text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-rose-100 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+                                        className="w-full flex-1 py-3.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-xl shadow-md shadow-rose-500/20 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
                                     >
-                                        <Trash2 size={16} />
+                                        <Trash2 size={15} />
                                         <span>Remove From Cart</span>
                                     </button>
                                 ) : isConflictPharmacy ? (
                                     <button
                                         onClick={() => setShowConflictModal(true)}
-                                        className="w-full flex-1 py-4 bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-amber-100 flex items-center justify-center gap-2 transition-all active:scale-95 border border-amber-600/15"
+                                        className="w-full flex-1 py-3.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 transition-all active:scale-95"
                                     >
-                                        <AlertTriangle size={16} />
+                                        <AlertTriangle size={15} />
                                         <span>Replace Cart &amp; Add</span>
                                     </button>
                                 ) : (
                                     <button
                                         onClick={handleGlobalAddToCart}
                                         disabled={cartLoading}
-                                        className="w-full flex-1 py-4 bg-[#3d3f96] hover:bg-[#2d2f75] text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+                                        className="w-full flex-1 py-3.5 bg-[#3d3f96] hover:bg-[#323480] text-white text-xs font-bold rounded-xl shadow-md shadow-[#3d3f96]/20 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
                                     >
-                                        <ShoppingBag size={16} />
+                                        <ShoppingBag size={15} />
                                         <span>Add To Cart</span>
                                     </button>
                                 )}
@@ -358,58 +411,55 @@ const SellersAndCartSection = ({
                         </div>
                     ) : (
                         <div className="py-6 text-center">
-                            <p className="text-xs font-bold text-slate-400">Select an available partner pharmacy on the left to set order options.</p>
+                            <p className="text-xs font-medium text-slate-400">Select a pharmacy from the left list to proceed.</p>
                         </div>
                     )}
                 </div>
 
             </div>
 
-            {/* --- MULTI-VENDOR CONFLICT RESOLUTION MODAL --- */}
+            {/* --- MULTI-VENDOR CONFLICT MODAL --- */}
             {showConflictModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    {/* Backdrop Overlay */}
+                    {/* Backdrop */}
                     <div
                         className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
                         onClick={() => !conflictLoading && setShowConflictModal(false)}
                     />
 
-                    {/* Modal Box */}
-                    <div className="bg-white rounded-[2.5rem] max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 relative z-10 flex flex-col items-center text-center">
+                    {/* Modal Window */}
+                    <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-100 relative z-10 flex flex-col items-center text-center">
 
-                        {/* Close Trigger Icon */}
                         {!conflictLoading && (
                             <button
                                 onClick={() => setShowConflictModal(false)}
-                                className="absolute top-4 right-4 bg-slate-50 text-slate-500 hover:bg-slate-100 p-2 rounded-full border border-slate-100 transition-colors"
+                                className="absolute top-4 right-4 bg-slate-100 text-slate-500 hover:bg-slate-200 p-1.5 rounded-full transition-colors"
                             >
-                                <X size={16} />
+                                <X size={15} />
                             </button>
                         )}
 
-                        {/* Warning Header */}
-                        <div className="bg-amber-50 text-amber-500 p-4 rounded-full mb-4">
-                            <AlertTriangle size={32} />
+                        <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 text-amber-500 flex items-center justify-center mb-3">
+                            <AlertTriangle size={24} />
                         </div>
 
-                        <h3 className="text-xl font-black text-slate-900 tracking-tight leading-snug">
-                            Replace Cart Items?
+                        <h3 className="text-lg font-bold text-slate-900">
+                            Clear Current Cart?
                         </h3>
 
-                        <p className="text-xs text-slate-500 font-bold mt-2.5 leading-relaxed">
-                            Your cart already contains products from another pharmacy. Each order can only contain products from a single pharmacy seller.
+                        <p className="text-xs text-slate-500 font-medium mt-2 leading-relaxed">
+                            Your cart already contains items from a different pharmacy. Healthcare orders can only be fulfilled from a single seller at a time.
                         </p>
 
-                        <p className="text-xs text-slate-400 font-medium mt-1 leading-relaxed">
-                            Would you like to clear your current cart and add this item instead?
+                        <p className="text-xs text-slate-400 mt-1">
+                            Would you like to replace your cart with items from <span className="font-bold text-slate-700">"{selectedSeller?.name}"</span>?
                         </p>
 
-                        {/* Confirm Actions */}
-                        <div className="flex gap-3 w-full mt-6 shrink-0">
+                        <div className="flex gap-2.5 w-full mt-5 shrink-0">
                             <button
                                 disabled={conflictLoading}
                                 onClick={() => setShowConflictModal(false)}
-                                className="flex-1 py-3.5 bg-slate-50 hover:bg-slate-100 text-slate-700 font-black text-xs rounded-2xl border border-slate-200/50 transition-all disabled:opacity-50"
+                                className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all disabled:opacity-50"
                             >
                                 Cancel
                             </button>
@@ -417,15 +467,15 @@ const SellersAndCartSection = ({
                             <button
                                 disabled={conflictLoading}
                                 onClick={handleClearAndAdd}
-                                className="flex-1 py-3.5 bg-rose-500 hover:bg-rose-600 text-white font-black text-xs rounded-2xl shadow-md shadow-rose-100 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+                                className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs rounded-xl shadow-md shadow-rose-500/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50"
                             >
                                 {conflictLoading ? (
                                     <>
-                                        <Loader2 size={14} className="animate-spin" />
+                                        <Loader2 size={13} className="animate-spin" />
                                         <span>Clearing...</span>
                                     </>
                                 ) : (
-                                    <span>Clear &amp; Add</span>
+                                    <span>Clear &amp; Proceed</span>
                                 )}
                             </button>
                         </div>
