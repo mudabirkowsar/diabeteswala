@@ -14,7 +14,8 @@ import {
     FaClock,
     FaFileMedical,
     FaPills,
-    FaCoins
+    FaCoins,
+    FaFirstOrder
 } from "react-icons/fa";
 import Image from "next/image";
 
@@ -34,7 +35,7 @@ export default function ClinicSidebar({ sidebarOpen }) {
     const menuItems = [
         { name: "Dashboard", route: "/vendors/clinic/dashboard", icon: FaTachometerAlt },
         // { name: "Revenue", route: "/vendors/clinic/dashboard/revenue", icon: FaRupeeSign },
-        // { name: "Manage Bank Details", route: "/vendors/clinic/dashboard/managebank", icon: FaUniversity },
+        { name: "Manage Orders", route: "/vendors/pharmacy/dashboard/manageorders", icon: FaFirstOrder },
         { name: "Manage Medicine", route: "/vendors/pharmacy/dashboard/managemedicine", icon: FaPills },
         { name: "Manage Drivers", route: "/vendors/pharmacy/dashboard/managedrivers", icon: FaUserMd },
         // { name: "Achievements", route: "/vendors/clinic/dashboard/achievements", icon: FaTrophy },
