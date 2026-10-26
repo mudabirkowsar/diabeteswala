@@ -383,6 +383,27 @@ const UserAPI = {
         return response.data;
     },
 
+    // --- 1. Get Pharmacy Order History (Lightweight List & Cards) ---
+    getUserPharmacyOrderHistory: async (params) => {
+        // params (optional): { status: "All" | "Placed" | "Packed" | "Shipped" | "Delivered" | "Cancelled", page: 1, limit: 10 }
+        const response = await authApi.get('/user/pharmacy/order-history', { params });
+        return response.data;
+    },
+
+    // --- 2. Get Pharmacy Order Details & Live Step-by-Step Tracking ---
+    getUserPharmacyOrderDetails: async (orderId) => {
+        // orderId: Custom Tracking ID (e.g. "DW-MED-604732254") OR MongoDB ObjectId (_id)
+        const response = await authApi.get(`/user/pharmacy/order-details/${orderId}`);
+        return response.data;
+    },
+
+    // --- 3. Cancel Pharmacy Medicine Order ---
+    cancelUserPharmacyOrder: async (data) => {
+        // data: { orderId: "DW-MED-604732254", reason: "Ordered wrong dosage" }
+        const response = await authApi.post('/user/pharmacy/cancel-order', data);
+        return response.data;
+    },
+
 
 
     // ===================================================
