@@ -170,7 +170,7 @@ const ProductDetailPage = () => {
       if (res && (res.success || res.Success)) {
         const detailsId = res.data?.details?._id || res.Data?.details?._id;
         if (detailsId) {
-          router.push(`/buymedicine/singleproductdetail/${detailsId}`);
+          router.push(`/pharmacy/productdetail/${detailsId}`);
         } else {
           if (showNotification) {
             showNotification("Medicine details not found for this alternative.", "error");

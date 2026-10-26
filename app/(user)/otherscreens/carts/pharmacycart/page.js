@@ -1,558 +1,634 @@
+// PharmacyCartPage.jsx
 "use client";
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Trash2,
-  Plus,
-  Minus,
-  ArrowLeft,
-  ShoppingBag,
-  ShieldCheck,
-  Truck,
-  ChevronRight,
-  AlertCircle,
-  Loader2,
-  Store,
-  Sparkles,
-  Tag,
-  CheckCircle2,
-  FileText,
-  X,
-  CreditCard
-} from 'lucide-react';
+
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Trash2, Loader2 } from 'lucide-react';
+
+// Contexts & Services
 import { useCart } from '../../../../context/CartContext';
+import { useNotification } from '../../../../context/NotificationContext';
+import UserAPI from '../../../../services/UserAPI';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.3:5002";
-const FREE_SHIPPING_THRESHOLD = 500;
+// Modular Sub-Components
+import EmptyCart from './components/EmptyCart';
+import PharmacyItemsList from './components/PharmacyItemsList';
+import PharmacyInfoCard from './components/PharmacyInfoCard';
+import PatientProfileCard from './components/PatientProfileCard';
+import PrescriptionCard from './components/PrescriptionCard';
+import DeliveryModeCard from './components/DeliveryModeCard';
+import DeliveryAddressCard from './components/DeliveryAddressCard';
+import CouponCard from './components/CouponCard';
+import CostSummaryCard from './components/CostSummaryCard';
+import Address from './components/Address';
+import Coupons from './components/Coupons';
+import OrderSuccessModal from './components/OrderSuccessModal';
 
-const CartPage = () => {
+// --- BASE MEDIA HELPER ---
+const BASE_SERVER_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.10:5002";
+
+const getMediaUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+  let cleanPath = path.replace(/\\/g, '/');
+  cleanPath = cleanPath.replace(/^public\//, '');
+  if (cleanPath.startsWith('/')) {
+    cleanPath = cleanPath.substring(1);
+  }
+  return `${BASE_SERVER_URL}/${cleanPath}`;
+};
+
+const PHARMACY_PLACEHOLDER = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=400";
+const ITEM_PLACEHOLDER = "https://images.unsplash.com/photo-1628771065518-0d82f1938462?q=80&w=400";
+
+// --- RAZORPAY SDK LOADER HELPER ---
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    if (typeof window !== "undefined" && window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
+export default function PharmacyCartPage() {
+  const router = useRouter();
+  const { showNotification } = useNotification();
+
   const {
     pharmacyCart,
     pharmacyCartTotal,
     updatePharmacyItemQuantity,
     removePharmacyItem,
-    clearPharmacyCart,
-    loading
+    clearPharmacyCart
   } = useCart();
 
-  // State for promo code
-  const [promoInput, setPromoInput] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState(null);
-  const [promoError, setPromoError] = useState("");
-  const [isClearing, setIsClearing] = useState(false);
-  const [itemProcessingId, setItemProcessingId] = useState(null);
+  // Action States
+  const [updatingId, setUpdatingId] = useState(null);
+  const [clearingCart, setClearingCart] = useState(false);
+  const [checkingOut, setCheckingOut] = useState(false);
 
-  // Helper to format image paths
-  const getSanitizedImageUrl = (path) => {
-    if (!path) return "";
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  // Address States
+  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [loadingAddress, setLoadingAddress] = useState(true);
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
 
-    let cleanPath = path.replace(/\\/g, '/');
-    cleanPath = cleanPath.replace(/^public\//, '');
-    if (cleanPath.startsWith('/')) {
-      cleanPath = cleanPath.substring(1);
-    }
-    return `${BASE_URL}/${cleanPath}`;
-  };
+  // Family / Patient Member States
+  const [familyMembers, setFamilyMembers] = useState([]);
+  const [selectedPatient, setSelectedPatient] = useState({ _id: "Self", memberName: "Self", relation: "Primary Account" });
 
-  const getProductImage = (item, index) => {
-    if (item.medicineId?.image) {
-      return getSanitizedImageUrl(item.medicineId.image);
-    }
-    if (item.image) {
-      return getSanitizedImageUrl(item.image);
-    }
-    if (item.medicineId?.image_url && item.medicineId.image_url.length > 0) {
-      return getSanitizedImageUrl(item.medicineId.image_url[0]);
-    }
-    const fallbackImages = [
-      "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=400&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1628771065518-0d82f1938462?q=80&w=400&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?q=80&w=400&auto=format&fit=crop"
-    ];
-    return fallbackImages[index % fallbackImages.length];
-  };
+  // Coupon States
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
 
-  // Quantity mutation sync handler
-  const handleQuantityUpdate = async (item, delta) => {
-    const medId = item.medicineId?._id || item.medicineId;
-    if (!medId || itemProcessingId) return;
+  // Delivery Mode & Slot States
+  const [deliveryMode, setDeliveryMode] = useState('standard'); // 'standard' | 'rapid' | 'slot'
+  const [deliveryCharges, setDeliveryCharges] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [isSlotLoading, setIsSlotLoading] = useState(false);
+  const [isSlotClosed, setIsSlotClosed] = useState(false);
 
-    setItemProcessingId(medId);
-    try {
-      if (delta === -1 && item.quantity <= 1) {
-        await removePharmacyItem(medId);
-      } else {
-        const action = delta === 1 ? 'inc' : 'dec';
-        await updatePharmacyItemQuantity(medId, action, item.isComboApplied || false);
-      }
-    } finally {
-      setItemProcessingId(null);
-    }
-  };
+  // Prescription Upload State
+  const [prescriptionFiles, setPrescriptionFiles] = useState([]);
 
-  // Item deletion sync handler
-  const handleItemRemoval = async (item) => {
-    const medId = item.medicineId?._id || item.medicineId;
-    if (!medId || itemProcessingId) return;
+  // Checkout Evaluation & Bill States
+  const [paymentMethod, setPaymentMethod] = useState('Online'); // 'Online' | 'COD'
+  const [billSummary, setBillSummary] = useState(null);
+  const [orderRestrictions, setOrderRestrictions] = useState({ isCodAvailable: true, isRapidAvailable: true });
+  const [calculatingBill, setCalculatingBill] = useState(false);
 
-    setItemProcessingId(medId);
-    try {
-      await removePharmacyItem(medId);
-    } finally {
-      setItemProcessingId(null);
-    }
-  };
-
-  // Handle Promo Code Apply
-  const handleApplyPromo = (e) => {
-    e.preventDefault();
-    setPromoError("");
-    const code = promoInput.trim().toUpperCase();
-
-    if (!code) return;
-
-    if (code === "SAVE10") {
-      setAppliedPromo({ code: "SAVE10", discountPercent: 10 });
-      setPromoInput("");
-    } else if (code === "FLAT50") {
-      setAppliedPromo({ code: "FLAT50", flatDiscount: 50 });
-      setPromoInput("");
-    } else {
-      setPromoError("Invalid promotional code");
-    }
-  };
+  // Order Success Modal State
+  const [placedOrderData, setPlacedOrderData] = useState(null);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const cartItems = pharmacyCart?.items || [];
-  const subtotal = pharmacyCartTotal || 0;
+  const pharmacy = pharmacyCart?.pharmacyId || {};
+  const pharmacyId = pharmacy._id || (typeof pharmacy === 'string' ? pharmacy : pharmacyCart?.vendorId);
 
-  // Check if any item in cart requires prescription
-  const hasPrescriptionItems = cartItems.some(
-    (item) =>
-      item.medicineId?.prescription_required === "YES" ||
-      item.medicineId?.prescriptionRequired === "YES" ||
-      item.prescriptionRequired === "YES"
-  );
+  // 🛡️ Rx Mandatory Detection (from item flags OR server bill summary)
+  const isPrescriptionRequired = useMemo(() => {
+    const hasRxItem = cartItems.some(
+      (item) =>
+        item.medicineId?.prescription_required === "YES" ||
+        item.medicineId?.prescriptionRequired === "YES" ||
+        item.prescriptionRequired === "YES"
+    );
+    return hasRxItem || billSummary?.rxMandatory === true;
+  }, [cartItems, billSummary]);
 
-  // Discount calculation
-  let promoDiscount = 0;
-  if (appliedPromo) {
-    if (appliedPromo.discountPercent) {
-      promoDiscount = Math.round((subtotal * appliedPromo.discountPercent) / 100);
-    } else if (appliedPromo.flatDiscount) {
-      promoDiscount = Math.min(appliedPromo.flatDiscount, subtotal);
+  // --- 1. Live Bill Evaluation (POST /user/pharmacy/checkout) ---
+  const calculateLiveBill = useCallback(async () => {
+    if (!cartItems || cartItems.length === 0) return;
+
+    setCalculatingBill(true);
+    try {
+      const calculationPayload = {
+        collectionType: "Home Delivery",
+        isRapid: deliveryMode === 'rapid',
+        isSlotSelected: deliveryMode === 'slot',
+        appointmentTime: deliveryMode === 'slot' ? selectedSlot?.displayTime : undefined,
+        couponCode: appliedCoupon ? appliedCoupon.couponName : undefined
+      };
+
+      const response = await UserAPI.evaluateUserPharmacyCheckoutSummary(calculationPayload);
+      if (response && response.success && response.data) {
+        const checkoutData = response.data;
+        setBillSummary(checkoutData.billSummary);
+
+        if (checkoutData.isCodAvailable !== undefined) {
+          setOrderRestrictions((prev) => ({
+            ...prev,
+            isCodAvailable: checkoutData.isCodAvailable
+          }));
+          if (checkoutData.isCodAvailable === false && paymentMethod === 'COD') {
+            setPaymentMethod('Online');
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error evaluating pharmacy checkout bill:", err);
+    } finally {
+      setCalculatingBill(false);
     }
+  }, [cartItems, deliveryMode, selectedSlot, appliedCoupon, paymentMethod]);
+
+  // --- 2. Initial Fetch for Address, Family Members & Store Config ---
+  useEffect(() => {
+    const fetchInitialDependencies = async () => {
+      setLoadingAddress(true);
+      try {
+        const [addrRes, famRes, chargesRes] = await Promise.all([
+          UserAPI.getAddressList(),
+          UserAPI.getFamilyMembers(),
+          UserAPI.getUserPharmacyDeliveryCharges()
+        ]);
+
+        if (addrRes && addrRes.success) {
+          const list = addrRes.data || [];
+          const defaultAddr = list.find((a) => a.isDefault) || (list.length > 0 ? list[0] : null);
+          if (defaultAddr) setSelectedAddress(defaultAddr);
+        }
+
+        if (famRes && famRes.success) {
+          setFamilyMembers(famRes.data || []);
+        }
+
+        if (chargesRes && chargesRes.success && chargesRes.data) {
+          setDeliveryCharges(chargesRes.data);
+          setOrderRestrictions({
+            isCodAvailable: chargesRes.data.isCodAvailable ?? chargesRes.data.isCODAvailable ?? true,
+            isRapidAvailable: chargesRes.data.isRapidAvailable ?? true
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching cart dependencies:", err);
+      } finally {
+        setLoadingAddress(false);
+      }
+    };
+
+    fetchInitialDependencies();
+  }, []);
+
+  // --- 3. Time Slots Fetch when Slot Mode is Chosen ---
+  useEffect(() => {
+    if (deliveryMode !== 'slot' || !pharmacyId) return;
+
+    const fetchSlots = async () => {
+      setIsSlotLoading(true);
+      try {
+        const res = await UserAPI.getUserPharmacyDeliverySlots({
+          pharmacyId,
+          date: selectedDate
+        });
+        if (res && res.success) {
+          setIsSlotClosed(res.isClosed || false);
+          setAvailableSlots(res.slots || []);
+          const firstOpen = (res.slots || []).find((s) => !s.isFull);
+          setSelectedSlot(firstOpen || null);
+        }
+      } catch (err) {
+        console.error("Error fetching slots:", err);
+      } finally {
+        setIsSlotLoading(false);
+      }
+    };
+
+    fetchSlots();
+  }, [deliveryMode, pharmacyId, selectedDate]);
+
+  // --- 4. Recalculate bill whenever dependencies update ---
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      calculateLiveBill();
+    }
+  }, [calculateLiveBill, cartItems.length]);
+
+  // --- Cart Item Modifiers ---
+  const handleQtyChange = async (itemId, currentQty, action) => {
+    setUpdatingId(itemId);
+    try {
+      if (currentQty === 1 && action === 'dec') {
+        const response = await removePharmacyItem(itemId);
+        if (showNotification && response) {
+          showNotification("Item removed from your cart.", "success");
+        }
+      } else {
+        await updatePharmacyItemQuantity(itemId, action);
+      }
+    } catch (err) {
+      console.error("Error updating item quantity:", err);
+      if (showNotification) {
+        showNotification("Failed to update item quantity.", "error");
+      }
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleRemoveItem = async (itemId) => {
+    setUpdatingId(itemId);
+    try {
+      const response = await removePharmacyItem(itemId);
+      if (showNotification && response) {
+        showNotification("Item removed from your cart.", "success");
+      }
+    } catch (err) {
+      console.error("Error removing item:", err);
+      if (showNotification) {
+        showNotification("Failed to remove item.", "error");
+      }
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleClearCart = async () => {
+    if (!window.confirm("Are you sure you want to clear your pharmacy cart?")) return;
+    setClearingCart(true);
+    try {
+      const response = await clearPharmacyCart();
+      if (showNotification && response) {
+        showNotification("Your pharmacy cart has been cleared.", "success");
+      }
+      setAppliedCoupon(null);
+      setPrescriptionFiles([]);
+    } catch (err) {
+      console.error("Error clearing cart:", err);
+      if (showNotification) {
+        showNotification("Failed to empty pharmacy cart.", "error");
+      }
+    } finally {
+      setClearingCart(false);
+    }
+  };
+
+  // =========================================================================
+  // CHECKOUT ORCHESTRATION WITH PRESCRIPTION VALIDATION
+  // =========================================================================
+  const handleProceedToCheckout = async () => {
+    if (!selectedAddress) {
+      if (showNotification) {
+        showNotification("Please select a delivery address to proceed.", "error");
+      }
+      setIsAddressModalOpen(true);
+      return;
+    }
+
+    if (deliveryMode === 'slot' && !selectedSlot) {
+      if (showNotification) {
+        showNotification("Please select a preferred delivery time slot.", "error");
+      }
+      return;
+    }
+
+    // 🛑 STRICT PRESCRIPTION VALIDATION: BLOCK ORDER IF NOT UPLOADED
+    if (isPrescriptionRequired && prescriptionFiles.length === 0) {
+      if (showNotification) {
+        showNotification(
+          "Doctor's prescription is required for medicines in your cart. Please upload a valid prescription to place your order.",
+          "error"
+        );
+      }
+      const rxSection = document.getElementById("prescription-section");
+      if (rxSection) {
+        rxSection.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return;
+    }
+
+    setCheckingOut(true);
+
+    const formData = new FormData();
+    formData.append("paymentMethod", paymentMethod);
+    formData.append("collectionType", "Home Delivery");
+
+    const addressPayload = {
+      name: selectedAddress.name,
+      phone: selectedAddress.phone,
+      houseNo: selectedAddress.houseNo,
+      sector: selectedAddress.sector || undefined,
+      landmark: selectedAddress.landmark || undefined,
+      city: selectedAddress.city,
+      state: selectedAddress.state,
+      pincode: selectedAddress.pincode,
+      addressType: selectedAddress.addressType || "Home"
+    };
+    formData.append("address", JSON.stringify(addressPayload));
+
+    formData.append("isRapid", (deliveryMode === 'rapid').toString());
+    formData.append("isSlotSelected", (deliveryMode === 'slot').toString());
+
+    if (deliveryMode === 'slot' && selectedSlot) {
+      formData.append("appointmentTime", selectedSlot.displayTime);
+      formData.append("appointmentDate", selectedDate);
+    }
+
+    if (appliedCoupon?.couponName) {
+      formData.append("couponCode", appliedCoupon.couponName);
+    }
+
+    const patientIds = [selectedPatient?._id || "Self"];
+    formData.append("patientIds", JSON.stringify(patientIds));
+
+    // Append all selected prescription files
+    prescriptionFiles.forEach((file) => {
+      formData.append("prescriptionImages", file);
+    });
+
+    try {
+      // --- FLOW A: CASH ON DELIVERY (COD) ---
+      if (paymentMethod === 'COD') {
+        const response = await UserAPI.placeUserPharmacyOrder(formData);
+        if (response && response.success) {
+          await clearPharmacyCart();
+          setPlacedOrderData(response.data);
+          setIsSuccessModalOpen(true);
+          if (showNotification) {
+            showNotification(response.message || "Pharmacy order placed successfully (COD)!", "success");
+          }
+        } else {
+          if (showNotification) {
+            showNotification(response?.message || "Failed to place COD order.", "error");
+          }
+        }
+        setCheckingOut(false);
+        return;
+      }
+
+      // --- FLOW B: RAZORPAY ONLINE PAYMENT ---
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        if (showNotification) {
+          showNotification("Razorpay payment gateway failed to load.", "error");
+        }
+        setCheckingOut(false);
+        return;
+      }
+
+      const orderRes = await UserAPI.placeUserPharmacyOrder(formData);
+      if (!orderRes || !orderRes.success) {
+        if (showNotification) {
+          showNotification(orderRes?.message || "Failed to initiate online order.", "error");
+        }
+        setCheckingOut(false);
+        return;
+      }
+
+      const razorpayKey = orderRes.key || orderRes.key_id || orderRes.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+      const razorpayOrderId = orderRes.razorpayOrderId || orderRes.orderId || orderRes.order_id;
+      const orderId = orderRes.orderId;
+
+      const amountInPaise = orderRes.amount || Math.round((billSummary?.totalAmount || pharmacyCartTotal) * 100);
+
+      const options = {
+        key: razorpayKey,
+        amount: amountInPaise,
+        currency: orderRes.currency || "INR",
+        name: pharmacy.name || "Partner Pharmacy",
+        description: "Prescription & Medication Checkout",
+        image: getMediaUrl(pharmacy.profileImage) || PHARMACY_PLACEHOLDER,
+        order_id: razorpayOrderId,
+        handler: async function (paymentResponse) {
+          try {
+            const verifyPayload = {
+              orderId: orderId,
+              razorpay_order_id: paymentResponse.razorpay_order_id,
+              razorpay_payment_id: paymentResponse.razorpay_payment_id,
+              razorpay_signature: paymentResponse.razorpay_signature
+            };
+
+            const verifyRes = await UserAPI.verifyUserPharmacyPayment(verifyPayload);
+            if (verifyRes && verifyRes.success) {
+              await clearPharmacyCart();
+              setPlacedOrderData(verifyRes.data || verifyRes);
+              setIsSuccessModalOpen(true);
+              if (showNotification) {
+                showNotification("Payment verified successfully & order confirmed!", "success");
+              }
+            } else {
+              if (showNotification) {
+                showNotification(verifyRes?.message || "Payment verification failed.", "error");
+              }
+            }
+          } catch (verifyErr) {
+            console.error("Verification error:", verifyErr);
+            if (showNotification) {
+              showNotification("Payment verification error.", "error");
+            }
+          }
+        },
+        prefill: {
+          name: selectedAddress.name,
+          contact: selectedAddress.phone
+        },
+        theme: {
+          color: "#3d3f96"
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      console.error("Checkout process error:", err);
+      if (showNotification) {
+        showNotification(err.response?.data?.message || "An error occurred during checkout.", "error");
+      }
+    } finally {
+      setCheckingOut(false);
+    }
+  };
+
+  const hasItems = cartItems.length > 0;
+
+  if (!hasItems && !isSuccessModalOpen) {
+    return <EmptyCart />;
   }
 
-  // Dynamic Shipping Fees
-  const isFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD || subtotal === 0;
-  const shippingFee = isFreeShipping ? 0 : 40;
-  const amountToFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
-  const freeShippingProgress = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100);
-
-  const finalTotal = Math.max(0, subtotal - promoDiscount + shippingFee);
-
   return (
-    <main className="min-h-screen bg-[#f8fbff] pt-4 sm:pt-8 pb-24 antialiased">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[#f8fbff] py-4 sm:py-8 lg:py-12 antialiased select-none text-slate-800 text-left">
+      <div className="max-w-[1200px] mx-auto px-3 sm:px-6 lg:px-8 space-y-4 sm:space-y-6">
 
-        {/* --- 1. HEADER SECTION --- */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8 pb-4 border-b border-slate-100">
-          <div>
-            <Link
-              href="/pharmacy"
-              className="inline-flex items-center gap-2 text-[#3d3f96] hover:text-[#2d2f75] font-black text-xs uppercase tracking-wider transition-colors mb-2"
-            >
-              <ArrowLeft size={16} /> Back to Catalog
-            </Link>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
-              Order <span className="text-[#3d3f96]">Cart</span>
-            </h1>
+        {/* Top Back Navigation Bar */}
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-1.5 sm:gap-2 text-[#3d3f96] hover:text-[#2d2f75] font-black text-[11px] sm:text-xs uppercase tracking-wider transition-colors cursor-pointer bg-white px-3 sm:px-4 py-2 rounded-xl sm:rounded-2xl border border-slate-100 shadow-xs"
+          >
+            <ArrowLeft size={13} className="stroke-[2.5]" />
+            <span>Back to Catalog</span>
+          </button>
 
-            {pharmacyCart?.pharmacyId && (
-              <div className="inline-flex items-center gap-2 mt-2 px-3 py-1 bg-white border border-slate-200/70 rounded-full shadow-sm text-xs font-bold text-slate-600">
-                <Store size={14} className="text-[#3d3f96] shrink-0" />
-                <span className="truncate max-w-[200px] sm:max-w-md">
-                  {pharmacyCart.pharmacyId.name}
-                  {pharmacyCart.pharmacyId.city ? ` (${pharmacyCart.pharmacyId.city})` : ""}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {cartItems.length > 0 && (
-            <div className="flex items-center justify-between sm:justify-end gap-3">
-              <span className="text-xs font-bold text-slate-400 bg-white px-3 py-1.5 rounded-xl border border-slate-200/60 shadow-sm flex items-center gap-1.5">
-                <ShoppingBag size={14} className="text-[#3d3f96]" /> {cartItems.length} {cartItems.length === 1 ? 'Item' : 'Items'}
-              </span>
-
-              <button
-                onClick={() => setIsClearing(true)}
-                className="text-xs font-bold text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 border border-transparent hover:border-rose-100"
-              >
-                <Trash2 size={13} /> Clear All
-              </button>
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={handleClearCart}
+            disabled={clearingCart}
+            className="text-[11px] sm:text-xs font-black text-rose-600 hover:text-rose-800 uppercase tracking-wider cursor-pointer disabled:opacity-50 flex items-center gap-1"
+          >
+            {clearingCart ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+            <span>Clear Full Cart</span>
+          </button>
         </div>
 
-        {/* --- LOADING SCREEN --- */}
-        {loading && cartItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-28 sm:py-36 bg-white rounded-[2rem] sm:rounded-[3rem] border border-slate-100 shadow-sm">
-            <Loader2 className="animate-spin text-[#3d3f96] mb-3" size={40} />
-            <p className="text-slate-500 text-sm font-bold">Synchronizing cart items...</p>
+        {/* Primary Layout Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-8 items-start">
+
+          {/* Left Column: Cart Items, Patient, Delivery Mode, Prescription */}
+          <div className="lg:col-span-7 space-y-3.5 sm:space-y-5">
+            <PharmacyItemsList
+              items={cartItems}
+              updatingId={updatingId}
+              onQtyChange={handleQtyChange}
+              onRemoveItem={handleRemoveItem}
+              getMediaUrl={getMediaUrl}
+              placeholderImage={ITEM_PLACEHOLDER}
+            />
+
+            <PatientProfileCard
+              familyMembers={familyMembers}
+              selectedPatient={selectedPatient}
+              onSelectPatient={setSelectedPatient}
+              getMediaUrl={getMediaUrl}
+            />
+
+            <DeliveryModeCard
+              deliveryMode={deliveryMode}
+              onSelectMode={setDeliveryMode}
+              deliveryCharges={deliveryCharges}
+              availableSlots={availableSlots}
+              selectedSlot={selectedSlot}
+              onSelectSlot={setSelectedSlot}
+              selectedDate={selectedDate}
+              onDateChange={setSelectedDate}
+              isSlotLoading={isSlotLoading}
+              isSlotClosed={isSlotClosed}
+            />
+
+            <PrescriptionCard
+              files={prescriptionFiles}
+              setFiles={setPrescriptionFiles}
+              isMandatory={isPrescriptionRequired}
+            />
           </div>
-        ) : cartItems.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
 
-            {/* --- LEFT SECTION: CART ITEMS LIST (8 COLUMNS) --- */}
-            <div className="lg:col-span-8 space-y-4">
+          {/* Right Column: Pharmacy, Address, Coupons & Real-Time Bill Breakdown */}
+          <div className="lg:col-span-5 space-y-3.5 sm:space-y-4">
+            <PharmacyInfoCard
+              pharmacy={pharmacy}
+              getMediaUrl={getMediaUrl}
+              placeholderImage={PHARMACY_PLACEHOLDER}
+            />
 
-              {/* Free Delivery Milestone Indicator */}
-              <div className="bg-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm">
-                <div className="flex items-center justify-between text-xs font-bold mb-2">
-                  <div className="flex items-center gap-1.5 text-slate-700">
-                    <Truck size={16} className="text-[#3d3f96]" />
-                    {isFreeShipping ? (
-                      <span className="text-emerald-600 font-black">You qualify for FREE Delivery!</span>
-                    ) : (
-                      <span>
-                        Add <strong className="text-slate-900 font-black">₹{amountToFreeShipping}</strong> more to unlock <span className="text-[#3d3f96] font-black">FREE Express Shipping</span>
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[11px] font-black text-slate-400">
-                    {Math.round(freeShippingProgress)}%
-                  </span>
-                </div>
-                <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-[#3d3f96] to-emerald-400 rounded-full transition-all duration-500"
-                    style={{ width: `${freeShippingProgress}%` }}
-                  />
-                </div>
-              </div>
+            <DeliveryAddressCard
+              selectedAddress={selectedAddress}
+              loadingAddress={loadingAddress}
+              onOpenAddressModal={() => setIsAddressModalOpen(true)}
+            />
 
-              {/* Prescription Alert Banner if Rx is needed */}
-              {hasPrescriptionItems && (
-                <div className="bg-amber-50/80 border border-amber-200/80 rounded-2xl sm:rounded-3xl p-4 flex items-start gap-3">
-                  <div className="p-2 bg-amber-500 text-white rounded-xl shrink-0 mt-0.5">
-                    <FileText size={18} />
-                  </div>
-                  <div>
-                    <h4 className="text-xs sm:text-sm font-black text-amber-900">
-                      Doctor's Prescription Required
-                    </h4>
-                    <p className="text-[11px] sm:text-xs font-medium text-amber-700 mt-0.5">
-                      One or more items in your cart require a valid prescription. You will be prompted to attach it during the final checkout stage.
-                    </p>
-                  </div>
-                </div>
-              )}
+            <CouponCard
+              appliedCoupon={appliedCoupon}
+              discountAmount={billSummary?.couponDiscount || 0}
+              onOpenCouponModal={() => setIsCouponModalOpen(true)}
+              onRemoveCoupon={() => {
+                setAppliedCoupon(null);
+                if (showNotification) {
+                  showNotification("Coupon removed.", "success");
+                }
+              }}
+            />
 
-              {/* Items List */}
-              <div className="space-y-3 sm:space-y-4">
-                <AnimatePresence initial={false}>
-                  {cartItems.map((item, index) => {
-                    const medId = item.medicineId?._id || item.medicineId;
-                    const hasRx =
-                      item.medicineId?.prescription_required === "YES" ||
-                      item.medicineId?.prescriptionRequired === "YES" ||
-                      item.prescriptionRequired === "YES";
-                    const itemBrand = item.medicineId?.manufacturers || "Verified Partner";
-                    const itemImg = getProductImage(item, index);
-                    const isMutating = itemProcessingId === medId;
-
-                    return (
-                      <motion.div
-                        key={item._id || medId || index}
-                        layout
-                        initial={{ opacity: 0, y: 15 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.25 }}
-                        className="bg-white p-4 sm:p-5 rounded-2xl sm:rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 relative overflow-hidden"
-                      >
-                        {/* Thumbnail */}
-                        <div className="relative w-20 h-20 sm:w-28 sm:h-28 rounded-xl sm:rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 shrink-0 mx-auto sm:mx-0">
-                          <img
-                            src={itemImg}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                          />
-                          {hasRx && (
-                            <span className="absolute top-1 left-1 bg-rose-500 text-white text-[7.5px] font-black px-1.5 py-0.5 rounded shadow">
-                              Rx
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Middle Info Details */}
-                        <div className="flex-1 min-w-0 w-full sm:w-auto text-left">
-                          <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
-                            <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">
-                              {itemBrand}
-                            </span>
-                            {item.isComboApplied && (
-                              <span className="inline-flex items-center gap-1 text-[8px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                                <Sparkles size={9} /> BOGO Deal Applied
-                              </span>
-                            )}
-                          </div>
-
-                          <h3 className="text-sm sm:text-base font-black text-slate-900 truncate" title={item.name}>
-                            {item.name}
-                          </h3>
-
-                          <p className="text-[11px] font-bold text-slate-400 mt-0.5">
-                            Unit Price: <span className="text-slate-700">₹{item.price}</span>
-                          </p>
-
-                          {/* Stepper & Mobile Price Controls */}
-                          <div className="flex items-center justify-between sm:justify-start gap-4 mt-3">
-                            {/* Stepper */}
-                            <div className="flex items-center bg-slate-50 border border-slate-200/70 rounded-xl p-1 shadow-inner">
-                              <button
-                                disabled={isMutating}
-                                onClick={() => handleQuantityUpdate(item, -1)}
-                                className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 hover:text-slate-900 transition-colors disabled:opacity-40"
-                              >
-                                <Minus size={13} />
-                              </button>
-                              <span className="w-8 text-center text-xs font-black text-slate-800">
-                                {isMutating ? <Loader2 size={12} className="animate-spin mx-auto text-[#3d3f96]" /> : item.quantity}
-                              </span>
-                              <button
-                                disabled={isMutating}
-                                onClick={() => handleQuantityUpdate(item, 1)}
-                                className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 hover:text-slate-900 transition-colors disabled:opacity-40"
-                              >
-                                <Plus size={13} />
-                              </button>
-                            </div>
-
-                            {/* Remove button */}
-                            <button
-                              disabled={isMutating}
-                              onClick={() => handleItemRemoval(item)}
-                              className="text-slate-400 hover:text-rose-500 text-[11px] font-bold inline-flex items-center gap-1 transition-colors disabled:opacity-40"
-                            >
-                              <Trash2 size={13} />
-                              <span className="hidden sm:inline">Remove</span>
-                            </button>
-
-                            {/* Mobile Price display */}
-                            <div className="text-right sm:hidden">
-                              <p className="text-base font-black text-slate-900">₹{item.price * item.quantity}</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Desktop Total Price Column */}
-                        <div className="hidden sm:block text-right shrink-0">
-                          <p className="text-lg font-black text-slate-900">
-                            ₹{item.price * item.quantity}
-                          </p>
-                          <p className="text-[10px] font-bold text-slate-400">
-                            {item.quantity} × ₹{item.price}
-                          </p>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
-              </div>
-
-            </div>
-
-            {/* --- RIGHT SECTION: SUMMARY SIDEBAR (4 COLUMNS) --- */}
-            <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-8">
-
-              {/* Promo Box */}
-              <div className="bg-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm">
-                <p className="text-xs font-black uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
-                  <Tag size={14} className="text-[#3d3f96]" /> Promo Code
-                </p>
-
-                {appliedPromo ? (
-                  <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200/80 rounded-xl p-3">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 size={16} className="text-emerald-600" />
-                      <div>
-                        <p className="text-xs font-black text-emerald-800">{appliedPromo.code}</p>
-                        <p className="text-[10px] font-bold text-emerald-600">
-                          {appliedPromo.discountPercent ? `${appliedPromo.discountPercent}% Off Applied` : `₹${appliedPromo.flatDiscount} Flat Off Applied`}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setAppliedPromo(null)}
-                      className="p-1 text-slate-400 hover:text-rose-500 rounded-lg"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                ) : (
-                  <form onSubmit={handleApplyPromo} className="space-y-1.5">
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Try 'SAVE10' or 'FLAT50'"
-                        value={promoInput}
-                        onChange={(e) => setPromoInput(e.target.value)}
-                        className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none uppercase placeholder:normal-case focus:border-[#3d3f96] transition-all"
-                      />
-                      <button
-                        type="submit"
-                        className="bg-[#3d3f96] hover:bg-[#2d2f75] text-white text-xs font-black px-4 py-2.5 rounded-xl transition-all active:scale-95 shadow-sm"
-                      >
-                        Apply
-                      </button>
-                    </div>
-                    {promoError && (
-                      <p className="text-[10px] font-bold text-rose-500 pl-1">{promoError}</p>
-                    )}
-                  </form>
-                )}
-              </div>
-
-              {/* Order Breakdown Box */}
-              <div className="bg-white rounded-2xl sm:rounded-[2.5rem] p-5 sm:p-7 border border-slate-100 shadow-xl shadow-indigo-100/40 space-y-5">
-                <h2 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-100 flex items-center justify-between">
-                  <span>Order Summary</span>
-                  <CreditCard size={18} className="text-slate-400" />
-                </h2>
-
-                <div className="space-y-3 text-xs sm:text-sm font-bold">
-                  <div className="flex justify-between text-slate-600">
-                    <span>Items Subtotal</span>
-                    <span className="text-slate-900 font-black">₹{subtotal}</span>
-                  </div>
-
-                  {promoDiscount > 0 && (
-                    <div className="flex justify-between text-emerald-600">
-                      <span>Promo Discount ({appliedPromo?.code})</span>
-                      <span className="font-black">-₹{promoDiscount}</span>
-                    </div>
-                  )}
-
-                  <div className="flex justify-between text-slate-600">
-                    <span>Estimated Shipping</span>
-                    <span className={shippingFee === 0 ? "text-emerald-600 font-black" : "text-slate-900 font-black"}>
-                      {shippingFee === 0 ? "FREE" : `₹${shippingFee}`}
-                    </span>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-100 flex justify-between items-baseline">
-                    <div>
-                      <span className="text-xs font-black text-slate-800 uppercase tracking-widest block">Total Payable</span>
-                      <span className="text-[10px] text-slate-400 font-bold">Inclusive of all taxes</span>
-                    </div>
-                    <span className="text-2xl sm:text-3xl font-black text-[#3d3f96]">
-                      ₹{finalTotal}
-                    </span>
-                  </div>
-                </div>
-
-                <Link
-                  href="/pharmacy/checkout"
-                  className="w-full bg-[#3d3f96] hover:bg-[#2d2f75] text-white py-4 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-100 transition-all active:scale-95 text-center"
-                >
-                  PROCEED TO CHECKOUT
-                  <ChevronRight size={18} />
-                </Link>
-
-                {/* Trust Seals */}
-                <div className="pt-4 border-t border-slate-50 space-y-2">
-                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    <ShieldCheck size={14} className="text-emerald-500 shrink-0" />
-                    <span>Safe & Encrypted Transactions</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    <Truck size={14} className="text-blue-500 shrink-0" />
-                    <span>Certified Cold-Chain Safe Delivery</span>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
+            <CostSummaryCard
+              billSummary={billSummary}
+              orderRestrictions={orderRestrictions}
+              deliveryMode={deliveryMode}
+              paymentMethod={paymentMethod}
+              onChangePaymentMethod={setPaymentMethod}
+              onProceedCheckout={handleProceedToCheckout}
+              checkingOut={checkingOut}
+              calculating={calculatingBill}
+              fallbackSubtotal={pharmacyCartTotal}
+            />
           </div>
-        ) : (
-          /* --- EMPTY CART STATE --- */
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-3xl sm:rounded-[3rem] p-8 sm:p-16 text-center border border-slate-100 shadow-md max-w-xl mx-auto my-8"
-          >
-            <div className="bg-[#3d3f96]/5 w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center mx-auto mb-6">
-              <ShoppingBag size={36} className="text-[#3d3f96]" />
-            </div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 mb-2">
-              Your Medicine Cart is Empty
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500 font-medium mb-8 max-w-md mx-auto">
-              You have no active medications or healthcare products queued. Browse your nearest partner store to add items.
-            </p>
-            <Link
-              href="/pharmacy"
-              className="bg-[#3d3f96] text-white px-8 py-3.5 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm hover:bg-[#2d2f75] transition-all shadow-lg shadow-indigo-100 inline-flex items-center gap-2"
-            >
-              Browse Medicines <ChevronRight size={16} />
-            </Link>
-          </motion.div>
-        )}
+
+        </div>
 
       </div>
 
-      {/* --- CLEAR CART CONFIRMATION MODAL --- */}
-      <AnimatePresence>
-        {isClearing && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
-              onClick={() => setIsClearing(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full relative z-10 text-center shadow-2xl border border-slate-100"
-            >
-              <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertCircle size={24} />
-              </div>
-              <h3 className="text-lg font-black text-slate-800">Clear Your Cart?</h3>
-              <p className="text-xs text-slate-500 font-medium mt-1 mb-6">
-                Are you sure you want to remove all {cartItems.length} items from this pharmacy? This action cannot be undone.
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => setIsClearing(false)}
-                  className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={async () => {
-                    await clearPharmacyCart();
-                    setIsClearing(false);
-                  }}
-                  className="py-3 px-4 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-rose-200 transition-colors"
-                >
-                  Yes, Clear
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* Address Selection Modal */}
+      {isAddressModalOpen && (
+        <Address
+          isOpen={isAddressModalOpen}
+          onClose={() => setIsAddressModalOpen(false)}
+          selectedAddressId={selectedAddress?._id}
+          onSelectAddress={(addr) => {
+            setSelectedAddress(addr);
+            setIsAddressModalOpen(false);
+            if (showNotification) {
+              showNotification(`Delivery address set to ${addr.city}.`, "success");
+            }
+          }}
+        />
+      )}
+
+      {/* Coupons Selection Modal */}
+      {isCouponModalOpen && (
+        <Coupons
+          isOpen={isCouponModalOpen}
+          onClose={() => setIsCouponModalOpen(false)}
+          cartTotal={billSummary?.itemTotal || pharmacyCartTotal}
+          appliedCoupon={appliedCoupon}
+          pharmacyId={pharmacyId}
+          onApplyCoupon={(coupon) => {
+            setAppliedCoupon(coupon);
+            if (showNotification) {
+              showNotification(`Coupon ${coupon.couponName} applied!`, "success");
+            }
+          }}
+          onRemoveCoupon={() => {
+            setAppliedCoupon(null);
+            if (showNotification) {
+              showNotification("Coupon removed.", "success");
+            }
+          }}
+        />
+      )}
+
+      {/* Order Confirmed Success Modal */}
+      <OrderSuccessModal
+        isOpen={isSuccessModalOpen}
+        orderData={placedOrderData}
+        onClose={() => setIsSuccessModalOpen(false)}
+      />
     </main>
   );
-};
-
-export default CartPage;
+}

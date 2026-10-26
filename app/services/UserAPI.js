@@ -324,6 +324,65 @@ const UserAPI = {
         return response.data;
     },
 
+    // --- 1. Get Pharmacy Delivery Time Slots ---
+    getUserPharmacyDeliverySlots: async (params) => {
+        // params: { pharmacyId: "6a7ee5e61fc7d77a0c20e009", date: "2026-10-24" }
+        const response = await authApi.get('/user/pharmacy/slots', { params });
+        return response.data;
+    },
+
+    // --- 2. Get Pharmacy Delivery Charges & COD Status ---
+    getUserPharmacyDeliveryCharges: async (params) => {
+        // params (optional): query filters if applicable
+        const response = await authApi.get('/user/pharmacy/delivery-charges', { params });
+        return response.data;
+    },
+
+    // --- 3. Get Available Coupons for Pharmacy Cart ---
+    getUserPharmacyAvailableCoupons: async () => {
+        const response = await authApi.get('/user/pharmacy/available-coupons');
+        return response.data;
+    },
+
+    // --- 4. Validate Specific Pharmacy Coupon Code ---
+    validateUserPharmacyCoupon: async (data) => {
+        // data: { couponName: "HEALTH10", pharmacyId: "6a7ee5e61fc7d77a0c20e009", totalAmount: 450 }
+        const response = await authApi.post('/user/pharmacy/validate-coupon', data);
+        return response.data;
+    },
+
+    // --- 5. Evaluate Checkout Summary (Pre-Order Calculation) ---
+    evaluateUserPharmacyCheckoutSummary: async (data) => {
+        // data: { collectionType: "Home Delivery" | "Self Pickup", isRapid: false, isSlotSelected: true, appointmentTime: "10:00 AM - 11:00 AM", couponCode: "HEALTH10" }
+        const response = await authApi.post('/user/pharmacy/checkout', data);
+        return response.data;
+    },
+
+    // --- 6. Place Pharmacy Order (Final Booking - Multipart Form-Data) ---
+    placeUserPharmacyOrder: async (formData) => {
+        // formData: FormData object containing 'paymentMethod' ('COD' | 'Online'), 'collectionType', 'address' (JSON string), 'isRapid', 'isSlotSelected', 'appointmentTime', 'appointmentDate', 'couponCode', 'patientIds', and conditional 'prescriptionImages' file(s)
+        const response = await authApi.post('/user/pharmacy/place-order', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
+
+    // --- 7. Verify Pharmacy Razorpay Payment (Online Flow Only) ---
+    verifyUserPharmacyPayment: async (data) => {
+        // data: { orderId: "HK-MED-616719393", razorpay_order_id: "order_P1Q2R3S4T5", razorpay_payment_id: "pay_ABC123XYZ", razorpay_signature: "9a8b7c6d5e4f3a2b1c..." }
+        const response = await authApi.post('/user/pharmacy/verify-payment', data);
+        return response.data;
+    },
+
+    // --- 8. Direct Prescription Upload Flow (Without Cart - Multipart Form-Data) ---
+    uploadUserDirectPrescription: async (formData) => {
+        // formData: FormData object containing 'pharmacyId', 'address' (JSON string), 'collectionType', and 'prescriptionImages' file
+        const response = await authApi.post('/user/pharmacy/upload-prescription', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
+
 
 
     // ===================================================
