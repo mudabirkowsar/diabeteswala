@@ -435,6 +435,46 @@ const AdminAPI = {
         return response.data;
     },
 
+    // =========================================================================
+    // ADMIN PHARMACY ORDERS MANAGEMENT (RBAC TAB ID 5)
+    // =========================================================================
+
+    // --- 1. Step 1: Vendors List with Order Statistics ---
+    adminGetPharmacyVendorsForOrders: async (params) => {
+        // params (optional): { page: 1, limit: 25 }
+        const response = await authApi.get('/admin/pharmacy/vendors-list', { params });
+        return response.data;
+    },
+
+    // --- 2. Step 2: Specific Pharmacy Store Orders on Click ---
+    adminGetOrdersByPharmacyId: async (pharmacyId, params) => {
+        // pharmacyId: MongoDB Document _id of the pharmacy store
+        // params (optional): { status: "Placed" | "Packed" | "Shipped" | "Delivered" | "Cancelled", orderType: "General" | "Prescription", isRapid: true | false, page: 1, limit: 20 }
+        const response = await authApi.get(`/admin/pharmacy/vendors/${pharmacyId}/orders`, { params });
+        return response.data;
+    },
+
+    // --- 3. Step 3: Complete Single Order Details ---
+    adminGetPharmacyBookingDetails: async (orderId) => {
+        // orderId: Custom tracking string (e.g. "DW-MED-604732254") or MongoDB Document _id
+        const response = await authApi.get(`/admin/pharmacy/bookings/details/${orderId}`);
+        return response.data;
+    },
+
+    // --- 4. Step 4: Dedicated Cancelled Orders List ---
+    adminGetCancelledPharmacyOrders: async (params) => {
+        // params (optional): { pharmacyId: "6a7ee5e61fc7d77a0c20e009", page: 1, limit: 20 }
+        const response = await authApi.get('/admin/pharmacy/cancelled-orders', { params });
+        return response.data;
+    },
+
+    // --- 5. Step 5: Global All Bookings Table ---
+    adminGetPharmacyBookings: async (params) => {
+        // params (optional): { status: "Placed" | "Packed" | "Shipped" | "Delivered" | "Cancelled", orderType: "General" | "Prescription", isRapid: true | false, pharmacyId: "...", userId: "...", page: 1, limit: 25 }
+        const response = await authApi.get('/admin/pharmacy/bookings', { params });
+        return response.data;
+    },
+
     // ============================================
     // --- FOOD PARTNER APPROVAL WORKFLOW APIS ----
     // ============================================

@@ -170,10 +170,10 @@ const Hero = () => {
 
               {/* Quick Links */}
               <div className="flex flex-wrap items-center gap-6 px-2">
-                <button className="flex items-center gap-2 text-[#3d3f96] font-bold text-xs uppercase tracking-widest hover:underline">
+                <Link href="/pharmacy/uploadprescription" className="flex items-center gap-2 text-[#3d3f96] font-bold text-xs uppercase tracking-widest hover:underline">
                   <UploadCloud size={18} />
                   Upload Prescription
-                </button>
+                </Link>
                 <div className="h-4 w-px bg-slate-200 hidden sm:block" />
                 <div className="flex items-center gap-2 text-slate-500 font-bold text-xs uppercase tracking-widest">
                   <PhoneCall size={16} className="text-emerald-500" />
