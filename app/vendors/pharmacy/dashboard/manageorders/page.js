@@ -70,15 +70,6 @@ export default function PharmacyOrdersHubPage() {
             description: 'Medicines & OTC products ordered directly through patient shopping cart'
         },
         {
-            id: 'prescriptions',
-            label: 'Uploaded Prescriptions (Rx)',
-            shortLabel: 'Rx Uploads',
-            icon: FileText,
-            //   badge: stats.pendingRxUploads > 0 ? `${stats.pendingRxUploads} Awaiting` : null,
-            badgeColor: 'bg-[#EB333C] text-white animate-pulse',
-            description: 'Prescription images requiring pharmacist verification & quote generation'
-        },
-        {
             id: 'rapid',
             label: 'Express 60-Min Orders',
             shortLabel: 'Express Orders',
@@ -87,6 +78,16 @@ export default function PharmacyOrdersHubPage() {
             badgeColor: 'bg-amber-500 text-white',
             description: 'Urgent priority deliveries requiring immediate dispatch'
         },
+        {
+            id: 'prescriptions',
+            label: 'Uploaded Prescriptions (Rx)',
+            shortLabel: 'Rx Uploads',
+            icon: FileText,
+            //   badge: stats.pendingRxUploads > 0 ? `${stats.pendingRxUploads} Awaiting` : null,
+            badgeColor: 'bg-[#EB333C] text-white animate-pulse',
+            description: 'Prescription images requiring pharmacist verification & quote generation'
+        },
+
         {
             id: 'returns',
             label: 'Returns & Cancellations',
@@ -224,8 +225,8 @@ export default function PharmacyOrdersHubPage() {
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
                                     className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-black transition-all whitespace-nowrap active:scale-95 cursor-pointer ${isActive
-                                            ? 'bg-[#3d3f96] text-white shadow-md shadow-indigo-100'
-                                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                                        ? 'bg-[#3d3f96] text-white shadow-md shadow-indigo-100'
+                                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                                         }`}
                                 >
                                     <Icon size={16} />

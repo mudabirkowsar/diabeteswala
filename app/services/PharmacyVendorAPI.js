@@ -298,6 +298,61 @@ const PharmacyVendorAPI = {
         return response.data;
     },
 
+    // =========================================================================
+    // MANAGE PHARMACY ORDERS & FULFILLMENT
+    // =========================================================================
+
+    // --- 1. Get Regular Orders List ---
+    getPharmacyOrders: async (params) => {
+        // params (optional): { status: "Placed", orderType: "General" | "Prescription", returnStatus: "Requested" | "Approved" | "All", page: 1, limit: 20 }
+        const response = await authApi.get('/provider/pharmacy/orders/list', { params });
+        return response.data;
+    },
+
+    // --- 2. Get Rapid Orders List (1-Hour Express Delivery) ---
+    getPharmacyRapidOrders: async (params) => {
+        // params (optional): { status: "Pending", orderType: "General" | "Prescription", returnStatus: "Requested" | "Approved" | "All", page: 1, limit: 20 }
+        const response = await authApi.get('/provider/pharmacy/orders/rapid-list', { params });
+        return response.data;
+    },
+
+    // --- 3. Get Available Drivers ---
+    getAvailableDrivers: async () => {
+        const response = await authApi.get('/provider/pharmacy/orders/available-drivers');
+        return response.data;
+    },
+
+    // --- 4. Get Universal Order Details ---
+    getPharmacyOrderDetails: async (orderId) => {
+        // orderId: MongoDB Document _id or Custom Tracking ID (e.g. "DW-MED-701046641")
+        const response = await authApi.get(`/provider/pharmacy/orders/details/${orderId}`);
+        return response.data;
+    },
+
+    // --- 5. Manually Assign Driver ---
+    assignDriverManual: async (data) => {
+        // data: { orderId: "6adee5bd4c456f5a0b415d93", driverId: "6718d105e1fc7d77a0c55555" }
+        const response = await authApi.post('/provider/pharmacy/orders/assign-manual', data);
+        return response.data;
+    },
+
+    // --- 6. Reassign Driver ---
+    reassignDriverManual: async (data) => {
+        // data: { orderId: "6adee5bd4c456f5a0b415d93", newDriverId: "6718d105e1fc7d77a0c55556", isReturnReassignment: false }
+        const response = await authApi.post('/provider/pharmacy/orders/reassign', data);
+        return response.data;
+    },
+
+    // --- 7. Update Order Status & Delivery Progress ---
+    updateOrderStatus: async (orderId, data) => {
+        // orderId: MongoDB Document _id or Custom Tracking ID (e.g. "DW-MED-701046641")
+        // data: { 
+        //   status?: "Pending" | "Placed" | "Under Review" | "Packed" | "Shipped" | "Delivered" | "Cancelled", 
+        //   deliveryStatus?: "PendingAssignment" | "Assigned" | "Accepted" | "PickedUp" | "OutForDelivery" | "ReachedLocation" | "Delivered" 
+        // }
+        const response = await authApi.patch(`/provider/pharmacy/orders/status/${orderId}`, data);
+        return response.data;
+    },
 
 
 }
