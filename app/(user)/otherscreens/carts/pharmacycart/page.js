@@ -17,6 +17,7 @@ import PharmacyInfoCard from './components/PharmacyInfoCard';
 import PatientProfileCard from './components/PatientProfileCard';
 import PrescriptionCard from './components/PrescriptionCard';
 import DeliveryModeCard from './components/DeliveryModeCard';
+import DeliveryInstructionsCard from './components/DeliveryInstructionsCard';
 import DeliveryAddressCard from './components/DeliveryAddressCard';
 import CouponCard from './components/CouponCard';
 import CostSummaryCard from './components/CostSummaryCard';
@@ -97,6 +98,9 @@ export default function PharmacyCartPage() {
   const [isSlotLoading, setIsSlotLoading] = useState(false);
   const [isSlotClosed, setIsSlotClosed] = useState(false);
 
+  // Delivery Instructions State
+  const [deliveryInstructions, setDeliveryInstructions] = useState("");
+
   // Prescription Upload State
   const [prescriptionFiles, setPrescriptionFiles] = useState([]);
 
@@ -114,7 +118,7 @@ export default function PharmacyCartPage() {
   const pharmacy = pharmacyCart?.pharmacyId || {};
   const pharmacyId = pharmacy._id || (typeof pharmacy === 'string' ? pharmacy : pharmacyCart?.vendorId);
 
-  // 🛡️ Rx Mandatory Detection (from item flags OR server bill summary)
+  // 🛡️ Rx Mandatory Detection
   const isPrescriptionRequired = useMemo(() => {
     const hasRxItem = cartItems.some(
       (item) =>
@@ -124,6 +128,15 @@ export default function PharmacyCartPage() {
     );
     return hasRxItem || billSummary?.rxMandatory === true;
   }, [cartItems, billSummary]);
+
+  // Navigate to add more medicine for this specific pharmacy
+  const handleAddMoreMedicines = () => {
+    if (pharmacyId) {
+      router.push(`/pharmacy/allproductsandmedicines?pharmacyId=${pharmacyId}`);
+    } else {
+      router.push(`/pharmacy/allproductsandmedicines`);
+    }
+  };
 
   // --- 1. Live Bill Evaluation (POST /user/pharmacy/checkout) ---
   const calculateLiveBill = useCallback(async () => {
@@ -282,6 +295,7 @@ export default function PharmacyCartPage() {
       }
       setAppliedCoupon(null);
       setPrescriptionFiles([]);
+      setDeliveryInstructions("");
     } catch (err) {
       console.error("Error clearing cart:", err);
       if (showNotification) {
@@ -293,7 +307,7 @@ export default function PharmacyCartPage() {
   };
 
   // =========================================================================
-  // CHECKOUT ORCHESTRATION WITH PRESCRIPTION VALIDATION
+  // CHECKOUT ORCHESTRATION WITH ANYINSTRUCTION & STRICT PRESCRIPTION CHECK
   // =========================================================================
   const handleProceedToCheckout = async () => {
     if (!selectedAddress) {
@@ -311,7 +325,7 @@ export default function PharmacyCartPage() {
       return;
     }
 
-    // 🛑 STRICT PRESCRIPTION VALIDATION: BLOCK ORDER IF NOT UPLOADED
+    // 🛑 STRICT PRESCRIPTION VALIDATION
     if (isPrescriptionRequired && prescriptionFiles.length === 0) {
       if (showNotification) {
         showNotification(
@@ -359,6 +373,12 @@ export default function PharmacyCartPage() {
 
     const patientIds = [selectedPatient?._id || "Self"];
     formData.append("patientIds", JSON.stringify(patientIds));
+
+    // Special delivery instructions for rider
+    if (deliveryInstructions.trim()) {
+      formData.append("anyInstruction", deliveryInstructions.trim());
+      formData.append("instructions", deliveryInstructions.trim());
+    }
 
     // Append all selected prescription files
     prescriptionFiles.forEach((file) => {
@@ -503,13 +523,14 @@ export default function PharmacyCartPage() {
         {/* Primary Layout Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-8 items-start">
 
-          {/* Left Column: Cart Items, Patient, Delivery Mode, Prescription */}
+          {/* Left Column: Cart Items, Patient, Delivery Mode, Instructions, Prescription */}
           <div className="lg:col-span-7 space-y-3.5 sm:space-y-5">
             <PharmacyItemsList
               items={cartItems}
               updatingId={updatingId}
               onQtyChange={handleQtyChange}
               onRemoveItem={handleRemoveItem}
+              onAddMoreMedicines={handleAddMoreMedicines}
               getMediaUrl={getMediaUrl}
               placeholderImage={ITEM_PLACEHOLDER}
             />
@@ -532,6 +553,11 @@ export default function PharmacyCartPage() {
               onDateChange={setSelectedDate}
               isSlotLoading={isSlotLoading}
               isSlotClosed={isSlotClosed}
+            />
+
+            <DeliveryInstructionsCard
+              instructions={deliveryInstructions}
+              setInstructions={setDeliveryInstructions}
             />
 
             <PrescriptionCard

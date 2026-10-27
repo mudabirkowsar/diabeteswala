@@ -1,13 +1,14 @@
 // components/PharmacyItemsList.jsx
 "use client";
 import React from 'react';
-import { Minus, Plus, Trash2, Loader2, Sparkles } from 'lucide-react';
+import { Minus, Plus, Trash2, Loader2, Sparkles, PlusCircle } from 'lucide-react';
 
 export default function PharmacyItemsList({
   items = [],
   updatingId,
   onQtyChange,
   onRemoveItem,
+  onAddMoreMedicines,
   getMediaUrl,
   placeholderImage
 }) {
@@ -17,6 +18,16 @@ export default function PharmacyItemsList({
         <h3 className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wider">
           Prescribed & Healthcare Items ({items.length})
         </h3>
+
+        {/* Add More Medicines Button */}
+        <button
+          type="button"
+          onClick={onAddMoreMedicines}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#3d3f96]/10 hover:bg-[#3d3f96]/20 text-[#3d3f96] font-black text-[10px] sm:text-xs uppercase tracking-wider transition-all cursor-pointer"
+        >
+          <PlusCircle size={13} />
+          <span>Add More Medicines</span>
+        </button>
       </div>
 
       <div className="space-y-2.5 sm:space-y-3">
