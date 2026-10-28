@@ -26,10 +26,13 @@ import {
     Tag,
     Sparkles,
     Key,
-    PackageCheck
+    PackageCheck,
+    Truck,
+    UserCheck
 } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
 import PharmacyAPI from '../../../../../../services/PharmacyVendorAPI';
+import AllDrivers from '../../orderdetail/components/AllDrivers';
 
 export default function RxOrderDetailPage({ params: propParams }) {
     const routeParams = useParams();
@@ -42,6 +45,9 @@ export default function RxOrderDetailPage({ params: propParams }) {
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
+
+    // Driver Modal Visibility State
+    const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
 
     // Pricing & Bill Workbench States
     const [isEditingBill, setIsEditingBill] = useState(false);
@@ -346,6 +352,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
     const rxImageUrl = getFullImageUrl(order.prescriptionImage);
     const activeDeliveryOtp = order.deliveryOTP;
     const trackingOrderId = order.confirmedOrderId || order.orderId;
+    const targetOrderIdForDriver = order.confirmedOrderId || order.orderId || order._id || requestId;
 
     return (
         <div className="space-y-6 text-left antialiased max-w-7xl mx-auto pb-12">
@@ -374,7 +381,19 @@ export default function RxOrderDetailPage({ params: propParams }) {
                 </div>
 
                 {/* Top Action Buttons */}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                    {/* Driver Assign / Reassign Button in Header once order is placed/confirmed */}
+                    {isPaidOrPlaced && (
+                        <button
+                            type="button"
+                            onClick={() => setIsDriverModalOpen(true)}
+                            className="px-4 py-2.5 bg-[#3d3f96] hover:bg-[#2d2f75] text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+                        >
+                            <UserCheck size={14} />
+                            <span>{order.assignedDriver ? 'Reassign Driver' : 'Assign Delivery Partner'}</span>
+                        </button>
+                    )}
+
                     {order.status === 'Pending Review' && (
                         <button
                             type="button"
@@ -414,7 +433,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
                                     Customer Confirmed Order! Please Pack &amp; Dispatch
                                 </h3>
                                 <p className="text-xs text-emerald-100 font-medium mt-0.5">
-                                    The patient verified your price quote and placed the order. Collect or verify OTP upon doorstep delivery.
+                                    The patient verified your price quote and placed the order. Assign a delivery driver and verify the OTP upon doorstep handover.
                                 </p>
                             </div>
                         </div>
@@ -461,7 +480,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
             {/* --- MAIN GRID LAYOUT --- */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-                {/* LEFT COLUMN: Patient Info, Prescription Image, Doctor Details (5 Cols) */}
+                {/* LEFT COLUMN: Patient Info, Driver, Prescription Image, Doctor Details (5 Cols) */}
                 <div className="lg:col-span-5 space-y-6">
 
                     {/* Patient Card */}
@@ -516,6 +535,56 @@ export default function RxOrderDetailPage({ params: propParams }) {
                             </div>
                         )}
                     </div>
+
+                    {/* --- DELIVERY PARTNER CARD --- */}
+                    {isPaidOrPlaced && (
+                        <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">
+                            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                <span className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                    <Truck size={14} className="text-[#3d3f96]" /> Delivery Partner
+                                </span>
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded-md">
+                                    {order.deliveryStatus || 'Pending'}
+                                </span>
+                            </div>
+
+                            {order.assignedDriver ? (
+                                <div className="flex items-center justify-between bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-indigo-100 text-[#3d3f96] flex items-center justify-center font-black">
+                                            <Truck size={18} />
+                                        </div>
+                                        <div className="text-xs">
+                                            <p className="font-black text-slate-900">{order.assignedDriver.name || "Assigned Driver"}</p>
+                                            <p className="text-slate-500">{order.assignedDriver.phone}</p>
+                                            {order.assignedDriver.vehicleNumber && (
+                                                <span className="text-[10px] font-mono text-slate-400">{order.assignedDriver.vehicleNumber}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsDriverModalOpen(true)}
+                                        className="text-xs font-bold text-[#3d3f96] hover:underline cursor-pointer"
+                                    >
+                                        Change
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="text-center py-4 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                                    <Truck size={20} className="mx-auto text-slate-300 mb-1" />
+                                    <p className="text-xs text-slate-400 font-bold">No driver assigned yet</p>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsDriverModalOpen(true)}
+                                        className="mt-2 text-xs font-bold text-[#3d3f96] hover:underline cursor-pointer"
+                                    >
+                                        Assign Now
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Prescription Details & Slip */}
                     <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-4">
@@ -999,6 +1068,15 @@ export default function RxOrderDetailPage({ params: propParams }) {
                     </div>
                 </div>
             )}
+
+            {/* --- ALL DRIVERS MODAL --- */}
+            <AllDrivers
+                isOpen={isDriverModalOpen}
+                onClose={() => setIsDriverModalOpen(false)}
+                orderId={targetOrderIdForDriver}
+                assignedDriver={order.assignedDriver}
+                onDriverAssigned={fetchOrderDetails}
+            />
         </div>
     );
 }
