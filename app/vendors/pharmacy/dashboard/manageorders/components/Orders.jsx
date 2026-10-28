@@ -167,11 +167,10 @@ export default function Orders() {
                                         setSelectedStatus(status);
                                         setPage(1);
                                     }}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer border ${
-                                        isSelected
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer border ${isSelected
                                             ? 'bg-[#3d3f96] text-white border-[#3d3f96] font-black shadow-sm'
                                             : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
-                                    }`}
+                                        }`}
                                 >
                                     {status}
                                 </button>
@@ -214,11 +213,11 @@ export default function Orders() {
                                 {filteredOrders.map((order) => {
                                     const timeFormatted = order.createdAt
                                         ? new Date(order.createdAt).toLocaleDateString("en-US", {
-                                              month: 'short',
-                                              day: 'numeric',
-                                              hour: '2-digit',
-                                              minute: '2-digit',
-                                          })
+                                            month: 'short',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                        })
                                         : '—';
 
                                     const targetId = order._id || order.orderId;
@@ -238,11 +237,10 @@ export default function Orders() {
                                                     <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
                                                         <Clock size={11} /> {timeFormatted}
                                                     </span>
-                                                    <span className={`inline-block text-[9px] font-black uppercase px-2 py-0.5 rounded-md border ${
-                                                        order.orderType === 'Prescription'
+                                                    <span className={`inline-block text-[9px] font-black uppercase px-2 py-0.5 rounded-md border ${order.orderType === 'Prescription'
                                                             ? 'bg-rose-50 text-rose-600 border-rose-200'
                                                             : 'bg-indigo-50 text-indigo-600 border-indigo-200'
-                                                    }`}>
+                                                        }`}>
                                                         {order.orderType || 'General'}
                                                     </span>
                                                 </div>
@@ -301,11 +299,10 @@ export default function Orders() {
                                                     <strong className="font-mono text-sm font-black text-slate-900 block">
                                                         ₹{order.totalAmount || 0}
                                                     </strong>
-                                                    <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded ${
-                                                        order.paymentStatus === 'Paid'
+                                                    <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded ${order.paymentStatus === 'Paid'
                                                             ? 'bg-emerald-50 text-emerald-600'
                                                             : 'bg-amber-50 text-amber-600'
-                                                    }`}>
+                                                        }`}>
                                                         {order.paymentMethod} • {order.paymentStatus}
                                                     </span>
                                                 </div>

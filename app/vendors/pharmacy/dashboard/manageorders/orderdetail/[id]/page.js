@@ -155,11 +155,10 @@ export default function OrderDetailPage() {
                         <div>
                             <div className="flex items-center gap-2">
                                 <h1 className="text-xl font-black text-slate-900 tracking-tight">{trackingId}</h1>
-                                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border ${
-                                    orderType === 'Prescription'
+                                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border ${orderType === 'Prescription'
                                         ? 'bg-rose-50 text-rose-600 border-rose-200'
                                         : 'bg-indigo-50 text-indigo-600 border-indigo-200'
-                                }`}>
+                                    }`}>
                                     {orderType} Order
                                 </span>
                             </div>

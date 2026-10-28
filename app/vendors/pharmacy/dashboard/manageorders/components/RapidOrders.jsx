@@ -197,11 +197,10 @@ export default function RapidOrders() {
                                         setSelectedStatus(status);
                                         setPage(1);
                                     }}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer border ${
-                                        isSelected
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer border ${isSelected
                                             ? 'bg-amber-500 text-white border-amber-500 font-black shadow-sm'
                                             : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
-                                    }`}
+                                        }`}
                                 >
                                     {status}
                                 </button>
@@ -248,10 +247,10 @@ export default function RapidOrders() {
                                 {filteredOrders.map((order) => {
                                     const timeFormatted = order.createdAt
                                         ? new Date(order.createdAt).toLocaleTimeString("en-US", {
-                                              hour: '2-digit',
-                                              minute: '2-digit',
-                                              hour12: true
-                                          })
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            hour12: true
+                                        })
                                         : '—';
 
                                     const targetId = order._id || order.orderId;
@@ -346,11 +345,10 @@ export default function RapidOrders() {
                                                             Incl. ₹{order.rapidCharge} express fee
                                                         </span>
                                                     )}
-                                                    <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded ${
-                                                        order.paymentStatus === 'Paid'
+                                                    <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded ${order.paymentStatus === 'Paid'
                                                             ? 'bg-emerald-50 text-emerald-600'
                                                             : 'bg-amber-50 text-amber-600'
-                                                    }`}>
+                                                        }`}>
                                                         {order.paymentMethod} • {order.paymentStatus}
                                                     </span>
                                                 </div>

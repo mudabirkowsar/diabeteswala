@@ -281,7 +281,7 @@ const UserAPI = {
         const response = await authApi.post('/user/pharmacy/search-suggestions', data);
         return response.data;
     },
-    
+
     // --- Step 4: Get Nearby Licensed Pharmacies ---
     getPharmacies: async (data) => {
         // data: { lat: 30.7046, lng: 76.7179, search: "" }

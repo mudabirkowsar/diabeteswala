@@ -184,11 +184,10 @@ export default function UploadPrescriptionOrders() {
                                 <button
                                     key={status}
                                     onClick={() => setSelectedStatus(status)}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer border ${
-                                        isSelected
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer border ${isSelected
                                             ? 'bg-[#3d3f96] text-white border-[#3d3f96] font-black shadow-sm'
                                             : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
-                                    }`}
+                                        }`}
                                 >
                                     {status}
                                 </button>
@@ -233,19 +232,19 @@ export default function UploadPrescriptionOrders() {
                                 {paginatedRequests.map((req) => {
                                     const timeFormatted = req.createdAt
                                         ? new Date(req.createdAt).toLocaleDateString("en-US", {
-                                              month: 'short',
-                                              day: 'numeric',
-                                              hour: '2-digit',
-                                              minute: '2-digit',
-                                          })
+                                            month: 'short',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                        })
                                         : '—';
 
                                     const rxDateFormatted = req.prescriptionDate
                                         ? new Date(req.prescriptionDate).toLocaleDateString("en-US", {
-                                              month: 'short',
-                                              day: 'numeric',
-                                              year: 'numeric',
-                                          })
+                                            month: 'short',
+                                            day: 'numeric',
+                                            year: 'numeric',
+                                        })
                                         : '—';
 
                                     // Tracking ticket string is required by the detail endpoint
