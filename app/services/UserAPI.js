@@ -262,6 +262,77 @@ const UserAPI = {
         return response.data;
     },
 
+    // =========================================================================
+    // AI-POWERED PRESCRIPTION (Rx) WORKFLOW
+    // =========================================================================
+
+    // --- Step 1: AI Prescription OCR Scanner ---
+    scanPrescription: async (formData) => {
+        // formData: FormData object containing file 'prescriptionFile' (.jpg, .png, .pdf)
+        const response = await authApi.post('/user/pharmacy/scan-rx', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
+
+    // --- Step 2: Search & Add Medicines Manually ---
+    getMedicineSuggestions: async (data) => {
+        // data: { query: "do" }
+        const response = await authApi.post('/user/pharmacy/search-suggestions', data);
+        return response.data;
+    },
+    
+    // --- Step 4: Get Nearby Licensed Pharmacies ---
+    getPharmacies: async (data) => {
+        // data: { lat: 30.7046, lng: 76.7179, search: "" }
+        const response = await authApi.post('/user/pharmacy/list', data);
+        return response.data;
+    },
+
+    // --- Step 5: Estimate Rx Prices (Optional) ---
+    estimateRxPrices: async (data) => {
+        // data: { pharmacyId: "6a7ee5e61fc7d77a0c20e009", medicines: [{ name: "DOLO 650 TABLET", medicineId: "6a82ae9fff6a9a9e81ad6f3f", durationDays: 15 }] }
+        const response = await authApi.post('/user/pharmacy/prescription-request/estimate-prices', data);
+        return response.data;
+    },
+
+    // --- Step 6: Submit Final Prescription Request ---
+    createPrescriptionRequest: async (formData) => {
+        // formData: FormData containing text ('pharmacyId', 'doctorName', 'prescriptionDate', 'durationType'), stringified JSON ('requestedMedicines', 'address'), and file ('prescriptionImage')
+        const response = await authApi.post('/user/pharmacy/prescription-request', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
+
+    // --- Step 7: Get User Prescription Requests List ---
+    getUserPrescriptionRequests: async (params) => {
+        // params (optional): { page: 1 }
+        const response = await authApi.get('/user/pharmacy/prescription-request/list', { params });
+        return response.data;
+    },
+
+    // --- Step 8: Get Single Request Details Modal ---
+    getUserPrescriptionRequestDetails: async (requestId) => {
+        // requestId: Tracking ticket string (e.g. "REQ-58BC59")
+        const response = await authApi.get(`/user/pharmacy/prescription-request/details/${requestId}`);
+        return response.data;
+    },
+
+    // --- Step 9: Pay & Confirm Order ---
+    payAndConfirmOrder: async (data) => {
+        // data: { requestId: "REQ-58BC59", paymentMethod: "COD" | "Online" }
+        const response = await authApi.post('/user/pharmacy/prescription-request/pay-confirm', data);
+        return response.data;
+    },
+
+    // --- Step 10: Verify Online Payment ---
+    verifyPrescriptionRequestPayment: async (data) => {
+        // data: { requestId: "REQ-58BC59", razorpay_order_id: "order_RX998877", razorpay_payment_id: "pay_ABC123XYZ", razorpay_signature: "signature_hash_value" }
+        const response = await authApi.post('/user/pharmacy/prescription-request/verify-payment', data);
+        return response.data;
+    },
+
     //Pharmacy APIS 
     // ===================================================
     // --- USER PHARMACY DISCOVERY & CATALOG APIS -------

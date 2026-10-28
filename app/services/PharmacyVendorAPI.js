@@ -355,6 +355,59 @@ const PharmacyVendorAPI = {
     },
 
 
+    
+    // =========================================================================
+    // PHARMACY VENDOR: PRESCRIPTION REQUESTS & BILLING
+    // =========================================================================
+
+    // --- 1. Get Prescription Requests List ---
+    getProviderPrescriptionRequests: async (params) => {
+        // params (optional): { status: "Pending Review" | "Reviewing" | "Bill Generated" | "Paid" | "Rejected" }
+        const response = await authApi.get('/provider/pharmacy/orders/prescription-request/list', { params });
+        return response.data;
+    },
+
+    // --- 2. Get Single Prescription Request Details ---
+    getProviderPrescriptionRequestDetails: async (requestId) => {
+        // requestId: Ticket tracking identifier (e.g. "REQ-58BC59")
+        const response = await authApi.get(`/provider/pharmacy/orders/prescription-request/details/${requestId}`);
+        return response.data;
+    },
+
+    // --- 3. Start Prescription Review (Transition to "Reviewing") ---
+    startPrescriptionReview: async (requestId) => {
+        // requestId: Ticket tracking identifier (e.g. "REQ-58BC59")
+        const response = await authApi.post(`/provider/pharmacy/orders/prescription-request/start-review/${requestId}`);
+        return response.data;
+    },
+
+    // --- 4. Submit Pharmacist Review & Generate Bill ---
+    submitPharmacistReview: async (requestId, data) => {
+        // requestId: Ticket tracking identifier (e.g. "REQ-58BC59")
+        // data: {
+        //   deliveryCharge: 40,
+        //   items: [
+        //     {
+        //       medicineId: "6a82ae9fff6a9a9e81ad6f3f",
+        //       name: "DOLO 650 TABLET",
+        //       mrp: 34,
+        //       pricePerUnit: 2,
+        //       quantity: 15
+        //     }
+        //   ]
+        // }
+        const response = await authApi.post(`/provider/pharmacy/orders/prescription-request/review/${requestId}`, data);
+        return response.data;
+    },
+
+    // --- 5. Reject Prescription Request ---
+    rejectPrescriptionRequest: async (requestId, data) => {
+        // requestId: Ticket tracking identifier (e.g. "REQ-58BC59")
+        // data (optional): { reason: "Prescription is illegible. Please re-upload a clear photo." }
+        const response = await authApi.post(`/provider/pharmacy/orders/prescription-request/reject/${requestId}`, data);
+        return response.data;
+    },
+
 }
 
 export default PharmacyVendorAPI;

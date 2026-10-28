@@ -18,7 +18,9 @@ import {
     Loader2,
     Sparkles,
     Star,
-    ChevronLeft
+    ChevronLeft,
+    FileText,
+    CreditCard
 } from 'lucide-react';
 
 // API Service & Notification Context
@@ -133,38 +135,38 @@ export default function PharmacyOrders() {
 
     return (
         <div className="space-y-6 text-left select-none max-w-[1200px] mx-auto py-4 px-3 sm:px-6">
-            {/* Header Section */}
-            {/* <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                        <Pill className="text-[#3d3f96]" size={24} />
-                        Pharmacy & Medicine Orders
-                    </h1>
-                    <p className="text-xs font-semibold text-slate-400 mt-1">
-                        Track live prescriptions, OTC drugs, and scheduled delivery slots
-                    </p>
-                </div>
-                <div className="text-xs font-black text-slate-500 bg-white px-3.5 py-1.5 rounded-xl border border-slate-200/80 shadow-xs self-start sm:self-auto">
-                    Total Orders: <span className="text-[#3d3f96] font-mono">{totalOrders}</span>
-                </div>
-            </div> */}
 
-            {/* Status Filter Tabs */}
-            {/* <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-                {STATUS_TABS.map((status) => (
-                    <button
-                        key={status}
-                        onClick={() => handleTabChange(status)}
-                        className={`px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-wider whitespace-nowrap transition cursor-pointer ${
-                            statusFilter === status
-                                ? 'bg-[#3d3f96] text-white shadow-md shadow-indigo-950/15'
-                                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/80'
-                        }`}
-                    >
-                        {status}
-                    </button>
-                ))}
-            </div> */}
+            {/* --- PRESCRIPTION ORDERS FAST-TRACK NAVIGATION BANNER --- */}
+            <div className="bg-gradient-to-r from-indigo-50 via-white to-purple-50 rounded-3xl p-5 border border-indigo-100/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-[#3d3f96] text-white flex items-center justify-center shadow-md shadow-indigo-100 shrink-0">
+                        <FileText size={22} />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-sm sm:text-base font-black text-slate-900 tracking-tight">
+                                Uploaded Prescriptions &amp; Quotes (Rx)
+                            </h2>
+                            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-indigo-100 text-[#3d3f96]">
+                                Quotes &amp; Pay
+                            </span>
+                        </div>
+                        <p className="text-xs text-slate-500 font-medium mt-0.5">
+                            Review pharmacist bills, approve verified quotes, and complete payment for uploaded prescriptions.
+                        </p>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={() => router.push('/otherscreens/orders/pharmacyprescriptionorders')}
+                    className="inline-flex items-center justify-center gap-2 bg-[#3d3f96] hover:bg-[#2e3077] text-white px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-indigo-950/10 cursor-pointer self-start sm:self-auto shrink-0 active:scale-95"
+                >
+                    <CreditCard size={14} />
+                    <span>View Rx Orders &amp; Pay</span>
+                    <ArrowRight size={14} />
+                </button>
+            </div>
 
             {/* List / Loading / Empty States */}
             {loading ? (
@@ -314,7 +316,7 @@ export default function PharmacyOrders() {
                                         className="w-full sm:w-auto bg-[#3d3f96] hover:bg-[#2d2f75] text-white text-[10px] font-black uppercase tracking-wider px-5 py-3 rounded-2xl shadow-md shadow-indigo-950/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
                                     >
                                         <ReceiptText size={13} />
-                                        <span>Track & Invoice</span>
+                                        <span>Track &amp; Invoice</span>
                                         <ChevronRight size={13} />
                                     </button>
                                 </div>
