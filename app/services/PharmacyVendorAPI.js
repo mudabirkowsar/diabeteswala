@@ -408,6 +408,21 @@ const PharmacyVendorAPI = {
         return response.data;
     },
 
+    // =========================================================================
+    // CANCELLED & RETURNED ORDERS MANAGEMENT
+    // =========================================================================
+
+    // --- Get Cancelled & Returned/Replacement Orders Ledger ---
+    getCancelledAndReturnedOrders: async (params) => {
+        // params (optional): { 
+        //   type: "Cancelled" | "Return" | "Replacement", 
+        //   page: 1, 
+        //   limit: 20 
+        // }
+        const response = await authApi.get('/provider/pharmacy/orders/cancelled-and-returned', { params });
+        return response.data;
+    },
+
 }
 
 export default PharmacyVendorAPI;
