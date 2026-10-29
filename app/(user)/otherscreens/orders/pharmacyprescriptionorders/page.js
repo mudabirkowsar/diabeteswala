@@ -16,7 +16,10 @@ import {
     RefreshCw,
     MapPin,
     Sparkles,
-    Lock
+    Lock,
+    PackageCheck,
+    Truck,
+    Key
 } from 'lucide-react';
 
 // API Service & Notification Context
@@ -77,40 +80,116 @@ export default function PharmacyPrescriptionOrdersPage() {
         fetchPrescriptionRequests();
     }, [fetchPrescriptionRequests]);
 
-    // Send the MongoDB _id to the order details page
-    const goToDetail = (id) => {
-        if (!id) return;
-        router.push(`/otherscreens/orders/rxorderdetail/${id}`);
+    // Send strictly the MongoDB _id (24-character hex string) to the detail page
+    const goToDetail = (mongoId) => {
+        if (!mongoId) return;
+        router.push(`/otherscreens/orders/rxorderdetail/${mongoId}`);
     };
 
-    // --- Helper: Status Badge ---
-    const renderRxStatusBadge = (status, hasBill) => {
-        const uppercase = (status || '').toUpperCase().trim();
+    // Calculate total bill amount across all potential API structures
+    const computeBillAmount = (req) => {
+        if (req.verifiedBill?.totalAmount !== undefined && req.verifiedBill.totalAmount !== null) {
+            return Number(req.verifiedBill.totalAmount);
+        }
+        if (req.verifiedBill?.itemTotal !== undefined && req.verifiedBill.itemTotal !== null) {
+            return Number(req.verifiedBill.itemTotal) + Number(req.verifiedBill.deliveryCharge || 0);
+        }
+        if (req.totalAmount !== undefined && req.totalAmount !== null) {
+            return Number(req.totalAmount);
+        }
+        if (Array.isArray(req.items) && req.items.length > 0) {
+            return req.items.reduce((acc, it) => acc + (Number(it.price || it.mrp || 0) * Number(it.quantity || 1)), 0);
+        }
+        return null;
+    };
 
-        if (uppercase === 'CONFIRMED' || uppercase === 'PLACED' || uppercase === 'PAID') {
+    // --- Status Badge Helper ---
+    const renderRxStatusBadge = (req) => {
+        const statusUpper = (req.status || '').toUpperCase().trim();
+        const deliveryUpper = (req.deliveryStatus || '').toUpperCase().trim();
+        const isConverted = Boolean(req.bookingId || req.bookingOrderId);
+
+        // 1. Delivered
+        if (statusUpper === 'DELIVERED' || deliveryUpper === 'DELIVERED') {
+            return (
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase text-emerald-800 bg-emerald-100/80 px-3 py-1 rounded-full border border-emerald-300">
+                    <CheckCircle2 size={11} className="text-emerald-600" /> Delivered
+                </span>
+            );
+        }
+
+        // 2. In Transit / Shipped / Out for Delivery
+        if (
+            statusUpper === 'SHIPPED' || 
+            deliveryUpper === 'OUTFORDELIVERY' || 
+            deliveryUpper === 'PICKEDUP' || 
+            deliveryUpper === 'REACHEDLOCATION'
+        ) {
+            return (
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase text-indigo-800 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200 animate-pulse">
+                    <Truck size={11} className="text-[#3d3f96]" /> Out For Delivery
+                </span>
+            );
+        }
+
+        // 3. Packed
+        if (statusUpper === 'PACKED') {
+            return (
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase text-teal-800 bg-teal-50 px-3 py-1 rounded-full border border-teal-200">
+                    <PackageCheck size={11} className="text-teal-600" /> Packed by Pharmacy
+                </span>
+            );
+        }
+
+        // 4. Placed / Confirmed / Converted Booking
+        if (
+            isConverted || 
+            statusUpper === 'PLACED' || 
+            statusUpper === 'CONFIRMED' || 
+            statusUpper === 'PAID'
+        ) {
             return (
                 <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
                     <CheckCircle2 size={11} className="text-emerald-500" /> Order Placed
                 </span>
             );
         }
-        if ((uppercase === 'BILL GENERATED' || uppercase === 'ACCEPTED') && hasBill) {
+
+        // 5. Quote Ready / Bill Generated (Awaiting Payment)
+        if (
+            statusUpper === 'BILL GENERATED' || 
+            statusUpper === 'PENDING PAYMENT' || 
+            statusUpper === 'ACCEPTED'
+        ) {
             return (
-                <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 animate-pulse">
-                    <Sparkles size={11} className="text-amber-500" /> Accepted • Quote Ready
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-300 animate-pulse">
+                    <Sparkles size={11} className="text-amber-600" /> Quote Ready • Pay Now
                 </span>
             );
         }
-        if (uppercase === 'CANCELLED' || uppercase === 'REJECTED') {
+
+        // 6. Declined / Cancelled
+        if (statusUpper === 'CANCELLED' || statusUpper === 'REJECTED') {
             return (
                 <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase text-rose-700 bg-rose-50 px-3 py-1 rounded-full border border-rose-200">
-                    <AlertCircle size={11} className="text-rose-500" /> Rejected / Cancelled
+                    <AlertCircle size={11} className="text-rose-500" /> Declined / Cancelled
                 </span>
             );
         }
+
+        // 7. Active Chemist Review
+        if (statusUpper === 'REVIEWING') {
+            return (
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
+                    <RefreshCw size={11} className="text-indigo-500 animate-spin" /> Reviewing Stock
+                </span>
+            );
+        }
+
+        // 8. Default: Pending Review
         return (
             <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase text-slate-600 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-                <Clock size={11} className="text-amber-500" /> Awaiting Pharmacy Review
+                <Clock size={11} className="text-amber-500" /> Awaiting Chemist Review
             </span>
         );
     };
@@ -138,7 +217,7 @@ export default function PharmacyPrescriptionOrdersPage() {
                             </span>
                         </div>
                         <p className="text-xs font-semibold text-slate-400 mt-0.5">
-                            Once the licensed chemist accepts and issues a verified bill, you can complete payment.
+                            Track doctor prescription reviews, certified chemist quotations, and live deliveries.
                         </p>
                     </div>
                 </div>
@@ -160,7 +239,7 @@ export default function PharmacyPrescriptionOrdersPage() {
                 <div className="flex flex-col items-center justify-center py-28 bg-white rounded-3xl border border-slate-100 shadow-sm space-y-3">
                     <Loader2 className="animate-spin text-[#3d3f96]" size={32} />
                     <p className="text-xs font-black text-slate-700 uppercase tracking-widest">
-                        Checking Pharmacy Invoices...
+                        Checking Prescription Invoices...
                     </p>
                 </div>
             ) : requests.length === 0 ? (
@@ -186,34 +265,39 @@ export default function PharmacyPrescriptionOrdersPage() {
                         const pharmacyImg = getMediaUrl(pharmacy.profileImage);
                         const statusUpper = (req.status || '').toUpperCase().trim();
                         
-                        const isConfirmed = statusUpper === 'CONFIRMED' || statusUpper === 'PLACED' || statusUpper === 'PAID';
-                        
-                        const isPharmacyAccepted =
-                            !isConfirmed &&
-                            (statusUpper === 'BILL GENERATED' || statusUpper === 'ACCEPTED') &&
-                            Boolean(req.verifiedBill);
+                        // Strict Mongo document ID required by details endpoint
+                        const mongoId = req._id;
 
-                        // Prioritize sending req._id
-                        const targetId = req._id || req.requestId;
+                        // Check converted/confirmed active booking
+                        const isConverted = Boolean(req.bookingId || req.bookingOrderId);
+                        const isPlaced = isConverted || ['PLACED', 'PACKED', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'PAID', 'CONFIRMED'].includes(statusUpper);
+                        
+                        // Check quote ready / bill generated
+                        const isQuoteReady = !isPlaced && ['BILL GENERATED', 'PENDING PAYMENT', 'ACCEPTED'].includes(statusUpper);
+                        const isDeclined = ['REJECTED', 'CANCELLED'].includes(statusUpper);
+
+                        const billTotal = computeBillAmount(req);
 
                         return (
                             <div
-                                key={req._id || req.requestId}
-                                onClick={() => goToDetail(targetId)}
+                                key={mongoId || req.requestId}
+                                onClick={() => goToDetail(mongoId)}
                                 className="bg-white rounded-3xl border border-slate-100 p-5 sm:p-6 shadow-sm hover:shadow-md transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative overflow-hidden cursor-pointer group"
                             >
-                                {/* Left accent indicator */}
+                                {/* Left accent indicator strip */}
                                 <div
                                     className={`absolute top-0 bottom-0 left-0 w-1.5 ${
-                                        isConfirmed
+                                        isPlaced
                                             ? 'bg-emerald-500'
-                                            : isPharmacyAccepted
+                                            : isQuoteReady
                                             ? 'bg-amber-500 animate-pulse'
+                                            : isDeclined
+                                            ? 'bg-rose-500'
                                             : 'bg-slate-300'
                                     }`}
                                 />
 
-                                {/* 1. Request Details & Pharmacy */}
+                                {/* 1. Request Details & Pharmacy Profile */}
                                 <div className="flex items-center gap-4 min-w-0 flex-1 pl-2">
                                     <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200 overflow-hidden shrink-0">
                                         <img
@@ -226,11 +310,16 @@ export default function PharmacyPrescriptionOrdersPage() {
                                     <div className="space-y-1 min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
                                             <span className="text-xs font-black uppercase font-mono text-slate-900 group-hover:text-[#3d3f96] transition-colors">
-                                                #{req.requestId || req._id}
+                                                #{req.requestId || mongoId}
                                             </span>
+                                            {req.bookingOrderId && (
+                                                <span className="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+                                                    Order #{req.bookingOrderId}
+                                                </span>
+                                            )}
                                             <span className="text-slate-300">•</span>
                                             <span className="text-[10px] font-bold text-slate-400">
-                                                {new Date(req.createdAt).toLocaleDateString()}
+                                                {req.createdAt ? new Date(req.createdAt).toLocaleDateString() : (req.prescriptionDate ? new Date(req.prescriptionDate).toLocaleDateString() : '')}
                                             </span>
                                             <span className="text-slate-300">•</span>
                                             <span className="text-[9px] font-bold uppercase text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
@@ -239,11 +328,11 @@ export default function PharmacyPrescriptionOrdersPage() {
                                         </div>
 
                                         <h4 className="text-sm sm:text-base font-black text-slate-900 truncate">
-                                            {pharmacy.name || "Partner Pharmacy"}
+                                            {pharmacy.name || "Licensed Partner Chemist"}
                                         </h4>
 
-                                        <div className="flex items-center gap-2 text-xs text-slate-500 font-semibold">
-                                            <span>Doctor: <strong>{req.doctorName || "Doctor Prescription"}</strong></span>
+                                        <div className="flex items-center gap-2 text-xs text-slate-500 font-semibold flex-wrap">
+                                            <span>Doctor: <strong>{req.doctorName || "Prescription Note"}</strong></span>
                                             {pharmacy.city && (
                                                 <>
                                                     <span>•</span>
@@ -254,28 +343,28 @@ export default function PharmacyPrescriptionOrdersPage() {
                                     </div>
                                 </div>
 
-                                {/* 2. Middle: Status & Bill Quote */}
+                                {/* 2. Middle: Status & Quotation Ledger */}
                                 <div className="flex items-center justify-between lg:justify-center gap-6 border-t lg:border-t-0 lg:border-x border-slate-100 pt-3 lg:pt-0 lg:px-8 shrink-0">
                                     <div className="space-y-1">
                                         <span className="text-[9px] font-black uppercase text-slate-400 block">
-                                            Pharmacy Status
+                                            Current Status
                                         </span>
-                                        <div>{renderRxStatusBadge(req.status, Boolean(req.verifiedBill))}</div>
+                                        <div>{renderRxStatusBadge(req)}</div>
                                     </div>
 
-                                    {req.verifiedBill ? (
+                                    {billTotal !== null ? (
                                         <div className="space-y-0.5 text-right lg:text-left">
                                             <span className="text-[9px] font-black uppercase text-slate-400 block">
-                                                Approved Bill Total
+                                                Quoted Bill Total
                                             </span>
                                             <span className="font-mono font-black text-lg text-emerald-600">
-                                                ₹{req.verifiedBill.totalAmount || req.verifiedBill.itemTotal || 0}
+                                                ₹{billTotal}
                                             </span>
                                         </div>
                                     ) : (
                                         <div className="space-y-0.5 text-right lg:text-left">
                                             <span className="text-[9px] font-black uppercase text-slate-400 block">
-                                                Invoice Status
+                                                Quotation Ledger
                                             </span>
                                             <span className="text-xs font-bold text-slate-400 italic">
                                                 Awaiting Quote
@@ -284,26 +373,40 @@ export default function PharmacyPrescriptionOrdersPage() {
                                     )}
                                 </div>
 
-                                {/* 3. Right: Action Buttons */}
+                                {/* 3. Right: Action Trigger Buttons */}
                                 <div className="flex items-center justify-between lg:justify-end gap-2.5 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
-                                    {isConfirmed ? (
+                                    {isPlaced ? (
+                                        <div className="flex items-center gap-2">
+                                            {req.deliveryOTP && (
+                                                <div 
+                                                    className="bg-emerald-50 border border-emerald-200 px-2.5 py-2 rounded-2xl flex items-center gap-1.5"
+                                                    title="Doorstep Delivery OTP"
+                                                >
+                                                    <Key size={13} className="text-emerald-600" />
+                                                    <span className="font-mono text-xs font-black text-emerald-800">
+                                                        {req.deliveryOTP}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    goToDetail(mongoId);
+                                                }}
+                                                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider rounded-2xl shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+                                            >
+                                                <Receipt size={14} />
+                                                <span>Track Order</span>
+                                                <ChevronRight size={14} />
+                                            </button>
+                                        </div>
+                                    ) : isQuoteReady ? (
                                         <button
                                             type="button"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                goToDetail(targetId);
-                                            }}
-                                            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider rounded-2xl shadow-sm transition flex items-center gap-1.5 cursor-pointer"
-                                        >
-                                            <Receipt size={14} />
-                                            <span>View Order &amp; OTP</span>
-                                        </button>
-                                    ) : isPharmacyAccepted ? (
-                                        <button
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                goToDetail(targetId);
+                                                goToDetail(mongoId);
                                             }}
                                             className="px-5 py-2.5 bg-[#3d3f96] hover:bg-[#2d2f75] text-white text-xs font-black uppercase tracking-wider rounded-2xl shadow-sm transition flex items-center gap-1.5 cursor-pointer active:scale-95"
                                         >
@@ -316,7 +419,7 @@ export default function PharmacyPrescriptionOrdersPage() {
                                             type="button"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                goToDetail(targetId);
+                                                goToDetail(mongoId);
                                             }}
                                             className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-2xl transition flex items-center gap-1.5 cursor-pointer"
                                         >

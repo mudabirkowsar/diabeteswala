@@ -23,19 +23,29 @@ import {
     RefreshCw,
     Key,
     PackageCheck,
-    Receipt
+    Receipt,
+    Bike,
+    Truck,
+    User,
+    Check,
+    CircleDot,
+    RotateCcw,
+    Tag,
+    Copy,
+    ChevronDown
 } from 'lucide-react';
 
 // API Service & Notification Context
 import UserAPI from '../../../../../services/UserAPI';
 import { useNotification } from '../../../../../context/NotificationContext';
 
-// --- BASE MEDIA HELPER ---
+// --- MEDIA URL HELPER ---
 const BASE_SERVER_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.3:5002";
 const PLACEHOLDER_STORE = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=300";
+const PLACEHOLDER_DRIVER = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200";
 
 const getMediaUrl = (path) => {
-    if (!path) return PLACEHOLDER_STORE;
+    if (!path) return null;
     if (path.startsWith("http://") || path.startsWith("https://")) {
         return path;
     }
@@ -63,31 +73,34 @@ const loadRazorpayScript = () => {
 export default function RxOrderDetailPage() {
     const params = useParams();
     const router = useRouter();
-    // requestId here contains the _id passed from the URL
-    const requestId = params?.id;
+    const mongoRequestId = params?.id;
     const { showNotification } = useNotification();
 
     // --- State Management ---
     const [request, setRequest] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [copiedOtp, setCopiedOtp] = useState(false);
+
+    // Collapsible Timeline State
+    const [isTimelineOpen, setIsTimelineOpen] = useState(true);
 
     // Payment & Confirmation State
     const [paymentMethod, setPaymentMethod] = useState("COD"); // "COD" | "Online"
     const [paying, setPaying] = useState(false);
     const [confirmedOrderData, setConfirmedOrderData] = useState(null);
 
-    // --- 1. Fetch Single Request Details ---
+    // --- 1. Fetch Request Details via MongoDB _id ---
     const fetchDetails = useCallback(async (isRefresh = false) => {
-        if (!requestId) return;
+        if (!mongoRequestId) return;
         if (isRefresh) setRefreshing(true);
         else setLoading(true);
 
         try {
-            const res = await UserAPI.getUserPrescriptionRequestDetails(requestId);
+            const res = await UserAPI.getUserPrescriptionRequestDetails(mongoRequestId);
             if (res && res.success) {
                 setRequest(res.data);
-                if (isRefresh) showNotification("Prescription quote updated!", "success");
+                if (isRefresh) showNotification("Prescription tracking refreshed!", "success");
             } else {
                 showNotification(res?.message || "Failed to load prescription order specifications.", "error");
             }
@@ -98,48 +111,64 @@ export default function RxOrderDetailPage() {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [requestId, showNotification]);
+    }, [mongoRequestId, showNotification]);
 
     useEffect(() => {
         fetchDetails();
     }, [fetchDetails]);
 
-    // 🌟 STATUS HELPERS
+    // Copy OTP Helper
+    const copyToClipboard = (text) => {
+        if (!text) return;
+        navigator.clipboard.writeText(text);
+        setCopiedOtp(true);
+        showNotification("Delivery OTP copied to clipboard", "success");
+        setTimeout(() => setCopiedOtp(false), 2000);
+    };
+
+    // --- Status Normalization Helpers ---
     const normalizedStatus = (request?.status || "").toUpperCase().trim();
-    const hasVerifiedBill = Boolean(request?.verifiedBill && (request.verifiedBill.totalAmount !== undefined || request.verifiedBill.itemTotal !== undefined));
 
     const isOrderPlaced =
         Boolean(confirmedOrderData) ||
-        normalizedStatus === 'PAID' ||
-        normalizedStatus === 'PLACED' ||
-        normalizedStatus === 'CONFIRMED' ||
-        normalizedStatus === 'COMPLETED';
+        Boolean(request?.bookingId) ||
+        Boolean(request?.bookingOrderId) ||
+        ['PLACED', 'PACKED', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'PAID'].includes(normalizedStatus);
 
-    const isRejected = 
-        normalizedStatus === 'REJECTED' || 
-        normalizedStatus === 'CANCELLED';
+    const isRejected = ['REJECTED', 'CANCELLED'].includes(normalizedStatus);
 
     const isPharmacyAccepted =
         !isOrderPlaced &&
         !isRejected &&
-        (normalizedStatus === 'BILL GENERATED' || normalizedStatus === 'ACCEPTED') &&
-        hasVerifiedBill;
+        (['BILL GENERATED', 'PENDING PAYMENT', 'ACCEPTED'].includes(normalizedStatus) ||
+            Boolean(request?.verifiedBill) ||
+            Boolean(request?.items && request.items.length > 0));
+
+    // Calculate financials
+    const itemsList = request?.items && request.items.length > 0 ? request.items : (request?.requestedMedicines || []);
+    const itemsCalculatedTotal = itemsList.reduce((acc, it) => acc + (Number(it.price || it.mrp || 0) * Number(it.quantity || 1)), 0);
+    const deliveryFee = Number(request?.verifiedBill?.deliveryCharge || 0);
+    const grandTotal = Number(request?.verifiedBill?.totalAmount) || (itemsCalculatedTotal + deliveryFee);
+
+    // Active Delivery OTP & Order Tracking Reference
+    const activeDeliveryOtp = request?.deliveryOTP || request?.liveTracking?.deliveryOTP || confirmedOrderData?.deliveryOTP;
+    const finalTrackingOrderId = request?.bookingOrderId || confirmedOrderData?.orderId || request?.confirmedOrderId;
 
     // --- 2. Confirm & Pay Handler ---
     const handlePayAndConfirm = async () => {
         if (!isPharmacyAccepted) {
-            showNotification("Pharmacy has not approved or generated the bill yet.", "error");
+            showNotification("Pharmacy has not approved or generated the quote yet.", "error");
             return;
         }
 
         setPaying(true);
 
         try {
-            const targetId = request?._id || requestId;
+            const targetMongoId = request?._id || mongoRequestId;
 
             const payload = {
-                _id: targetId,
-                requestId: targetId,
+                _id: targetMongoId,
+                requestId: targetMongoId,
                 paymentMethod: paymentMethod
             };
 
@@ -151,24 +180,17 @@ export default function RxOrderDetailPage() {
                 return;
             }
 
-            // === A. COD FLOW ===
             if (paymentMethod === "COD") {
                 showNotification(res.message || "Prescription order confirmed with COD!", "success");
                 setConfirmedOrderData(res.data);
-                setRequest((prev) => ({
-                    ...prev,
-                    status: "Paid",
-                    confirmedOrderId: res.data?.orderId || res.data?._id,
-                    deliveryOTP: res.data?.deliveryOTP
-                }));
+                fetchDetails();
                 setPaying(false);
                 return;
             }
 
-            // === B. ONLINE FLOW (RAZORPAY) ===
             const razorpayKey = res.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
             const razorpayOrderId = res.razorpayOrderId;
-            const payableAmount = res.amount || (request.verifiedBill.totalAmount * 100);
+            const payableAmount = res.amount || (grandTotal * 100);
 
             if (!razorpayKey || !razorpayOrderId) {
                 showNotification("Payment gateway configuration missing. Please try COD.", "error");
@@ -187,15 +209,15 @@ export default function RxOrderDetailPage() {
                 key: razorpayKey,
                 amount: payableAmount,
                 currency: "INR",
-                name: request.pharmacyId?.name || "Licensed Pharmacy",
-                description: `Prescription #${request.requestId || targetId}`,
+                name: request.pharmacyId?.name || "Partner Pharmacy",
+                description: `Prescription #${request.requestId || targetMongoId}`,
                 order_id: razorpayOrderId,
                 handler: async function (response) {
                     try {
                         setPaying(true);
                         const verifyPayload = {
-                            _id: targetId,
-                            requestId: targetId,
+                            _id: targetMongoId,
+                            requestId: targetMongoId,
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_payment_id: response.razorpay_payment_id,
                             razorpay_signature: response.razorpay_signature
@@ -206,12 +228,7 @@ export default function RxOrderDetailPage() {
                         if (verifyRes && verifyRes.success) {
                             showNotification(verifyRes.message || "Payment verified! Order placed successfully.", "success");
                             setConfirmedOrderData(verifyRes.data);
-                            setRequest((prev) => ({
-                                ...prev,
-                                status: "Paid",
-                                confirmedOrderId: verifyRes.data?.orderId || verifyRes.data?.bookingMongoId,
-                                deliveryOTP: verifyRes.data?.deliveryOTP
-                            }));
+                            fetchDetails();
                         } else {
                             showNotification(verifyRes?.message || "Online payment verification failed.", "error");
                         }
@@ -223,12 +240,10 @@ export default function RxOrderDetailPage() {
                     }
                 },
                 prefill: {
-                    name: request.address?.name || "",
-                    contact: request.address?.phone || ""
+                    name: request.deliveryAddress?.name || request.address?.name || "",
+                    contact: request.deliveryAddress?.phone || request.address?.phone || ""
                 },
-                theme: {
-                    color: "#3d3f96"
-                },
+                theme: { color: "#3d3f96" },
                 modal: {
                     ondismiss: function () {
                         setPaying(false);
@@ -254,10 +269,10 @@ export default function RxOrderDetailPage() {
 
     if (loading) {
         return (
-            <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 space-y-4">
-                <Loader2 className="animate-spin text-[#3d3f96]" size={36} />
-                <p className="text-xs font-black text-slate-700 uppercase tracking-widest">
-                    Loading Prescription Quote...
+            <div className="min-h-[60vh] flex flex-col items-center justify-center p-4 space-y-3">
+                <Loader2 className="animate-spin text-[#3d3f96]" size={32} />
+                <p className="text-[11px] font-black text-slate-600 uppercase tracking-wider text-center">
+                    Loading Prescription Details...
                 </p>
             </div>
         );
@@ -265,181 +280,390 @@ export default function RxOrderDetailPage() {
 
     if (!request) {
         return (
-            <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center max-w-md mx-auto space-y-4">
-                <AlertCircle className="w-12 h-12 text-rose-500" />
-                <h2 className="text-lg font-black text-slate-800">Prescription Request Not Found</h2>
-                <p className="text-xs text-slate-400 font-medium">We could not retrieve the details for this ticket.</p>
+            <div className="min-h-[50vh] flex flex-col items-center justify-center p-4 text-center max-w-sm mx-auto space-y-3">
+                <AlertCircle className="w-10 h-10 text-rose-500" />
+                <h2 className="text-base font-black text-slate-800">Prescription Request Not Found</h2>
+                <p className="text-xs text-slate-400">
+                    We could not retrieve details for this ticket.
+                </p>
                 <button
                     onClick={() => router.back()}
-                    className="mt-2 inline-flex items-center gap-2 bg-[#3d3f96] text-white text-xs font-black uppercase px-6 py-3 rounded-2xl cursor-pointer hover:bg-[#2e3075] transition"
+                    className="mt-2 inline-flex items-center gap-1.5 bg-[#3d3f96] text-white text-xs font-black uppercase px-4 py-2.5 rounded-xl cursor-pointer hover:bg-[#2e3075] transition"
                 >
-                    <ArrowLeft size={14} /> Go Back
+                    <ArrowLeft size={13} /> Go Back
                 </button>
             </div>
         );
     }
 
-    const pharmacy = request.pharmacyId || {};
-    const pharmacyImg = getMediaUrl(pharmacy.profileImage);
-    const activeDeliveryOtp = confirmedOrderData?.deliveryOTP || request.deliveryOTP;
-    const finalTrackingOrderId = confirmedOrderData?.orderId || request.confirmedOrderId;
+    const driver = request.driver;
+    const deliveryAddress = request.deliveryAddress || request.address;
+    const timeline = request.trackingTimeline || [];
+    const returnDetails = request.returnDetails;
+    const hasActiveReturn = returnDetails && returnDetails.status && returnDetails.status !== "None";
+    const currentTimelineStep = timeline.find(t => t.isCurrent) || timeline[timeline.length - 1];
 
     return (
-        <div className="max-w-[1200px] mx-auto py-6 px-4 sm:px-6 space-y-6 text-left select-none antialiased">
+        <div className="max-w-[1200px] mx-auto py-3 sm:py-6 px-3 sm:px-6 space-y-4 text-left select-none antialiased">
 
             {/* --- TOP HEADER --- */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-                <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                <div className="flex items-start sm:items-center gap-2.5">
                     <button
                         onClick={() => router.back()}
-                        className="w-10 h-10 rounded-2xl bg-white border border-slate-200/80 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition shadow-xs cursor-pointer"
-                        title="Back to Rx Orders"
+                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 shrink-0 shadow-xs cursor-pointer"
+                        title="Back"
                     >
-                        <ArrowLeft size={18} />
+                        <ArrowLeft size={16} />
                     </button>
-                    <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight font-mono">
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            <h1 className="text-base sm:text-xl font-black text-slate-900 tracking-tight font-mono truncate max-w-[200px] sm:max-w-none">
                                 #{request.requestId || request._id}
                             </h1>
-                            <span className="text-[10px] font-black uppercase text-[#3d3f96] bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-lg">
+                            {finalTrackingOrderId && (
+                                <span className="text-[10px] sm:text-xs font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200">
+                                    Ref: {finalTrackingOrderId}
+                                </span>
+                            )}
+                            <span className="text-[9px] sm:text-[10px] font-black uppercase text-[#3d3f96] bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md">
                                 {request.durationType || 'Full Course'}
                             </span>
                         </div>
-                        <p className="text-xs font-semibold text-slate-400 flex items-center gap-1.5 mt-0.5">
-                            <Calendar size={13} /> Placed on {new Date(request.createdAt).toLocaleString()}
+                        <p className="text-[11px] font-semibold text-slate-400 flex items-center gap-1 mt-0.5">
+                            <Calendar size={11} /> Rx: {request.prescriptionDate ? new Date(request.prescriptionDate).toLocaleDateString() : 'N/A'}
                         </p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center self-end sm:self-auto">
                     <button
                         onClick={() => fetchDetails(true)}
                         disabled={refreshing}
-                        className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200/80 rounded-2xl text-xs font-bold text-slate-700 flex items-center gap-1.5 shadow-xs transition cursor-pointer disabled:opacity-50"
+                        className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 flex items-center gap-1.5 shadow-xs transition cursor-pointer disabled:opacity-50"
                     >
-                        <RefreshCw size={13} className={refreshing ? "animate-spin text-[#3d3f96]" : ""} />
+                        <RefreshCw size={11} className={refreshing ? "animate-spin text-[#3d3f96]" : ""} />
                         <span>Refresh</span>
                     </button>
                 </div>
             </div>
 
-            {/* --- ORDER STATUS BANNER --- */}
+            {/* --- TOP STATUS BANNER --- */}
             {isOrderPlaced ? (
-                <div className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white p-6 rounded-3xl shadow-lg space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div className="flex items-center gap-3.5">
-                            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0">
-                                <PackageCheck size={26} className="text-white" />
+                <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white p-3.5 sm:p-5 rounded-2xl shadow-sm space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-start sm:items-center gap-2.5">
+                            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0">
+                                <PackageCheck size={20} className="text-white" />
                             </div>
                             <div>
-                                <div className="flex items-center gap-2">
-                                    <h2 className="text-base sm:text-lg font-black tracking-tight">
-                                        Prescription Order Confirmed!
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                    <h2 className="text-sm sm:text-base font-black tracking-tight">
+                                        {request.liveTracking?.statusHeading || "Prescription Order Confirmed!"}
                                     </h2>
-                                    <span className="bg-white/20 px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider">
-                                        Dispatched Soon
+                                    <span className="bg-white/20 px-2 py-0.5 rounded-md text-[9px] font-black uppercase">
+                                        {request.status || "In Progress"}
                                     </span>
                                 </div>
-                                <p className="text-xs text-emerald-100 font-medium mt-0.5">
-                                    Your order has been registered with the pharmacy. Medicines are being packed.
+                                <p className="text-[11px] text-emerald-100 font-medium mt-0.5 leading-tight">
+                                    {request.deliveryStatus
+                                        ? `Delivery status: ${request.deliveryStatus}`
+                                        : "Your medicines are verified & under fulfillment."}
                                 </p>
                             </div>
                         </div>
 
                         {/* Doorstep OTP Badge */}
                         {activeDeliveryOtp && (
-                            <div className="bg-white text-emerald-900 px-4 py-2 rounded-2xl shadow-sm flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
-                                <Key size={16} className="text-emerald-600" />
-                                <div>
-                                    <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block">
-                                        Delivery OTP
-                                    </span>
-                                    <span className="text-lg font-mono font-black tracking-widest text-emerald-700">
-                                        {activeDeliveryOtp}
-                                    </span>
+                            <div
+                                onClick={() => copyToClipboard(activeDeliveryOtp)}
+                                className="w-full sm:w-auto bg-white text-emerald-950 px-3 py-1.5 rounded-xl shadow-xs flex items-center justify-between sm:justify-start gap-2.5 shrink-0 cursor-pointer hover:bg-emerald-50 active:scale-98 transition"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
+                                        <Key size={13} />
+                                    </div>
+                                    <div>
+                                        <span className="text-[8px] font-black uppercase tracking-wider text-slate-400 block">
+                                            Delivery OTP
+                                        </span>
+                                        <span className="text-sm font-mono font-black tracking-widest text-emerald-800">
+                                            {activeDeliveryOtp}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-1 text-[10px] text-slate-400 font-bold bg-slate-50 px-2 py-1 rounded">
+                                    <Copy size={11} className={copiedOtp ? "text-emerald-600" : ""} />
+                                    <span>{copiedOtp ? "Copied" : "Copy"}</span>
                                 </div>
                             </div>
                         )}
                     </div>
-
-                    {finalTrackingOrderId && (
-                        <div className="pt-2 border-t border-white/20 text-xs font-mono font-bold text-emerald-100 flex items-center gap-2">
-                            <span>Official Tracking Reference:</span>
-                            <span className="text-white font-black bg-white/10 px-2 py-0.5 rounded">
-                                #{finalTrackingOrderId}
-                            </span>
-                        </div>
-                    )}
                 </div>
             ) : isRejected ? (
-                <div className="bg-rose-50 border border-rose-200 rounded-3xl p-5 flex items-start gap-3.5 text-xs">
-                    <AlertCircle size={20} className="text-rose-600 shrink-0 mt-0.5" />
-                    <div className="space-y-1">
-                        <p className="font-black text-rose-900 text-sm">Prescription Request Declined</p>
-                        <p className="text-rose-700 leading-relaxed font-medium">
-                            {request.rejectReason || "The pharmacy was unable to fulfill this prescription inquiry. Please check the doctor's slip or choose another pharmacy."}
+                <div className="bg-rose-50 border border-rose-200 rounded-2xl p-3.5 flex items-start gap-2.5 text-xs">
+                    <AlertCircle size={16} className="text-rose-600 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                        <p className="font-black text-rose-900 text-xs">Prescription Request Declined</p>
+                        <p className="text-[11px] text-rose-700 leading-relaxed font-medium">
+                            {request.rejectReason || "The pharmacy was unable to fulfill this inquiry."}
                         </p>
                     </div>
                 </div>
             ) : isPharmacyAccepted ? (
-                <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-5 flex items-start gap-3.5 text-xs">
-                    <Sparkles size={20} className="text-emerald-600 shrink-0 mt-0.5" />
-                    <div className="space-y-1">
-                        <p className="font-black text-emerald-900 text-sm">Prescription Approved &amp; Bill Ready!</p>
-                        <p className="text-emerald-700 leading-relaxed font-medium">
-                            The pharmacy verified your medicines and generated the final invoice. Select your payment method below to confirm dispatch.
+                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 flex items-start gap-2.5 text-xs">
+                    <Sparkles size={16} className="text-emerald-600 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                        <p className="font-black text-emerald-900 text-xs">Chemist Verified & Quotation Ready!</p>
+                        <p className="text-[11px] text-emerald-700 leading-relaxed font-medium">
+                            The licensed chemist verified your items. Review ledger and pay below to dispatch.
                         </p>
                     </div>
                 </div>
             ) : (
-                <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 flex items-start gap-3.5 text-xs">
-                    <Clock size={20} className="text-amber-600 shrink-0 mt-0.5" />
-                    <div className="space-y-1">
-                        <p className="font-black text-amber-900 text-sm">Awaiting Pharmacist Acceptance &amp; Quotation</p>
-                        <p className="text-amber-700 leading-relaxed font-medium">
-                            The licensed chemist is verifying your doctor’s prescription and checking medicine stock. Once approved, you will be able to review the certified quotation and pay.
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 flex items-start gap-2.5 text-xs">
+                    <Clock size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                        <p className="font-black text-amber-900 text-xs">Awaiting Chemist Quotation</p>
+                        <p className="text-[11px] text-amber-700 leading-relaxed font-medium">
+                            The chemist is verifying stock and pricing. You will be notified once ready.
                         </p>
                     </div>
                 </div>
             )}
 
-            {/* --- MAIN GRID --- */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* --- MAIN GRID LAYOUT --- */}
+            <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4">
 
-                {/* === LEFT 2 COLUMNS: ATTACHMENT & MEDICINES === */}
-                <div className="lg:col-span-2 space-y-6">
+                {/* === LEFT CONTENT: TIMELINE, DRIVER, ITEMS, SLIP === */}
+                <div className="lg:col-span-2 space-y-4 order-2 lg:order-1">
 
-                    {/* Prescription Document Preview */}
+                    {/* 1. Collapsible Stepper Timeline */}
+                    {timeline.length > 0 && (
+                        <div className="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden transition-all duration-300">
+                            {/* Toggle Header */}
+                            <button
+                                type="button"
+                                onClick={() => setIsTimelineOpen(!isTimelineOpen)}
+                                className="w-full flex items-center justify-between p-3.5 sm:p-5 text-left hover:bg-slate-50/70 transition cursor-pointer"
+                            >
+                                <div className="space-y-0.5 min-w-0 pr-2">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <Clock size={14} className="text-[#3d3f96]" />
+                                        <h3 className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-slate-700">
+                                            Fulfillment Timeline
+                                        </h3>
+                                        <span className="text-[9px] font-bold text-[#3d3f96] bg-indigo-50 border border-indigo-100 px-1.5 py-0.2 rounded">
+                                            Stage {timeline.findIndex(t => t.isCurrent) + 1 || timeline.filter(t => t.isCompleted).length}/{timeline.length}
+                                        </span>
+                                    </div>
+                                    {!isTimelineOpen && currentTimelineStep && (
+                                        <p className="text-[10px] text-slate-400 font-semibold truncate pl-5">
+                                            Current: <span className="text-slate-700 font-bold">{currentTimelineStep.title}</span>
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                    <span className="text-[10px] font-bold text-slate-400 hidden xs:inline">
+                                        {isTimelineOpen ? "Hide" : "Show"}
+                                    </span>
+                                    <div className={`w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 transition-transform duration-300 ${isTimelineOpen ? 'rotate-180' : ''}`}>
+                                        <ChevronDown size={14} />
+                                    </div>
+                                </div>
+                            </button>
+
+                            {/* Dropdown Content */}
+                            <div
+                                className={`transition-all duration-300 ease-in-out px-4 sm:px-6 ${
+                                    isTimelineOpen ? 'max-h-[1000px] pb-4 opacity-100 border-t border-slate-100 pt-4' : 'max-h-0 opacity-0 overflow-hidden py-0'
+                                }`}
+                            >
+                                <div className="relative pl-5 sm:pl-7 space-y-4 before:absolute before:left-2 sm:before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+                                    {timeline.map((stepItem, idx) => {
+                                        const isCompleted = stepItem.isCompleted;
+                                        const isCurrent = stepItem.isCurrent;
+
+                                        return (
+                                            <div key={stepItem.step || idx} className="relative flex items-start gap-2.5">
+                                                {/* Stepper Dot */}
+                                                <div
+                                                    className={`absolute -left-5 sm:-left-7 w-5 sm:w-6 h-5 sm:h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all shadow-2xs ${
+                                                        isCompleted
+                                                            ? 'bg-emerald-600 text-white'
+                                                            : isCurrent
+                                                                ? 'bg-[#3d3f96] text-white ring-3 ring-indigo-100 animate-pulse'
+                                                                : 'bg-white border-2 border-slate-200 text-slate-300'
+                                                    }`}
+                                                >
+                                                    {isCompleted ? <Check size={10} strokeWidth={3} /> : stepItem.step}
+                                                </div>
+
+                                                {/* Content */}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center justify-between flex-wrap gap-1">
+                                                        <h4 className={`text-xs font-bold leading-tight ${isCurrent ? 'text-[#3d3f96]' : isCompleted ? 'text-slate-900' : 'text-slate-400'}`}>
+                                                            {stepItem.title}
+                                                        </h4>
+                                                        {stepItem.formattedTime && (
+                                                            <span className="text-[9px] font-semibold text-slate-400 bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded">
+                                                                {stepItem.formattedTime}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                                                        {stepItem.description}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 2. Assigned Driver Card */}
+                    {driver && (
+                        <div className="bg-gradient-to-br from-indigo-50/50 to-slate-50 rounded-2xl border border-indigo-100/70 p-3.5 sm:p-5 shadow-xs space-y-3">
+                            <div className="flex items-center justify-between border-b border-indigo-100 pb-2.5">
+                                <h3 className="text-[11px] font-black uppercase tracking-wider text-[#3d3f96] flex items-center gap-1.5">
+                                    <Bike size={14} /> Assigned Partner
+                                </h3>
+                                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                                    {driver.status || "Active Duty"}
+                                </span>
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-11 h-11 rounded-xl bg-white border border-slate-200 overflow-hidden shadow-2xs shrink-0">
+                                        <img
+                                            src={getMediaUrl(driver.profilePic) || PLACEHOLDER_DRIVER}
+                                            alt={driver.name}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => { e.target.src = PLACEHOLDER_DRIVER; }}
+                                        />
+                                    </div>
+                                    <div className="space-y-0.5 min-w-0">
+                                        <h4 className="text-xs font-black text-slate-900 truncate">
+                                            {driver.name}
+                                        </h4>
+                                        <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
+                                            <span>{driver.vehicleType || "Vehicle"}</span>
+                                            <span>•</span>
+                                            <span className="font-mono font-bold text-slate-700 bg-white px-1.5 py-0.2 rounded border border-slate-200 text-[10px]">
+                                                {driver.vehicleNumber}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {driver.phone && (
+                                    <a
+                                        href={`tel:${driver.phone}`}
+                                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#3d3f96] hover:bg-[#2e3075] text-white text-[11px] font-black uppercase rounded-xl shadow-xs transition shrink-0"
+                                    >
+                                        <Phone size={11} />
+                                        <span>Call Delivery Partner</span>
+                                    </a>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 3. Verified Prescribed Medicines List */}
+                    <div className="bg-white rounded-2xl border border-slate-100 p-3.5 sm:p-5 shadow-xs space-y-3">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                            <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                <Pill size={13} className="text-[#3d3f96]" /> Prescribed Medicines ({itemsList.length})
+                            </h3>
+                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                                Verified
+                            </span>
+                        </div>
+
+                        <div className="divide-y divide-slate-100">
+                            {itemsList.map((med, idx) => (
+                                <div key={med.medicineId || med._id || idx} className="py-2.5 first:pt-0 last:pb-0 flex items-start justify-between gap-2.5">
+                                    <div className="space-y-1 min-w-0">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                            <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">{med.name}</h4>
+                                            {med.isComboApplied && (
+                                                <span className="text-[8px] font-black uppercase bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-full flex items-center gap-0.5">
+                                                    <Tag size={8} /> +{med.freeQuantity} Free
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-medium text-slate-400 flex-wrap">
+                                            {med.packaging && (
+                                                <span className="bg-slate-100 px-1.5 py-0.2 rounded text-slate-600">
+                                                    {med.packaging}
+                                                </span>
+                                            )}
+                                            {med.duration && (
+                                                <>
+                                                    <span>•</span>
+                                                    <span>{med.duration}</span>
+                                                </>
+                                            )}
+                                            <span>•</span>
+                                            <span>Qty: <strong className="text-slate-700">{med.quantity}</strong></span>
+                                        </div>
+
+                                        {(med.isReturnAllowed || med.isReplacementAllowed) && (
+                                            <div className="flex items-center gap-1.5 text-[8px] sm:text-[9px] font-semibold text-emerald-600">
+                                                {med.isReturnAllowed && <span>• Returns Allowed</span>}
+                                                {med.isReplacementAllowed && <span>• Replacement Allowed</span>}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="text-right shrink-0">
+                                        <div className="flex flex-col items-end">
+                                            {med.mrp > med.price && (
+                                                <span className="text-[10px] text-slate-400 line-through">₹{med.mrp}</span>
+                                            )}
+                                            <span className="font-mono text-xs sm:text-sm font-black text-slate-900">
+                                                ₹{med.price || med.mrp || 0}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* 4. Uploaded Prescription Document Slip */}
                     {request.prescriptionImage && (
-                        <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm space-y-4">
-                            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                                <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                                    <FileText size={14} className="text-[#3d3f96]" /> Uploaded Doctor Prescription
+                        <div className="bg-white rounded-2xl border border-slate-100 p-3.5 sm:p-5 shadow-xs space-y-3">
+                            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                                <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                    <FileText size={13} className="text-[#3d3f96]" /> Uploaded Rx Slip
                                 </h3>
                                 <a
                                     href={getMediaUrl(request.prescriptionImage)}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="text-xs font-bold text-[#3d3f96] hover:underline flex items-center gap-1"
+                                    className="text-[11px] font-bold text-[#3d3f96] hover:underline flex items-center gap-0.5"
                                 >
-                                    <span>Open Full Document</span>
-                                    <ExternalLink size={12} />
+                                    <span>View</span>
+                                    <ExternalLink size={10} />
                                 </a>
                             </div>
 
-                            <div className="rounded-2xl border border-slate-200/80 overflow-hidden bg-slate-50 max-h-80 flex items-center justify-center p-2">
+                            <div className="rounded-xl border border-slate-200/80 overflow-hidden bg-slate-50 max-h-56 sm:max-h-72 flex items-center justify-center p-2">
                                 <img
                                     src={getMediaUrl(request.prescriptionImage)}
                                     alt="Prescription Document"
-                                    className="max-h-72 w-auto object-contain rounded-xl shadow-xs"
-                                    onError={(e) => {
-                                        e.target.style.display = 'none';
-                                    }}
+                                    className="max-h-52 sm:max-h-64 w-auto object-contain rounded-lg"
+                                    onError={(e) => { e.target.style.display = 'none'; }}
                                 />
                             </div>
 
-                            <div className="flex items-center gap-4 text-xs font-semibold text-slate-500 pt-1">
+                            <div className="flex items-center gap-2 text-[10px] sm:text-[11px] font-medium text-slate-500 pt-0.5 flex-wrap">
                                 <span>Doctor: <strong className="text-slate-800">{request.doctorName || "Doctor Note"}</strong></span>
                                 <span>•</span>
                                 <span>Rx Date: <strong className="text-slate-800">{request.prescriptionDate ? new Date(request.prescriptionDate).toLocaleDateString() : 'N/A'}</strong></span>
@@ -447,131 +671,136 @@ export default function RxOrderDetailPage() {
                         </div>
                     )}
 
-                    {/* Requested Medicines List */}
-                    <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm space-y-4">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                            <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                                <Pill size={14} className="text-[#3d3f96]" /> Prescribed Medicines ({request.requestedMedicines?.length || 0})
-                            </h3>
-                            <span className="text-[11px] font-bold text-slate-400">Stock Verified</span>
-                        </div>
+                    {/* 5. Return & Refund Lifecycle */}
+                    {hasActiveReturn && (
+                        <div className="bg-amber-50/60 rounded-2xl border border-amber-200 p-3.5 sm:p-5 shadow-xs space-y-3">
+                            <div className="flex items-center justify-between border-b border-amber-200/70 pb-2.5">
+                                <h3 className="text-[11px] font-black uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                                    <RotateCcw size={13} /> Return Status
+                                </h3>
+                                <span className="text-[9px] font-black uppercase bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                                    {returnDetails.status}
+                                </span>
+                            </div>
 
-                        <div className="divide-y divide-slate-100">
-                            {request.requestedMedicines?.map((med, idx) => (
-                                <div key={med._id || idx} className="py-3.5 first:pt-1 last:pb-1 flex items-center justify-between gap-4">
-                                    <div className="space-y-1">
-                                        <h4 className="text-sm font-extrabold text-slate-900">{med.name}</h4>
-                                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
-                                            <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-600">
-                                                Dosage: {med.dosage || "1-0-1"}
-                                            </span>
-                                            <span>•</span>
-                                            <span>Duration: {med.durationDays || 15} Days</span>
-                                        </div>
+                            <div className="space-y-1.5 text-[11px] text-amber-900">
+                                <div className="flex justify-between items-center">
+                                    <span className="font-bold">Type:</span>
+                                    <span>{returnDetails.requestType || "Return"}</span>
+                                </div>
+                                {returnDetails.reason && (
+                                    <div className="flex justify-between items-start gap-2">
+                                        <span className="font-bold">Reason:</span>
+                                        <span className="text-right">{returnDetails.reason}</span>
                                     </div>
-
-                                    <div className="text-right">
-                                        <span className="text-[10px] text-slate-400 font-bold block">Estimated MRP</span>
-                                        <span className="font-mono text-sm font-black text-slate-900">
-                                            ₹{med.mrp || 0}
+                                )}
+                                {returnDetails.returnOTP && (
+                                    <div className="flex justify-between items-center pt-1 border-t border-amber-200">
+                                        <span className="font-black">Handover OTP:</span>
+                                        <span className="font-mono font-black text-xs bg-white px-1.5 py-0.2 rounded border border-amber-300">
+                                            {returnDetails.returnOTP}
                                         </span>
                                     </div>
-                                </div>
-                            ))}
+                                )}
+                                {returnDetails.refundAmount > 0 && (
+                                    <div className="flex justify-between items-center pt-1">
+                                        <span className="font-black">Refund Amount:</span>
+                                        <span className="font-mono font-black text-xs text-emerald-700">
+                                            ₹{returnDetails.refundAmount}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                 </div>
 
-                {/* === RIGHT COLUMN: BILL & PAYMENT CHECKOUT === */}
-                <div className="space-y-6">
+                {/* === RIGHT CONTENT: PAYMENT & LEDGER (Mobile friendly stacked) === */}
+                <div className="space-y-4 order-1 lg:order-2">
 
-                    {/* Certified Bill Summary */}
-                    <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm space-y-4">
-                        <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 border-b border-slate-100 pb-3">
-                            <Receipt size={14} className="text-emerald-500" /> Quotation Ledger
+                    {/* Certified Ledger / Bill */}
+                    <div className="bg-white rounded-2xl border border-slate-100 p-3.5 sm:p-5 shadow-xs space-y-3">
+                        <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 border-b border-slate-100 pb-2.5">
+                            <Receipt size={13} className="text-emerald-500" /> Quotation Ledger
                         </h3>
 
-                        {request.verifiedBill ? (
-                            <div className="space-y-2.5 text-xs font-bold text-slate-600">
-                                <div className="flex justify-between items-center">
+                        {itemsCalculatedTotal > 0 || request.verifiedBill ? (
+                            <div className="space-y-2 text-xs font-semibold text-slate-600">
+                                <div className="flex justify-between items-center text-[11px] sm:text-xs">
                                     <span>Medicines Total</span>
-                                    <span className="font-mono text-slate-800">
-                                        ₹{request.verifiedBill.itemTotal || 0}
-                                    </span>
+                                    <span className="font-mono text-slate-800">₹{itemsCalculatedTotal}</span>
                                 </div>
-                                <div className="flex justify-between items-center">
+                                <div className="flex justify-between items-center text-[11px] sm:text-xs">
                                     <span>Delivery Fee</span>
-                                    <span className="font-mono text-slate-800">
-                                        ₹{request.verifiedBill.deliveryCharge || 0}
-                                    </span>
+                                    <span className="font-mono text-slate-800">₹{deliveryFee}</span>
                                 </div>
-                                <div className="flex justify-between items-center text-slate-900 border-t border-slate-200 pt-3 text-sm font-black">
-                                    <span>Grand Total</span>
-                                    <span className="font-mono text-xl font-black text-[#3d3f96]">
-                                        ₹{request.verifiedBill.totalAmount || (Number(request.verifiedBill.itemTotal || 0) + Number(request.verifiedBill.deliveryCharge || 0))}
+                                <div className="flex justify-between items-center text-slate-900 border-t border-slate-200 pt-2 font-black">
+                                    <span className="text-xs">Grand Total</span>
+                                    <span className="font-mono text-base sm:text-lg text-[#3d3f96]">
+                                        ₹{grandTotal}
                                     </span>
                                 </div>
                             </div>
                         ) : (
-                            <div className="p-4 bg-slate-50 rounded-2xl text-center space-y-1">
-                                <Lock size={20} className="mx-auto text-amber-500" />
-                                <p className="text-xs font-bold text-slate-700">Invoice Pending Pharmacist Approval</p>
-                                <p className="text-[10px] text-slate-400">The price calculation will appear here once approved.</p>
+                            <div className="p-3 bg-slate-50 rounded-xl text-center space-y-1">
+                                <Lock size={16} className="mx-auto text-amber-500" />
+                                <p className="text-[11px] font-bold text-slate-700">Pending Chemist Quote</p>
+                                <p className="text-[9px] text-slate-400">Total updates when chemist verifies pricing.</p>
                             </div>
                         )}
                     </div>
 
-                    {/* Payment Mode Selection & Checkout Action */}
-                    <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm space-y-4">
-                        <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 border-b border-slate-100 pb-3">
-                            <CreditCard size={14} className="text-[#3d3f96]" /> Payment Status
+                    {/* Payment Mode Selection & Action Card */}
+                    <div className="bg-white rounded-2xl border border-slate-100 p-3.5 sm:p-5 shadow-xs space-y-3">
+                        <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 border-b border-slate-100 pb-2.5">
+                            <CreditCard size={13} className="text-[#3d3f96]" /> Payment Status
                         </h3>
 
                         {isOrderPlaced ? (
-                            <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl text-center space-y-2">
-                                <CheckCircle2 size={24} className="text-emerald-600 mx-auto" />
+                            <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl text-center space-y-1">
+                                <CheckCircle2 size={18} className="text-emerald-600 mx-auto" />
                                 <strong className="text-xs font-black text-emerald-900 block uppercase">
-                                    Payment Verified &amp; Confirmed
+                                    Confirmed & Active
                                 </strong>
-                                <p className="text-[11px] text-emerald-700 font-medium">
-                                    This prescription order is complete. The store is dispatching your medicines.
+                                <p className="text-[10px] text-emerald-700 font-medium">
+                                    Prescription order verified. Live updates are available above.
                                 </p>
                             </div>
                         ) : isRejected ? (
-                            <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-center space-y-2">
-                                <AlertCircle size={24} className="text-rose-600 mx-auto" />
+                            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-center space-y-1">
+                                <AlertCircle size={18} className="text-rose-600 mx-auto" />
                                 <strong className="text-xs font-black text-rose-900 block uppercase">
                                     Inquiry Closed
                                 </strong>
-                                <p className="text-[11px] text-rose-700 font-medium">
-                                    This prescription request was declined by the chemist.
+                                <p className="text-[10px] text-rose-700 font-medium">
+                                    Prescription inquiry was rejected.
                                 </p>
                             </div>
                         ) : isPharmacyAccepted ? (
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-3">
+                                <div className="grid grid-cols-2 gap-2">
                                     <button
                                         type="button"
                                         onClick={() => setPaymentMethod("COD")}
-                                        className={`p-3 rounded-2xl border text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer transition ${
+                                        className={`py-2 px-2.5 rounded-xl border text-[11px] font-black flex items-center justify-center gap-1.5 cursor-pointer transition ${
                                             paymentMethod === "COD"
-                                                ? 'border-[#3d3f96] bg-indigo-50/50 text-[#3d3f96] shadow-xs'
+                                                ? 'border-[#3d3f96] bg-indigo-50/50 text-[#3d3f96] shadow-2xs'
                                                 : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                                         }`}
                                     >
-                                        <DollarSign size={15} /> Cash On Delivery
+                                        <DollarSign size={13} /> Cash (COD)
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setPaymentMethod("Online")}
-                                        className={`p-3 rounded-2xl border text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer transition ${
+                                        className={`py-2 px-2.5 rounded-xl border text-[11px] font-black flex items-center justify-center gap-1.5 cursor-pointer transition ${
                                             paymentMethod === "Online"
-                                                ? 'border-[#3d3f96] bg-indigo-50/50 text-[#3d3f96] shadow-xs'
+                                                ? 'border-[#3d3f96] bg-indigo-50/50 text-[#3d3f96] shadow-2xs'
                                                 : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                                         }`}
                                     >
-                                        <CreditCard size={15} /> Online Payment
+                                        <CreditCard size={13} /> Online
                                     </button>
                                 </div>
 
@@ -579,84 +808,58 @@ export default function RxOrderDetailPage() {
                                     type="button"
                                     disabled={paying}
                                     onClick={handlePayAndConfirm}
-                                    className="w-full py-3.5 bg-[#3d3f96] hover:bg-[#2d2f75] disabled:opacity-50 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                                    className="w-full py-2.5 sm:py-3 bg-[#3d3f96] hover:bg-[#2d2f75] disabled:opacity-50 text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
                                 >
                                     {paying ? (
                                         <>
-                                            <Loader2 size={15} className="animate-spin" />
-                                            <span>Processing Order...</span>
+                                            <Loader2 size={13} className="animate-spin" />
+                                            <span>Confirming...</span>
                                         </>
                                     ) : (
                                         <>
-                                            <ShieldCheck size={16} />
-                                            <span>Pay ₹{request.verifiedBill?.totalAmount} &amp; Confirm</span>
+                                            <ShieldCheck size={14} />
+                                            <span>Pay ₹{grandTotal} & Confirm</span>
                                         </>
                                     )}
                                 </button>
                             </div>
                         ) : (
-                            <div className="py-3 text-center space-y-2">
+                            <div className="py-2 text-center space-y-1.5">
                                 <button
                                     disabled
-                                    className="w-full py-3.5 bg-slate-100 text-slate-400 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed"
+                                    className="w-full py-2.5 bg-slate-100 text-slate-400 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-not-allowed"
                                 >
-                                    <Lock size={14} />
-                                    <span>Payment Locked (Pending Approval)</span>
+                                    <Lock size={12} />
+                                    <span>Pending Chemist Quote</span>
                                 </button>
-                                <p className="text-[10px] text-slate-400">
-                                    You will be able to choose COD or Online payment as soon as the chemist confirms your prescription.
+                                <p className="text-[9px] text-slate-400 leading-tight">
+                                    You can confirm payment as soon as the chemist reviews the items.
                                 </p>
                             </div>
-                        )}
-                    </div>
-
-                    {/* Pharmacy Store Card */}
-                    <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm space-y-3">
-                        <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                            <Store size={14} className="text-[#3d3f96]" /> Assigned Pharmacy
-                        </h3>
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 overflow-hidden shrink-0">
-                                <img
-                                    src={pharmacyImg}
-                                    alt={pharmacy.name || "Store"}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => { e.target.src = PLACEHOLDER_STORE; }}
-                                />
-                            </div>
-                            <div className="min-w-0">
-                                <h4 className="text-sm font-extrabold text-slate-900 truncate">
-                                    {pharmacy.name || "Partner Chemist"}
-                                </h4>
-                                <p className="text-xs text-slate-400 font-semibold flex items-center gap-1">
-                                    <MapPin size={11} /> {pharmacy.city || "Mohali"}
-                                </p>
-                            </div>
-                        </div>
-                        {pharmacy.phone && (
-                            <a
-                                href={`tel:${pharmacy.phone}`}
-                                className="w-full py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl text-slate-700 text-xs font-extrabold flex items-center justify-center gap-1.5 transition"
-                            >
-                                <Phone size={13} /> Call Chemist ({pharmacy.phone})
-                            </a>
                         )}
                     </div>
 
                     {/* Delivery Destination Address */}
-                    {request.address && (
-                        <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm space-y-2">
-                            <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                                <MapPin size={14} className="text-[#3d3f96]" /> Delivery Destination
-                            </h3>
-                            <div className="text-xs space-y-0.5">
-                                <strong className="text-slate-900 font-black block">{request.address.name}</strong>
+                    {deliveryAddress && (
+                        <div className="bg-white rounded-2xl border border-slate-100 p-3.5 sm:p-5 shadow-xs space-y-2">
+                            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                    <MapPin size={13} className="text-[#3d3f96]" /> Delivery Address
+                                </h3>
+                                {deliveryAddress.addressType && (
+                                    <span className="text-[9px] font-bold uppercase bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded">
+                                        {deliveryAddress.addressType}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="text-[11px] space-y-0.5">
+                                <strong className="text-slate-900 font-bold block">{deliveryAddress.name}</strong>
                                 <p className="text-slate-600 font-medium leading-relaxed">
-                                    {[request.address.houseNo, request.address.sector, request.address.city, request.address.pincode]
+                                    {[deliveryAddress.houseNo, deliveryAddress.sector, deliveryAddress.city, deliveryAddress.pincode]
                                         .filter(Boolean)
                                         .join(", ")}
                                 </p>
-                                <p className="text-slate-400 font-bold pt-0.5">Phone: {request.address.phone}</p>
+                                <p className="text-slate-500 pt-0.5">Phone: <strong className="text-slate-800">{deliveryAddress.phone}</strong></p>
                             </div>
                         </div>
                     )}
