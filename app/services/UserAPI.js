@@ -474,6 +474,17 @@ const UserAPI = {
         const response = await authApi.post('/user/pharmacy/cancel-order', data);
         return response.data;
     },
+      // --- 2. Request Order Return / Replacement (After Delivery) ---
+    requestPharmacyOrderReturn: async (orderId, formData) => {
+        // orderId: MongoDB Document _id or Custom Tracking ID (e.g. "DW-MED-847291038")
+        // formData: FormData object containing:
+        //   - Text fields: 'requestType' ("Return" | "Replacement"), 'reason', 'userComments' (optional)
+        //   - File attachments: 'proofImages' (up to 5 image files)
+        const response = await authApi.post(`/user/pharmacy/orders/return-request/${orderId}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
 
 
 

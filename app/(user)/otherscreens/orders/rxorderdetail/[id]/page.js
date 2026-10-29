@@ -32,7 +32,11 @@ import {
     RotateCcw,
     Tag,
     Copy,
-    ChevronDown
+    ChevronDown,
+    X,
+    UploadCloud,
+    Trash2,
+    Ban
 } from 'lucide-react';
 
 // API Service & Notification Context
@@ -90,7 +94,21 @@ export default function RxOrderDetailPage() {
     const [paying, setPaying] = useState(false);
     const [confirmedOrderData, setConfirmedOrderData] = useState(null);
 
-    // --- 1. Fetch Request Details via MongoDB _id ---
+    // --- Modals State ---
+    // 1. Cancel Modal
+    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+    const [cancelReason, setCancelReason] = useState("");
+    const [cancelling, setCancelling] = useState(false);
+
+    // 2. Return / Replacement Modal
+    const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+    const [returnRequestType, setReturnRequestType] = useState("Return"); // "Return" | "Replacement"
+    const [returnReason, setReturnReason] = useState("");
+    const [userComments, setUserComments] = useState("");
+    const [proofFiles, setProofFiles] = useState([]);
+    const [submittingReturn, setSubmittingReturn] = useState(false);
+
+    // --- Fetch Request Details ---
     const fetchDetails = useCallback(async (isRefresh = false) => {
         if (!mongoRequestId) return;
         if (isRefresh) setRefreshing(true);
@@ -126,9 +144,11 @@ export default function RxOrderDetailPage() {
         setTimeout(() => setCopiedOtp(false), 2000);
     };
 
-    // --- Status Normalization Helpers ---
+    // --- Status Normalization & Rules ---
     const normalizedStatus = (request?.status || "").toUpperCase().trim();
+    const normalizedDeliveryStatus = (request?.deliveryStatus || "").toUpperCase().trim();
 
+    // Order placed status
     const isOrderPlaced =
         Boolean(confirmedOrderData) ||
         Boolean(request?.bookingId) ||
@@ -144,17 +164,49 @@ export default function RxOrderDetailPage() {
             Boolean(request?.verifiedBill) ||
             Boolean(request?.items && request.items.length > 0));
 
-    // Calculate financials
+    // Target tracking IDs for API calls
+    const targetOrderId =
+        request?.bookingOrderId ||
+        confirmedOrderData?.orderId ||
+        request?.orderId ||
+        request?.requestId ||
+        request?._id ||
+        mongoRequestId;
+
+    // Delivery Guard: Is order delivered?
+    const isDelivered = normalizedStatus === 'DELIVERED' || normalizedDeliveryStatus === 'DELIVERED';
+
+    // Transit Guard: Has transit started?
+    const inTransitStatuses = ['OUTFOR DELIVERY', 'OUT_FOR_DELIVERY', 'OUTFORDELIVERY', 'REACHEDLOCATION', 'PICKEDUP', 'SHIPPED', 'DELIVERED'];
+    const isInTransit = inTransitStatuses.includes(normalizedDeliveryStatus) || inTransitStatuses.includes(normalizedStatus);
+
+    // Can order be cancelled? (Only early stages: Placed, Packed, Pending and NOT in transit)
+    const isCancellable =
+        isOrderPlaced &&
+        !isRejected &&
+        !isDelivered &&
+        !isInTransit &&
+        ['PLACED', 'PACKED', 'PENDING'].includes(normalizedStatus);
+
+    // Return & Replacement eligibility checks
+    const returnDetails = request?.returnDetails;
+    const hasActiveReturn = Boolean(returnDetails && returnDetails.status && returnDetails.status !== "None");
+
     const itemsList = request?.items && request.items.length > 0 ? request.items : (request?.requestedMedicines || []);
+    const hasReturnEligibleItems = itemsList.some(item => item.isReturnAllowed || item.isReplacementAllowed);
+
+    // Can request return / replacement?
+    const canRequestReturn = isDelivered && !hasActiveReturn && hasReturnEligibleItems;
+
+    // Calculate financials
     const itemsCalculatedTotal = itemsList.reduce((acc, it) => acc + (Number(it.price || it.mrp || 0) * Number(it.quantity || 1)), 0);
     const deliveryFee = Number(request?.verifiedBill?.deliveryCharge || 0);
     const grandTotal = Number(request?.verifiedBill?.totalAmount) || (itemsCalculatedTotal + deliveryFee);
 
-    // Active Delivery OTP & Order Tracking Reference
     const activeDeliveryOtp = request?.deliveryOTP || request?.liveTracking?.deliveryOTP || confirmedOrderData?.deliveryOTP;
     const finalTrackingOrderId = request?.bookingOrderId || confirmedOrderData?.orderId || request?.confirmedOrderId;
 
-    // --- 2. Confirm & Pay Handler ---
+    // --- 1. Confirm & Pay Handler ---
     const handlePayAndConfirm = async () => {
         if (!isPharmacyAccepted) {
             showNotification("Pharmacy has not approved or generated the quote yet.", "error");
@@ -267,12 +319,116 @@ export default function RxOrderDetailPage() {
         }
     };
 
+    // --- 2. Cancel Order Handler ---
+    const handleCancelOrderSubmit = async (e) => {
+        e.preventDefault();
+        if (!targetOrderId) {
+            showNotification("Order identifier missing.", "error");
+            return;
+        }
+
+        setCancelling(true);
+        try {
+            const payload = {
+                orderId: targetOrderId,
+                reason: cancelReason || "Cancelled by customer before dispatch."
+            };
+
+            const res = await UserAPI.cancelUserPharmacyOrder(payload);
+
+            if (res && res.success) {
+                showNotification(res.message || "Order cancelled successfully.", "success");
+                setIsCancelModalOpen(false);
+                setCancelReason("");
+                fetchDetails(true);
+            } else {
+                showNotification(res?.message || "Failed to cancel order.", "error");
+            }
+        } catch (err) {
+            console.error("Cancel Order Error:", err);
+            const errMsg = err?.response?.data?.message || err?.message || "Failed to cancel order.";
+            showNotification(errMsg, "error");
+        } finally {
+            setCancelling(false);
+        }
+    };
+
+    // --- 3. Return / Replacement File Handler ---
+    const handleProofFileChange = (e) => {
+        const selected = Array.from(e.target.files || []);
+        if (proofFiles.length + selected.length > 5) {
+            showNotification("You can upload a maximum of 5 proof images.", "error");
+            return;
+        }
+
+        // Validate image types
+        const validImages = selected.filter(file => file.type.startsWith('image/'));
+        if (validImages.length !== selected.length) {
+            showNotification("Only image files (JPG, PNG, WEBP) are permitted.", "error");
+        }
+
+        setProofFiles(prev => [...prev, ...validImages].slice(0, 5));
+    };
+
+    const removeProofFile = (indexToRemove) => {
+        setProofFiles(prev => prev.filter((_, idx) => idx !== indexToRemove));
+    };
+
+    // --- 4. Return / Replacement Submit Handler ---
+    const handleReturnSubmit = async (e) => {
+        e.preventDefault();
+        if (!returnReason.trim()) {
+            showNotification("Please select or enter a primary reason for return/replacement.", "error");
+            return;
+        }
+
+        if (!targetOrderId) {
+            showNotification("Order identifier missing.", "error");
+            return;
+        }
+
+        setSubmittingReturn(true);
+
+        try {
+            const formData = new FormData();
+            formData.append("requestType", returnRequestType); // "Return" or "Replacement"
+            formData.append("reason", returnReason);
+            if (userComments.trim()) {
+                formData.append("userComments", userComments.trim());
+            }
+
+            // Append proof images
+            proofFiles.forEach((file) => {
+                formData.append("proofImages", file);
+            });
+
+            const res = await UserAPI.requestPharmacyOrderReturn(targetOrderId, formData);
+
+            if (res && res.success) {
+                showNotification(res.message || "Return request submitted successfully!", "success");
+                setIsReturnModalOpen(false);
+                setReturnReason("");
+                setUserComments("");
+                setProofFiles([]);
+                fetchDetails(true);
+            } else {
+                showNotification(res?.message || "Could not submit return request.", "error");
+            }
+        } catch (err) {
+            console.error("Return Request Error:", err);
+            const errMsg = err?.response?.data?.message || err?.message || "Failed to submit return request.";
+            showNotification(errMsg, "error");
+        } finally {
+            setSubmittingReturn(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-[60vh] flex flex-col items-center justify-center p-4 space-y-3">
                 <Loader2 className="animate-spin text-[#3d3f96]" size={32} />
                 <p className="text-[11px] font-black text-slate-600 uppercase tracking-wider text-center">
-                    Loading Prescription Details...
+                    Loading Prescription Order Details...
                 </p>
             </div>
         );
@@ -299,8 +455,6 @@ export default function RxOrderDetailPage() {
     const driver = request.driver;
     const deliveryAddress = request.deliveryAddress || request.address;
     const timeline = request.trackingTimeline || [];
-    const returnDetails = request.returnDetails;
-    const hasActiveReturn = returnDetails && returnDetails.status && returnDetails.status !== "None";
     const currentTimelineStep = timeline.find(t => t.isCurrent) || timeline[timeline.length - 1];
 
     return (
@@ -336,7 +490,30 @@ export default function RxOrderDetailPage() {
                     </div>
                 </div>
 
-                <div className="flex items-center self-end sm:self-auto">
+                <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap">
+                    {/* Action 1: Cancel Button (Early Stages Only) */}
+                    {isCancellable && (
+                        <button
+                            onClick={() => setIsCancelModalOpen(true)}
+                            className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl text-[11px] font-bold text-rose-700 flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                        >
+                            <Ban size={12} />
+                            <span>Cancel Order</span>
+                        </button>
+                    )}
+
+                    {/* Action 2: Return / Replacement Button (Only Delivered Orders) */}
+                    {canRequestReturn && (
+                        <button
+                            onClick={() => setIsReturnModalOpen(true)}
+                            className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl text-[11px] font-bold text-amber-800 flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                        >
+                            <RotateCcw size={12} />
+                            <span>Return / Replacement</span>
+                        </button>
+                    )}
+
+                    {/* Refresh Status */}
                     <button
                         onClick={() => fetchDetails(true)}
                         disabled={refreshing}
@@ -404,9 +581,9 @@ export default function RxOrderDetailPage() {
                 <div className="bg-rose-50 border border-rose-200 rounded-2xl p-3.5 flex items-start gap-2.5 text-xs">
                     <AlertCircle size={16} className="text-rose-600 shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
-                        <p className="font-black text-rose-900 text-xs">Prescription Request Declined</p>
+                        <p className="font-black text-rose-900 text-xs">Prescription Order Inactive</p>
                         <p className="text-[11px] text-rose-700 leading-relaxed font-medium">
-                            {request.rejectReason || "The pharmacy was unable to fulfill this inquiry."}
+                            {request.rejectReason || "This order inquiry has been cancelled or rejected."}
                         </p>
                     </div>
                 </div>
@@ -414,7 +591,7 @@ export default function RxOrderDetailPage() {
                 <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 flex items-start gap-2.5 text-xs">
                     <Sparkles size={16} className="text-emerald-600 shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
-                        <p className="font-black text-emerald-900 text-xs">Chemist Verified & Quotation Ready!</p>
+                        <p className="font-black text-emerald-900 text-xs">Chemist Verified &amp; Quotation Ready!</p>
                         <p className="text-[11px] text-emerald-700 leading-relaxed font-medium">
                             The licensed chemist verified your items. Review ledger and pay below to dispatch.
                         </p>
@@ -435,13 +612,12 @@ export default function RxOrderDetailPage() {
             {/* --- MAIN GRID LAYOUT --- */}
             <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4">
 
-                {/* === LEFT CONTENT: TIMELINE, DRIVER, ITEMS, SLIP === */}
+                {/* === LEFT CONTENT: TIMELINE, DRIVER, ITEMS, SLIP, RETURNS === */}
                 <div className="lg:col-span-2 space-y-4 order-2 lg:order-1">
 
                     {/* 1. Collapsible Stepper Timeline */}
                     {timeline.length > 0 && (
                         <div className="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden transition-all duration-300">
-                            {/* Toggle Header */}
                             <button
                                 type="button"
                                 onClick={() => setIsTimelineOpen(!isTimelineOpen)}
@@ -474,7 +650,6 @@ export default function RxOrderDetailPage() {
                                 </div>
                             </button>
 
-                            {/* Dropdown Content */}
                             <div
                                 className={`transition-all duration-300 ease-in-out px-4 sm:px-6 ${
                                     isTimelineOpen ? 'max-h-[1000px] pb-4 opacity-100 border-t border-slate-100 pt-4' : 'max-h-0 opacity-0 overflow-hidden py-0'
@@ -487,7 +662,6 @@ export default function RxOrderDetailPage() {
 
                                         return (
                                             <div key={stepItem.step || idx} className="relative flex items-start gap-2.5">
-                                                {/* Stepper Dot */}
                                                 <div
                                                     className={`absolute -left-5 sm:-left-7 w-5 sm:w-6 h-5 sm:h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all shadow-2xs ${
                                                         isCompleted
@@ -500,7 +674,6 @@ export default function RxOrderDetailPage() {
                                                     {isCompleted ? <Check size={10} strokeWidth={3} /> : stepItem.step}
                                                 </div>
 
-                                                {/* Content */}
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center justify-between flex-wrap gap-1">
                                                         <h4 className={`text-xs font-bold leading-tight ${isCurrent ? 'text-[#3d3f96]' : isCompleted ? 'text-slate-900' : 'text-slate-400'}`}>
@@ -529,7 +702,7 @@ export default function RxOrderDetailPage() {
                         <div className="bg-gradient-to-br from-indigo-50/50 to-slate-50 rounded-2xl border border-indigo-100/70 p-3.5 sm:p-5 shadow-xs space-y-3">
                             <div className="flex items-center justify-between border-b border-indigo-100 pb-2.5">
                                 <h3 className="text-[11px] font-black uppercase tracking-wider text-[#3d3f96] flex items-center gap-1.5">
-                                    <Bike size={14} /> Assigned Partner
+                                    <Bike size={14} /> Assigned Delivery Partner
                                 </h3>
                                 <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
                                     {driver.status || "Active Duty"}
@@ -636,12 +809,64 @@ export default function RxOrderDetailPage() {
                         </div>
                     </div>
 
-                    {/* 4. Uploaded Prescription Document Slip */}
+                    {/* 4. Active Return / Replacement Lifecycle Card */}
+                    {hasActiveReturn && (
+                        <div className="bg-amber-50/60 rounded-2xl border border-amber-200 p-3.5 sm:p-5 shadow-xs space-y-3">
+                            <div className="flex items-center justify-between border-b border-amber-200/70 pb-2.5">
+                                <h3 className="text-[11px] font-black uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                                    <RotateCcw size={13} /> Return / Replacement Status
+                                </h3>
+                                <span className="text-[9px] font-black uppercase bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                                    {returnDetails.status}
+                                </span>
+                            </div>
+
+                            <div className="space-y-1.5 text-[11px] text-amber-900">
+                                <div className="flex justify-between items-center">
+                                    <span className="font-bold">Request Type:</span>
+                                    <span>{returnDetails.requestType || "Return"}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="font-bold">Pickup Status:</span>
+                                    <span className="font-semibold text-amber-800">{returnDetails.pickupStatus || "PendingAssignment"}</span>
+                                </div>
+                                {returnDetails.reason && (
+                                    <div className="flex justify-between items-start gap-2">
+                                        <span className="font-bold">Reason:</span>
+                                        <span className="text-right max-w-xs">{returnDetails.reason}</span>
+                                    </div>
+                                )}
+                                {returnDetails.rejectionReason && (
+                                    <div className="p-2 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-[10px] leading-tight mt-1">
+                                        <strong>Chemist Note:</strong> {returnDetails.rejectionReason}
+                                    </div>
+                                )}
+                                {returnDetails.returnOTP && (
+                                    <div className="flex justify-between items-center pt-1 border-t border-amber-200">
+                                        <span className="font-black">Pickup Handover OTP:</span>
+                                        <span className="font-mono font-black text-xs bg-white px-2 py-0.5 rounded border border-amber-300">
+                                            {returnDetails.returnOTP}
+                                        </span>
+                                    </div>
+                                )}
+                                {returnDetails.refundAmount > 0 && (
+                                    <div className="flex justify-between items-center pt-1 border-t border-amber-200">
+                                        <span className="font-black">Refund Amount:</span>
+                                        <span className="font-mono font-black text-xs text-emerald-700">
+                                            ₹{returnDetails.refundAmount}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 5. Uploaded Prescription Document Slip */}
                     {request.prescriptionImage && (
                         <div className="bg-white rounded-2xl border border-slate-100 p-3.5 sm:p-5 shadow-xs space-y-3">
                             <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                                 <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                                    <FileText size={13} className="text-[#3d3f96]" /> Uploaded Rx Slip
+                                    <FileText size={13} className="text-[#3d3f96]" /> Uploaded Doctor Prescription
                                 </h3>
                                 <a
                                     href={getMediaUrl(request.prescriptionImage)}
@@ -671,52 +896,9 @@ export default function RxOrderDetailPage() {
                         </div>
                     )}
 
-                    {/* 5. Return & Refund Lifecycle */}
-                    {hasActiveReturn && (
-                        <div className="bg-amber-50/60 rounded-2xl border border-amber-200 p-3.5 sm:p-5 shadow-xs space-y-3">
-                            <div className="flex items-center justify-between border-b border-amber-200/70 pb-2.5">
-                                <h3 className="text-[11px] font-black uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
-                                    <RotateCcw size={13} /> Return Status
-                                </h3>
-                                <span className="text-[9px] font-black uppercase bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
-                                    {returnDetails.status}
-                                </span>
-                            </div>
-
-                            <div className="space-y-1.5 text-[11px] text-amber-900">
-                                <div className="flex justify-between items-center">
-                                    <span className="font-bold">Type:</span>
-                                    <span>{returnDetails.requestType || "Return"}</span>
-                                </div>
-                                {returnDetails.reason && (
-                                    <div className="flex justify-between items-start gap-2">
-                                        <span className="font-bold">Reason:</span>
-                                        <span className="text-right">{returnDetails.reason}</span>
-                                    </div>
-                                )}
-                                {returnDetails.returnOTP && (
-                                    <div className="flex justify-between items-center pt-1 border-t border-amber-200">
-                                        <span className="font-black">Handover OTP:</span>
-                                        <span className="font-mono font-black text-xs bg-white px-1.5 py-0.2 rounded border border-amber-300">
-                                            {returnDetails.returnOTP}
-                                        </span>
-                                    </div>
-                                )}
-                                {returnDetails.refundAmount > 0 && (
-                                    <div className="flex justify-between items-center pt-1">
-                                        <span className="font-black">Refund Amount:</span>
-                                        <span className="font-mono font-black text-xs text-emerald-700">
-                                            ₹{returnDetails.refundAmount}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
                 </div>
 
-                {/* === RIGHT CONTENT: PAYMENT & LEDGER (Mobile friendly stacked) === */}
+                {/* === RIGHT CONTENT: PAYMENT & LEDGER === */}
                 <div className="space-y-4 order-1 lg:order-2">
 
                     {/* Certified Ledger / Bill */}
@@ -761,7 +943,7 @@ export default function RxOrderDetailPage() {
                             <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl text-center space-y-1">
                                 <CheckCircle2 size={18} className="text-emerald-600 mx-auto" />
                                 <strong className="text-xs font-black text-emerald-900 block uppercase">
-                                    Confirmed & Active
+                                    Confirmed &amp; Active
                                 </strong>
                                 <p className="text-[10px] text-emerald-700 font-medium">
                                     Prescription order verified. Live updates are available above.
@@ -774,7 +956,7 @@ export default function RxOrderDetailPage() {
                                     Inquiry Closed
                                 </strong>
                                 <p className="text-[10px] text-rose-700 font-medium">
-                                    Prescription inquiry was rejected.
+                                    Prescription order was cancelled or rejected.
                                 </p>
                             </div>
                         ) : isPharmacyAccepted ? (
@@ -818,7 +1000,7 @@ export default function RxOrderDetailPage() {
                                     ) : (
                                         <>
                                             <ShieldCheck size={14} />
-                                            <span>Pay ₹{grandTotal} & Confirm</span>
+                                            <span>Pay ₹{grandTotal} &amp; Confirm</span>
                                         </>
                                     )}
                                 </button>
@@ -867,6 +1049,240 @@ export default function RxOrderDetailPage() {
                 </div>
 
             </div>
+
+            {/* ========================================================================= */}
+            {/* 🛑 CANCEL ORDER MODAL                                                     */}
+            {/* ========================================================================= */}
+            {isCancelModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+                    <div className="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                            <div className="flex items-center gap-2 text-rose-600">
+                                <div className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center">
+                                    <Ban size={16} />
+                                </div>
+                                <h3 className="text-sm font-black text-slate-900">Cancel Prescription Order</h3>
+                            </div>
+                            <button
+                                onClick={() => setIsCancelModalOpen(false)}
+                                className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 cursor-pointer"
+                            >
+                                <X size={15} />
+                            </button>
+                        </div>
+
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                            Orders can only be cancelled before dispatch begins. Any reserved inventory stock will be restored to the chemist.
+                        </p>
+
+                        <form onSubmit={handleCancelOrderSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-[11px] font-black uppercase text-slate-500 tracking-wider mb-1">
+                                    Reason for Cancellation
+                                </label>
+                                <textarea
+                                    rows={3}
+                                    value={cancelReason}
+                                    onChange={(e) => setCancelReason(e.target.value)}
+                                    placeholder="e.g. Ordered wrong dosage by mistake or doctor modified prescription."
+                                    className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-hidden transition resize-none"
+                                />
+                            </div>
+
+                            <div className="flex items-center gap-2 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCancelModalOpen(false)}
+                                    className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                                >
+                                    Dismiss
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={cancelling}
+                                    className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black uppercase shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                                >
+                                    {cancelling ? (
+                                        <>
+                                            <Loader2 size={13} className="animate-spin" />
+                                            <span>Cancelling...</span>
+                                        </>
+                                    ) : (
+                                        <span>Confirm Cancel</span>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* 🔄 RETURN / REPLACEMENT MODAL                                             */}
+            {/* ========================================================================= */}
+            {isReturnModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+                    <div className="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl space-y-4 my-8 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                            <div className="flex items-center gap-2 text-indigo-900">
+                                <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-[#3d3f96]">
+                                    <RotateCcw size={16} />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-slate-900">Request Return or Replacement</h3>
+                                    <p className="text-[10px] text-slate-400">Order #{targetOrderId}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setIsReturnModalOpen(false)}
+                                className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 cursor-pointer"
+                            >
+                                <X size={15} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleReturnSubmit} className="space-y-4">
+                            {/* Request Type Choice */}
+                            <div>
+                                <label className="block text-[11px] font-black uppercase text-slate-500 tracking-wider mb-1.5">
+                                    Action Requested
+                                </label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setReturnRequestType("Return")}
+                                        className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                                            returnRequestType === "Return"
+                                                ? "border-[#3d3f96] bg-indigo-50/50 text-[#3d3f96]"
+                                                : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                                        }`}
+                                    >
+                                        <RotateCcw size={13} />
+                                        <span>Return &amp; Refund</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setReturnRequestType("Replacement")}
+                                        className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                                            returnRequestType === "Replacement"
+                                                ? "border-[#3d3f96] bg-indigo-50/50 text-[#3d3f96]"
+                                                : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                                        }`}
+                                    >
+                                        <RefreshCw size={13} />
+                                        <span>Item Replacement</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Reason for Return */}
+                            <div>
+                                <label className="block text-[11px] font-black uppercase text-slate-500 tracking-wider mb-1">
+                                    Primary Reason <span className="text-rose-500">*</span>
+                                </label>
+                                <select
+                                    required
+                                    value={returnReason}
+                                    onChange={(e) => setReturnReason(e.target.value)}
+                                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-[#3d3f96] outline-hidden bg-white cursor-pointer"
+                                >
+                                    <option value="">Select reason...</option>
+                                    <option value="Damaged or Leaked Medicine">Damaged or Leaked Medicine</option>
+                                    <option value="Expired Product Delivered">Expired Product Delivered</option>
+                                    <option value="Incorrect Medicine / Dosage Sent">Incorrect Medicine / Dosage Sent</option>
+                                    <option value="Seal Broken or Packaging Tampered">Seal Broken or Packaging Tampered</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            {/* Additional Comments */}
+                            <div>
+                                <label className="block text-[11px] font-black uppercase text-slate-500 tracking-wider mb-1">
+                                    Customer Comments (Optional)
+                                </label>
+                                <textarea
+                                    rows={2}
+                                    value={userComments}
+                                    onChange={(e) => setUserComments(e.target.value)}
+                                    placeholder="Explain specifics (e.g. seal broken on syrup bottle)..."
+                                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-[#3d3f96] outline-hidden transition resize-none"
+                                />
+                            </div>
+
+                            {/* Proof Images Upload (Max 5) */}
+                            <div>
+                                <div className="flex justify-between items-center mb-1">
+                                    <label className="text-[11px] font-black uppercase text-slate-500 tracking-wider">
+                                        Proof Images (Up to 5)
+                                    </label>
+                                    <span className="text-[10px] text-slate-400 font-bold">{proofFiles.length}/5 images</span>
+                                </div>
+
+                                <label className="border-2 border-dashed border-slate-200 hover:border-[#3d3f96] rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer bg-slate-50/50 hover:bg-indigo-50/20 transition">
+                                    <UploadCloud size={22} className="text-[#3d3f96] mb-1" />
+                                    <span className="text-xs font-bold text-slate-700">Click to upload photos</span>
+                                    <span className="text-[10px] text-slate-400">Photos of batch, damage, or expiry date</span>
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept="image/*"
+                                        onChange={handleProofFileChange}
+                                        disabled={proofFiles.length >= 5}
+                                        className="hidden"
+                                    />
+                                </label>
+
+                                {/* Image Previews */}
+                                {proofFiles.length > 0 && (
+                                    <div className="grid grid-cols-5 gap-2 mt-2">
+                                        {proofFiles.map((file, idx) => (
+                                            <div key={idx} className="relative group w-full aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
+                                                <img
+                                                    src={URL.createObjectURL(file)}
+                                                    alt="proof"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeProofFile(idx)}
+                                                    className="absolute top-1 right-1 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center shadow-xs cursor-pointer hover:bg-rose-700"
+                                                >
+                                                    <X size={10} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Modal Actions */}
+                            <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsReturnModalOpen(false)}
+                                    className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={submittingReturn}
+                                    className="flex-1 py-2.5 rounded-xl bg-[#3d3f96] hover:bg-[#2d2f75] text-white text-xs font-black uppercase shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                                >
+                                    {submittingReturn ? (
+                                        <>
+                                            <Loader2 size={13} className="animate-spin" />
+                                            <span>Submitting...</span>
+                                        </>
+                                    ) : (
+                                        <span>Submit Ticket</span>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
         </div>
     );
