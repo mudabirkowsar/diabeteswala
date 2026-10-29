@@ -132,7 +132,7 @@ export default function UploadPrescriptionOrders() {
                 </span>
             );
         }
-        if (uppercase === 'PENDING REVIEW') {
+        if (uppercase === 'PENDING REVIEW' || uppercase === 'PENDING') {
             return (
                 <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 flex items-center gap-1.5 w-fit">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" /> Pending Review
@@ -247,13 +247,13 @@ export default function UploadPrescriptionOrders() {
                                         })
                                         : '—';
 
-                                    // Tracking ticket string is required by the detail endpoint
-                                    const ticketId = req.requestId || req._id;
+                                    // Strictly send MongoDB _id
+                                    const mongoId = req._id;
 
                                     return (
                                         <tr
-                                            key={req._id || req.requestId}
-                                            onClick={() => router.push(`/vendors/pharmacy/dashboard/manageorders/rxorderdetail/${ticketId}`)}
+                                            key={req._id}
+                                            onClick={() => router.push(`/vendors/pharmacy/dashboard/manageorders/rxorderdetail/${mongoId}`)}
                                             className="hover:bg-slate-50/70 transition-colors cursor-pointer group"
                                         >
                                             {/* Ticket ID & Submitted */}
@@ -352,7 +352,7 @@ export default function UploadPrescriptionOrders() {
                                                     type="button"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        router.push(`/vendors/pharmacy/dashboard/manageorders/rxorderdetail/${ticketId}`);
+                                                        router.push(`/vendors/pharmacy/dashboard/manageorders/rxorderdetail/${mongoId}`);
                                                     }}
                                                     className="px-3.5 py-2 bg-[#3d3f96] hover:bg-[#2d2f75] text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5 ml-auto cursor-pointer"
                                                 >

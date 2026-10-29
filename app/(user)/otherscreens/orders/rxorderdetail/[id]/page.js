@@ -63,6 +63,7 @@ const loadRazorpayScript = () => {
 export default function RxOrderDetailPage() {
     const params = useParams();
     const router = useRouter();
+    // requestId here contains the _id passed from the URL
     const requestId = params?.id;
     const { showNotification } = useNotification();
 
@@ -103,11 +104,10 @@ export default function RxOrderDetailPage() {
         fetchDetails();
     }, [fetchDetails]);
 
-    // 🌟 STATUS HELPERS (Normalized and fixed for 'PAID')
+    // 🌟 STATUS HELPERS
     const normalizedStatus = (request?.status || "").toUpperCase().trim();
     const hasVerifiedBill = Boolean(request?.verifiedBill && (request.verifiedBill.totalAmount !== undefined || request.verifiedBill.itemTotal !== undefined));
 
-    // 🌟 FIX: Added 'PAID' and 'COMPLETED' so confirmed banner shows after payment
     const isOrderPlaced =
         Boolean(confirmedOrderData) ||
         normalizedStatus === 'PAID' ||
@@ -135,8 +135,11 @@ export default function RxOrderDetailPage() {
         setPaying(true);
 
         try {
+            const targetId = request?._id || requestId;
+
             const payload = {
-                requestId: request.requestId || requestId,
+                _id: targetId,
+                requestId: targetId,
                 paymentMethod: paymentMethod
             };
 
@@ -154,7 +157,7 @@ export default function RxOrderDetailPage() {
                 setConfirmedOrderData(res.data);
                 setRequest((prev) => ({
                     ...prev,
-                    status: "Paid", // Updated to Paid
+                    status: "Paid",
                     confirmedOrderId: res.data?.orderId || res.data?._id,
                     deliveryOTP: res.data?.deliveryOTP
                 }));
@@ -185,13 +188,14 @@ export default function RxOrderDetailPage() {
                 amount: payableAmount,
                 currency: "INR",
                 name: request.pharmacyId?.name || "Licensed Pharmacy",
-                description: `Prescription #${request.requestId}`,
+                description: `Prescription #${request.requestId || targetId}`,
                 order_id: razorpayOrderId,
                 handler: async function (response) {
                     try {
                         setPaying(true);
                         const verifyPayload = {
-                            requestId: request.requestId || requestId,
+                            _id: targetId,
+                            requestId: targetId,
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_payment_id: response.razorpay_payment_id,
                             razorpay_signature: response.razorpay_signature
@@ -204,7 +208,7 @@ export default function RxOrderDetailPage() {
                             setConfirmedOrderData(verifyRes.data);
                             setRequest((prev) => ({
                                 ...prev,
-                                status: "Paid", // Updated to Paid
+                                status: "Paid",
                                 confirmedOrderId: verifyRes.data?.orderId || verifyRes.data?.bookingMongoId,
                                 deliveryOTP: verifyRes.data?.deliveryOTP
                             }));
@@ -296,7 +300,7 @@ export default function RxOrderDetailPage() {
                     <div>
                         <div className="flex items-center gap-2 flex-wrap">
                             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight font-mono">
-                                #{request.requestId}
+                                #{request.requestId || request._id}
                             </h1>
                             <span className="text-[10px] font-black uppercase text-[#3d3f96] bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-lg">
                                 {request.durationType || 'Full Course'}
@@ -320,9 +324,8 @@ export default function RxOrderDetailPage() {
                 </div>
             </div>
 
-            {/* --- 🌟 ORDER STATUS BANNER (FIXED FOR ALL STATES) --- */}
+            {/* --- ORDER STATUS BANNER --- */}
             {isOrderPlaced ? (
-                /* 1. PAYMENT COMPLETED BANNER (Green) */
                 <div className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white p-6 rounded-3xl shadow-lg space-y-3">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-3.5">
@@ -370,7 +373,6 @@ export default function RxOrderDetailPage() {
                     )}
                 </div>
             ) : isRejected ? (
-                /* 2. REJECTED BANNER (Red) */
                 <div className="bg-rose-50 border border-rose-200 rounded-3xl p-5 flex items-start gap-3.5 text-xs">
                     <AlertCircle size={20} className="text-rose-600 shrink-0 mt-0.5" />
                     <div className="space-y-1">
@@ -381,7 +383,6 @@ export default function RxOrderDetailPage() {
                     </div>
                 </div>
             ) : isPharmacyAccepted ? (
-                /* 3. QUOTE READY BANNER (Green Light) */
                 <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-5 flex items-start gap-3.5 text-xs">
                     <Sparkles size={20} className="text-emerald-600 shrink-0 mt-0.5" />
                     <div className="space-y-1">
@@ -392,7 +393,6 @@ export default function RxOrderDetailPage() {
                     </div>
                 </div>
             ) : (
-                /* 4. AWAITING REVIEW BANNER (Amber) - Only shows when status is 'Pending Review' or 'Reviewing' */
                 <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 flex items-start gap-3.5 text-xs">
                     <Clock size={20} className="text-amber-600 shrink-0 mt-0.5" />
                     <div className="space-y-1">
@@ -529,7 +529,6 @@ export default function RxOrderDetailPage() {
                         </h3>
 
                         {isOrderPlaced ? (
-                            /* 🌟 STATE 1: PAID / CONFIRMED */
                             <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl text-center space-y-2">
                                 <CheckCircle2 size={24} className="text-emerald-600 mx-auto" />
                                 <strong className="text-xs font-black text-emerald-900 block uppercase">
@@ -540,7 +539,6 @@ export default function RxOrderDetailPage() {
                                 </p>
                             </div>
                         ) : isRejected ? (
-                            /* 🌟 STATE 2: REJECTED */
                             <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-center space-y-2">
                                 <AlertCircle size={24} className="text-rose-600 mx-auto" />
                                 <strong className="text-xs font-black text-rose-900 block uppercase">
@@ -551,7 +549,6 @@ export default function RxOrderDetailPage() {
                                 </p>
                             </div>
                         ) : isPharmacyAccepted ? (
-                            /* 🌟 STATE 3: BILL READY (PAYMENT BUTTONS ACTIVE) */
                             <div className="space-y-4">
                                 <div className="grid grid-cols-2 gap-3">
                                     <button
@@ -598,7 +595,6 @@ export default function RxOrderDetailPage() {
                                 </button>
                             </div>
                         ) : (
-                            /* 🌟 STATE 4: LOCKED (PENDING PHARMACY REVIEW) */
                             <div className="py-3 text-center space-y-2">
                                 <button
                                     disabled

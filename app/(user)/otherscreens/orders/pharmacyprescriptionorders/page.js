@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import {
     ArrowLeft,
     FileText,
-    Store,
-    Calendar,
     Clock,
     CheckCircle2,
     AlertCircle,
@@ -79,12 +77,13 @@ export default function PharmacyPrescriptionOrdersPage() {
         fetchPrescriptionRequests();
     }, [fetchPrescriptionRequests]);
 
-    const goToDetail = (requestId) => {
-        if (!requestId) return;
-        router.push(`/otherscreens/orders/rxorderdetail/${requestId}`);
+    // Send the MongoDB _id to the order details page
+    const goToDetail = (id) => {
+        if (!id) return;
+        router.push(`/otherscreens/orders/rxorderdetail/${id}`);
     };
 
-    // --- 🌟 Helper: Status Badge (Fixed to include 'PAID') ---
+    // --- Helper: Status Badge ---
     const renderRxStatusBadge = (status, hasBill) => {
         const uppercase = (status || '').toUpperCase().trim();
 
@@ -187,7 +186,6 @@ export default function PharmacyPrescriptionOrdersPage() {
                         const pharmacyImg = getMediaUrl(pharmacy.profileImage);
                         const statusUpper = (req.status || '').toUpperCase().trim();
                         
-                        // 🌟 FIX: Included 'PAID' status check
                         const isConfirmed = statusUpper === 'CONFIRMED' || statusUpper === 'PLACED' || statusUpper === 'PAID';
                         
                         const isPharmacyAccepted =
@@ -195,12 +193,13 @@ export default function PharmacyPrescriptionOrdersPage() {
                             (statusUpper === 'BILL GENERATED' || statusUpper === 'ACCEPTED') &&
                             Boolean(req.verifiedBill);
 
-                        const targetRequestId = req.requestId || req._id;
+                        // Prioritize sending req._id
+                        const targetId = req._id || req.requestId;
 
                         return (
                             <div
                                 key={req._id || req.requestId}
-                                onClick={() => goToDetail(targetRequestId)}
+                                onClick={() => goToDetail(targetId)}
                                 className="bg-white rounded-3xl border border-slate-100 p-5 sm:p-6 shadow-sm hover:shadow-md transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative overflow-hidden cursor-pointer group"
                             >
                                 {/* Left accent indicator */}
@@ -227,7 +226,7 @@ export default function PharmacyPrescriptionOrdersPage() {
                                     <div className="space-y-1 min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
                                             <span className="text-xs font-black uppercase font-mono text-slate-900 group-hover:text-[#3d3f96] transition-colors">
-                                                #{req.requestId}
+                                                #{req.requestId || req._id}
                                             </span>
                                             <span className="text-slate-300">•</span>
                                             <span className="text-[10px] font-bold text-slate-400">
@@ -292,7 +291,7 @@ export default function PharmacyPrescriptionOrdersPage() {
                                             type="button"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                goToDetail(targetRequestId);
+                                                goToDetail(targetId);
                                             }}
                                             className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider rounded-2xl shadow-sm transition flex items-center gap-1.5 cursor-pointer"
                                         >
@@ -304,7 +303,7 @@ export default function PharmacyPrescriptionOrdersPage() {
                                             type="button"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                goToDetail(targetRequestId);
+                                                goToDetail(targetId);
                                             }}
                                             className="px-5 py-2.5 bg-[#3d3f96] hover:bg-[#2d2f75] text-white text-xs font-black uppercase tracking-wider rounded-2xl shadow-sm transition flex items-center gap-1.5 cursor-pointer active:scale-95"
                                         >
@@ -317,7 +316,7 @@ export default function PharmacyPrescriptionOrdersPage() {
                                             type="button"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                goToDetail(targetRequestId);
+                                                goToDetail(targetId);
                                             }}
                                             className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-2xl transition flex items-center gap-1.5 cursor-pointer"
                                         >

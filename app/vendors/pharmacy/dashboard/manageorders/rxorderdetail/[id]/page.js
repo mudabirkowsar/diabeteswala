@@ -28,18 +28,24 @@ import {
     Key,
     PackageCheck,
     Truck,
-    UserCheck
+    UserCheck,
+    Lock
 } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
 import PharmacyAPI from '../../../../../../services/PharmacyVendorAPI';
 import AllDrivers from '../../orderdetail/components/AllDrivers';
 
-export default function RxOrderDetailPage({ params: propParams }) {
+export default function RxOrderDetailPage({ params }) {
+    // In Next.js 15 Client Components, unwrap Promise params with React.use()
+    const resolvedParams = params && typeof params.then === 'function'
+        ? React.use(params)
+        : params;
+
     const routeParams = useParams();
     const router = useRouter();
 
-    // Resolves requestId reliably across all Next.js versions
-    const requestId = routeParams?.id || propParams?.id;
+    // Resolves MongoDB _id from route folder [id] or params
+    const _id = routeParams?.id || routeParams?._id || resolvedParams?.id || resolvedParams?._id || '';
 
     // Data States
     const [order, setOrder] = useState(null);
@@ -81,15 +87,15 @@ export default function RxOrderDetailPage({ params: propParams }) {
 
     // --- Fetch Details ---
     const fetchOrderDetails = async () => {
-        if (!requestId) return;
+        if (!_id) return;
         setLoading(true);
         try {
-            const response = await PharmacyAPI.getProviderPrescriptionRequestDetails(requestId);
+            const response = await PharmacyAPI.getProviderPrescriptionRequestDetails(_id);
             if (response && response.success && response.data) {
                 const data = response.data;
                 setOrder(data);
 
-                // If bill exists, populate items so vendor can view or revise them
+                // Populate verified bill items if already prepared
                 if (data.verifiedBill && data.verifiedBill.items?.length > 0) {
                     setBilledItems(
                         data.verifiedBill.items.map((item) => ({
@@ -103,9 +109,9 @@ export default function RxOrderDetailPage({ params: propParams }) {
                     setDeliveryCharge(data.verifiedBill.deliveryCharge ?? 40);
                     setIsEditingBill(false);
                 } else if (data.requestedMedicines && data.requestedMedicines.length > 0) {
-                    // Pre-fill from requested medicines with MRP as base for vendor to set custom rate
+                    // Pre-fill from requested medicines with MRP
                     const initialItems = data.requestedMedicines.map((m) => ({
-                        medicineId: m.medicineId || (m._id?.length === 24 ? m._id : ''),
+                        medicineId: m._id || m.medicineId || '',
                         name: m.name || '',
                         mrp: m.mrp || 0,
                         pricePerUnit: m.mrp || 0,
@@ -128,23 +134,31 @@ export default function RxOrderDetailPage({ params: propParams }) {
     };
 
     useEffect(() => {
-        fetchOrderDetails();
-    }, [requestId]);
+        if (_id) {
+            fetchOrderDetails();
+        }
+    }, [_id]);
 
     // Status helpers
     const currentStatus = (order?.status || '').toUpperCase();
-    const isPaidOrPlaced =
-        currentStatus === 'PAID' ||
-        currentStatus === 'PLACED' ||
-        currentStatus === 'CONFIRMED';
+    const isPaid = currentStatus === 'PAID';
     const isRejected = currentStatus === 'REJECTED';
+
+    // Reliable MongoDB identifier for all backend update actions
+    const targetMongoId = order?.mongoId || order?._id || _id;
+
+    // Driver target ID: according to docs, use bookingId || mongoId
+    const targetOrderIdForDriver = order?.bookingId || order?.bookingMongoId || targetMongoId;
 
     // --- Action 1: Start Review ---
     const handleStartReview = async () => {
+        if (!targetMongoId) {
+            toast.error("Missing prescription ID.");
+            return;
+        }
         setActionLoading(true);
         try {
-            const ticketTrackingId = order?.requestId || requestId;
-            const res = await PharmacyAPI.startPrescriptionReview(ticketTrackingId);
+            const res = await PharmacyAPI.startPrescriptionReview(targetMongoId);
             if (res && res.success) {
                 toast.success("Audit initiated. You can now prepare your price quote.");
                 setIsEditingBill(true);
@@ -159,7 +173,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
         }
     };
 
-    // --- Action 2: Item Line Manipulations ---
+    // --- Action 2: Line Item Modifications ---
     const handleItemChange = (index, field, value) => {
         setBilledItems((prev) => {
             const updated = [...prev];
@@ -232,10 +246,14 @@ export default function RxOrderDetailPage({ params: propParams }) {
             }))
         };
 
+        if (!targetMongoId) {
+            toast.error("Missing prescription ID.");
+            return;
+        }
+
         setActionLoading(true);
         try {
-            const ticketTrackingId = order?.requestId || requestId;
-            const res = await PharmacyAPI.submitPharmacistReview(ticketTrackingId, payload);
+            const res = await PharmacyAPI.submitPharmacistReview(targetMongoId, payload);
             if (res && res.success) {
                 toast.success("Custom pricing bill sent to patient successfully!");
                 setIsEditingBill(false);
@@ -257,10 +275,14 @@ export default function RxOrderDetailPage({ params: propParams }) {
             return;
         }
 
+        if (!targetMongoId) {
+            toast.error("Missing prescription ID.");
+            return;
+        }
+
         setActionLoading(true);
         try {
-            const ticketTrackingId = order?.requestId || requestId;
-            const res = await PharmacyAPI.rejectPrescriptionRequest(ticketTrackingId, {
+            const res = await PharmacyAPI.rejectPrescriptionRequest(targetMongoId, {
                 reason: rejectReason.trim()
             });
             if (res && res.success) {
@@ -280,10 +302,10 @@ export default function RxOrderDetailPage({ params: propParams }) {
     // --- Status Badge Helper ---
     const renderStatusBadge = (status) => {
         const uppercase = status?.toUpperCase();
-        if (uppercase === 'PAID' || uppercase === 'PLACED' || uppercase === 'CONFIRMED') {
+        if (uppercase === 'PAID') {
             return (
                 <span className="text-xs font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1.5">
-                    <CheckCircle2 size={13} /> Order Confirmed &amp; Placed
+                    <CheckCircle2 size={13} /> Paid &amp; Confirmed
                 </span>
             );
         }
@@ -301,7 +323,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
                 </span>
             );
         }
-        if (uppercase === 'PENDING REVIEW') {
+        if (uppercase === 'PENDING REVIEW' || uppercase === 'PENDING') {
             return (
                 <span className="text-xs font-black uppercase tracking-wider text-amber-600 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" /> Pending Review
@@ -351,8 +373,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
 
     const rxImageUrl = getFullImageUrl(order.prescriptionImage);
     const activeDeliveryOtp = order.deliveryOTP;
-    const trackingOrderId = order.confirmedOrderId || order.orderId;
-    const targetOrderIdForDriver = order.confirmedOrderId || order.orderId || order._id || requestId;
+    const trackingOrderId = order.bookingOrderId;
 
     return (
         <div className="space-y-6 text-left antialiased max-w-7xl mx-auto pb-12">
@@ -370,7 +391,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
                     <div>
                         <div className="flex items-center gap-2">
                             <h1 className="text-lg font-black text-slate-900 tracking-tight font-mono">
-                                #{order.requestId}
+                                #{order.requestId || order._id}
                             </h1>
                             {renderStatusBadge(order.status)}
                         </div>
@@ -382,19 +403,30 @@ export default function RxOrderDetailPage({ params: propParams }) {
 
                 {/* Top Action Buttons */}
                 <div className="flex flex-wrap items-center gap-2">
-                    {/* Driver Assign / Reassign Button in Header once order is placed/confirmed */}
-                    {isPaidOrPlaced && (
+                    {/* According to Docs: Show Assign/Reassign Driver if Paid */}
+                    {order.canAssignDriver && (
                         <button
                             type="button"
                             onClick={() => setIsDriverModalOpen(true)}
                             className="px-4 py-2.5 bg-[#3d3f96] hover:bg-[#2d2f75] text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center gap-1.5 cursor-pointer"
                         >
                             <UserCheck size={14} />
-                            <span>{order.assignedDriver ? 'Reassign Driver' : 'Assign Delivery Partner'}</span>
+                            <span>Assign Delivery Partner</span>
                         </button>
                     )}
 
-                    {order.status === 'Pending Review' && (
+                    {order.isDriverAssigned && (
+                        <button
+                            type="button"
+                            onClick={() => setIsDriverModalOpen(true)}
+                            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                        >
+                            <Truck size={14} />
+                            <span>Reassign Driver</span>
+                        </button>
+                    )}
+
+                    {(currentStatus === 'PENDING REVIEW' || currentStatus === 'PENDING') && (
                         <button
                             type="button"
                             disabled={actionLoading}
@@ -406,7 +438,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
                         </button>
                     )}
 
-                    {!isPaidOrPlaced && !isRejected && (
+                    {!isPaid && !isRejected && (
                         <button
                             type="button"
                             disabled={actionLoading}
@@ -420,8 +452,8 @@ export default function RxOrderDetailPage({ params: propParams }) {
                 </div>
             </div>
 
-            {/* --- CONFIRMED ORDER & OTP BANNER --- */}
-            {isPaidOrPlaced && (
+            {/* --- CONFIRMED ORDER & OTP BANNER (Shown when Paid) --- */}
+            {isPaid && (
                 <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white p-6 rounded-3xl shadow-md space-y-3">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-3.5">
@@ -430,10 +462,10 @@ export default function RxOrderDetailPage({ params: propParams }) {
                             </div>
                             <div>
                                 <h3 className="text-base sm:text-lg font-black tracking-tight">
-                                    Customer Confirmed Order! Please Pack &amp; Dispatch
+                                    Customer Confirmed &amp; Paid Order! Please Pack &amp; Handover
                                 </h3>
                                 <p className="text-xs text-emerald-100 font-medium mt-0.5">
-                                    The patient verified your price quote and placed the order. Assign a delivery driver and verify the OTP upon doorstep handover.
+                                    The patient accepted your quotation and paid. Hand over to delivery partner and confirm OTP on handover.
                                 </p>
                             </div>
                         </div>
@@ -443,7 +475,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
                                 <Key size={16} className="text-emerald-600" />
                                 <div>
                                     <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block">
-                                        Verification OTP
+                                        Doorstep Verification OTP
                                     </span>
                                     <span className="text-lg font-mono font-black tracking-widest text-emerald-700">
                                         {activeDeliveryOtp}
@@ -453,14 +485,22 @@ export default function RxOrderDetailPage({ params: propParams }) {
                         )}
                     </div>
 
-                    {trackingOrderId && (
-                        <div className="pt-2 border-t border-white/20 text-xs font-mono font-bold text-emerald-100 flex items-center gap-2">
-                            <span>Order Reference:</span>
+                    <div className="pt-2 border-t border-white/20 text-xs font-mono font-bold text-emerald-100 flex flex-wrap items-center gap-3">
+                        {trackingOrderId && (
+                            <div className="flex items-center gap-1.5">
+                                <span>Booking Order:</span>
+                                <span className="text-white font-black bg-white/10 px-2 py-0.5 rounded">
+                                    {trackingOrderId}
+                                </span>
+                            </div>
+                        )}
+                        <div className="flex items-center gap-1.5">
+                            <span>Dispatch State:</span>
                             <span className="text-white font-black bg-white/10 px-2 py-0.5 rounded">
-                                #{trackingOrderId}
+                                {order.deliveryStatus || 'PendingAssignment'}
                             </span>
                         </div>
-                    )}
+                    </div>
                 </div>
             )}
 
@@ -480,14 +520,14 @@ export default function RxOrderDetailPage({ params: propParams }) {
             {/* --- MAIN GRID LAYOUT --- */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-                {/* LEFT COLUMN: Patient Info, Driver, Prescription Image, Doctor Details (5 Cols) */}
+                {/* LEFT COLUMN: Customer Profile, Driver Card, Prescription Document */}
                 <div className="lg:col-span-5 space-y-6">
 
-                    {/* Patient Card */}
+                    {/* Customer Profile Card */}
                     <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-4">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                             <span className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                                <User size={14} className="text-[#3d3f96]" /> Patient Profile
+                                <User size={14} className="text-[#3d3f96]" /> Customer Profile
                             </span>
                             {order.userId?.gender && (
                                 <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md">
@@ -498,7 +538,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
 
                         <div className="space-y-2">
                             <h3 className="text-sm font-extrabold text-slate-800">
-                                {order.userId?.name || "Patient"}
+                                {order.userId?.name || "Customer"}
                             </h3>
                             <div className="space-y-1.5 text-xs text-slate-600 font-medium">
                                 <div className="flex items-center gap-2">
@@ -518,16 +558,15 @@ export default function RxOrderDetailPage({ params: propParams }) {
                         {order.address && (
                             <div className="pt-3 border-t border-slate-100 space-y-1">
                                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
-                                    <MapPin size={11} className="text-[#3d3f96]" /> Delivery Destination
+                                    <MapPin size={11} className="text-[#3d3f96]" /> Delivery Address
                                 </span>
                                 <strong className="text-xs font-black text-slate-800 block">
                                     {order.address.name} {order.address.phone ? `(${order.address.phone})` : ''}
                                 </strong>
                                 <p className="text-xs text-slate-700 font-semibold leading-relaxed">
-                                    {[order.address.houseNo, order.address.sector, order.address.city, order.address.state]
+                                    {[order.address.houseNo, order.address.city, order.address.pincode]
                                         .filter(Boolean)
-                                        .join(', ')}{' '}
-                                    - {order.address.pincode}
+                                        .join(', ')}
                                 </p>
                                 <span className="text-[10px] font-bold text-slate-400 block">
                                     Type: {order.address.addressType || 'Home'}
@@ -536,55 +575,102 @@ export default function RxOrderDetailPage({ params: propParams }) {
                         )}
                     </div>
 
-                    {/* --- DELIVERY PARTNER CARD --- */}
-                    {isPaidOrPlaced && (
-                        <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">
-                            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                                <span className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                                    <Truck size={14} className="text-[#3d3f96]" /> Delivery Partner
-                                </span>
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded-md">
-                                    {order.deliveryStatus || 'Pending'}
-                                </span>
-                            </div>
+                    {/* --- ASSIGNED DRIVER DETAILS CARD (Per API Spec) --- */}
+                    <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <span className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                <Truck size={14} className="text-[#3d3f96]" /> Delivery Partner
+                            </span>
+                            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider bg-slate-100 px-2.5 py-0.5 rounded-md">
+                                {order.deliveryStatus || 'PendingAssignment'}
+                            </span>
+                        </div>
 
-                            {order.assignedDriver ? (
-                                <div className="flex items-center justify-between bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                        {order.isDriverAssigned && order.driver ? (
+                            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                                <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-indigo-100 text-[#3d3f96] flex items-center justify-center font-black">
-                                            <Truck size={18} />
-                                        </div>
+                                        {order.driver.profilePic ? (
+                                            <img
+                                                src={getFullImageUrl(order.driver.profilePic)}
+                                                alt={order.driver.name}
+                                                className="w-12 h-12 rounded-2xl object-cover border border-slate-200"
+                                            />
+                                        ) : (
+                                            <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-[#3d3f96] flex items-center justify-center font-black text-sm">
+                                                {order.driver.name ? order.driver.name.charAt(0).toUpperCase() : <Truck size={20} />}
+                                            </div>
+                                        )}
                                         <div className="text-xs">
-                                            <p className="font-black text-slate-900">{order.assignedDriver.name || "Assigned Driver"}</p>
-                                            <p className="text-slate-500">{order.assignedDriver.phone}</p>
-                                            {order.assignedDriver.vehicleNumber && (
-                                                <span className="text-[10px] font-mono text-slate-400">{order.assignedDriver.vehicleNumber}</span>
+                                            <p className="font-black text-slate-900 text-sm">{order.driver.name}</p>
+                                            <a href={`tel:${order.driver.phone}`} className="text-slate-500 font-semibold hover:text-[#3d3f96] hover:underline block">
+                                                {order.driver.phone}
+                                            </a>
+                                            {order.driver.email && (
+                                                <span className="text-[11px] text-slate-400 block truncate max-w-[160px]">
+                                                    {order.driver.email}
+                                                </span>
                                             )}
                                         </div>
                                     </div>
+
+                                    {order.driver.status && (
+                                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border ${
+                                            order.driver.status.toLowerCase() === 'busy'
+                                                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                        }`}>
+                                            {order.driver.status}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="pt-2 border-t border-slate-200 grid grid-cols-2 gap-2 text-[11px]">
+                                    <div className="bg-white p-2 rounded-xl border border-slate-100">
+                                        <span className="text-[9px] uppercase font-bold text-slate-400 block">Vehicle Plate</span>
+                                        <strong className="text-slate-800 font-mono font-black">{order.driver.vehicleNumber || '—'}</strong>
+                                    </div>
+                                    <div className="bg-white p-2 rounded-xl border border-slate-100">
+                                        <span className="text-[9px] uppercase font-bold text-slate-400 block">Vehicle Type</span>
+                                        <strong className="text-slate-800 font-black">{order.driver.vehicleType || 'Bike'}</strong>
+                                    </div>
+                                </div>
+
+                                <div className="text-right pt-1">
                                     <button
                                         type="button"
                                         onClick={() => setIsDriverModalOpen(true)}
                                         className="text-xs font-bold text-[#3d3f96] hover:underline cursor-pointer"
                                     >
-                                        Change
+                                        Reassign Partner
                                     </button>
                                 </div>
-                            ) : (
-                                <div className="text-center py-4 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-                                    <Truck size={20} className="mx-auto text-slate-300 mb-1" />
-                                    <p className="text-xs text-slate-400 font-bold">No driver assigned yet</p>
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsDriverModalOpen(true)}
-                                        className="mt-2 text-xs font-bold text-[#3d3f96] hover:underline cursor-pointer"
-                                    >
-                                        Assign Now
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                            </div>
+                        ) : order.canAssignDriver ? (
+                            <div className="text-center py-6 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 space-y-2">
+                                <Truck size={24} className="mx-auto text-slate-300" />
+                                <p className="text-xs text-slate-600 font-bold">Order Paid! No Driver Assigned Yet</p>
+                                <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
+                                    Assign a delivery partner to dispatch this order to the customer.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsDriverModalOpen(true)}
+                                    className="mt-1 px-4 py-2 bg-[#3d3f96] text-white rounded-xl text-xs font-bold hover:bg-[#2d2f75] transition cursor-pointer shadow-xs"
+                                >
+                                    Assign Delivery Partner
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="text-center py-5 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 space-y-1.5">
+                                <Lock size={20} className="mx-auto text-slate-300" />
+                                <p className="text-xs text-slate-400 font-bold">Awaiting Customer Payment</p>
+                                <p className="text-[11px] text-slate-400">
+                                    Driver assignment unlocks automatically once the user accepts the bill and completes payment.
+                                </p>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Prescription Details & Slip */}
                     <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-4">
@@ -601,7 +687,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
                             <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
                                 <span className="text-[10px] font-bold text-slate-400 block uppercase">Doctor</span>
                                 <strong className="text-slate-800 font-black block mt-0.5 truncate">
-                                    {order.doctorName || 'Not Detected'}
+                                    {order.doctorName || 'Not Mentioned'}
                                 </strong>
                             </div>
                             <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
@@ -617,7 +703,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
                         {/* Prescription Image */}
                         <div className="space-y-2 pt-2">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold text-slate-700">Prescription Document</span>
+                                <span className="text-xs font-bold text-slate-700">Prescription Slip</span>
                                 {rxImageUrl && (
                                     <a
                                         href={rxImageUrl}
@@ -652,7 +738,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
                         {order.requestedMedicines && order.requestedMedicines.length > 0 && (
                             <div className="pt-3 border-t border-slate-100 space-y-2">
                                 <span className="text-xs font-bold text-slate-700 block">
-                                    Patient Requested Medicines ({order.requestedMedicines.length})
+                                    Requested Medicines ({order.requestedMedicines.length})
                                 </span>
                                 <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                                     {order.requestedMedicines.map((m, idx) => (
@@ -679,7 +765,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
                     </div>
                 </div>
 
-                {/* RIGHT COLUMN: Vendor Pricing Workbench & Bill Submission (7 Cols) */}
+                {/* RIGHT COLUMN: Vendor Pricing Workbench & Bill Submission */}
                 <div className="lg:col-span-7 space-y-6">
 
                     {/* VIEW MODE: If Bill already exists AND vendor is not actively editing */}
@@ -691,12 +777,12 @@ export default function RxOrderDetailPage({ params: propParams }) {
                                         <ReceiptText size={15} className="text-[#3d3f96]" /> Active Price Quote
                                     </span>
                                     <h3 className="text-base font-black text-slate-900 mt-0.5">
-                                        {isPaidOrPlaced ? 'Final Paid Quotation' : 'Bill Dispatched to Patient'}
+                                        {isPaid ? 'Final Paid Quotation' : 'Bill Dispatched to Patient'}
                                     </h3>
                                 </div>
 
                                 <div className="flex items-center gap-2">
-                                    {!isPaidOrPlaced && !isRejected && (
+                                    {!isPaid && !isRejected && (
                                         <button
                                             type="button"
                                             onClick={() => setIsEditingBill(true)}
@@ -729,7 +815,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
                                                 <tr key={idx} className="hover:bg-slate-50/50">
                                                     <td className="py-3 px-3">
                                                         <strong className="block text-slate-900 font-bold">{item.name}</strong>
-                                                        <span className="text-[10px] text-slate-400">HSN: {item.hsn_number || '3004'}</span>
+                                                        <span className="text-[10px] text-slate-400">HSN: {item.hsn_number || '30049099'}</span>
                                                     </td>
                                                     <td className="py-3 px-3 text-center font-bold">{item.quantity}</td>
                                                     <td className="py-3 px-3 text-right font-mono font-bold text-[#3d3f96]">
@@ -756,18 +842,6 @@ export default function RxOrderDetailPage({ params: propParams }) {
                                 <div className="flex justify-between text-slate-500 font-semibold">
                                     <span>Medicines Subtotal (Your Rate)</span>
                                     <span className="font-mono">₹{order.verifiedBill.itemTotal || 0}</span>
-                                </div>
-                                <div className="flex justify-between text-slate-500 font-semibold">
-                                    <span>Base Taxable Amount</span>
-                                    <span className="font-mono">₹{order.verifiedBill.taxableTotal || 0}</span>
-                                </div>
-                                <div className="flex justify-between text-slate-500 font-semibold">
-                                    <span>CGST Total</span>
-                                    <span className="font-mono">₹{order.verifiedBill.cgstTotal || 0}</span>
-                                </div>
-                                <div className="flex justify-between text-slate-500 font-semibold">
-                                    <span>SGST Total</span>
-                                    <span className="font-mono">₹{order.verifiedBill.sgstTotal || 0}</span>
                                 </div>
                                 <div className="flex justify-between text-slate-500 font-semibold">
                                     <span>Logistics / Delivery Charge</span>
@@ -861,7 +935,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
                                                     <input
                                                         type="text"
                                                         required
-                                                        placeholder="e.g. DOLO 650 TABLET"
+                                                        placeholder="e.g. Acivir 200 Tablet"
                                                         value={item.name}
                                                         onChange={(e) => handleItemChange(index, 'name', e.target.value)}
                                                         className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-[#3d3f96]"
@@ -875,14 +949,14 @@ export default function RxOrderDetailPage({ params: propParams }) {
                                                         type="number"
                                                         min="0"
                                                         step="0.01"
-                                                        placeholder="34"
+                                                        placeholder="105"
                                                         value={item.mrp === '' ? '' : item.mrp}
                                                         onChange={(e) => handleItemChange(index, 'mrp', e.target.value)}
                                                         className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold font-mono text-slate-800 outline-none focus:border-[#3d3f96]"
                                                     />
                                                 </div>
 
-                                                {/* Vendor's Custom Selling Price */}
+                                                {/* Chemist Selling Price */}
                                                 <div className="md:col-span-3 space-y-1">
                                                     <label className="text-[10px] font-black text-[#3d3f96] flex items-center gap-1">
                                                         <Tag size={10} /> Your Price / Unit (₹)*
@@ -892,7 +966,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
                                                         min="0.01"
                                                         step="0.01"
                                                         required
-                                                        placeholder="2.00"
+                                                        placeholder="105"
                                                         value={item.pricePerUnit === '' ? '' : item.pricePerUnit}
                                                         onChange={(e) => handleItemChange(index, 'pricePerUnit', e.target.value)}
                                                         className="w-full px-3 py-2 bg-white border-2 border-[#3d3f96]/30 focus:border-[#3d3f96] rounded-xl text-xs font-black font-mono text-[#3d3f96] outline-none"
@@ -906,7 +980,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
                                                         type="number"
                                                         min="1"
                                                         required
-                                                        placeholder="15"
+                                                        placeholder="7"
                                                         value={item.quantity === '' ? '' : item.quantity}
                                                         onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
                                                         className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold font-mono text-slate-800 outline-none focus:border-[#3d3f96]"
@@ -975,7 +1049,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
                                             Total Patient Bill
                                         </span>
                                         <span className="text-[10px] text-slate-400">
-                                            (Backend automatically computes HSN GST split CGST/SGST)
+                                            (Auto-calculates HSN 3004 GST and invoice summary)
                                         </span>
                                     </div>
                                     <div className="font-mono text-2xl font-black text-[#3d3f96]">
@@ -988,7 +1062,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
                             <div className="pt-2 flex items-center justify-end gap-3">
                                 <button
                                     type="submit"
-                                    disabled={actionLoading || isRejected || isPaidOrPlaced}
+                                    disabled={actionLoading || isRejected || isPaid}
                                     className="px-6 py-3.5 bg-[#3d3f96] hover:bg-[#2d2f75] text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
                                 >
                                     {actionLoading ? (
@@ -1074,7 +1148,7 @@ export default function RxOrderDetailPage({ params: propParams }) {
                 isOpen={isDriverModalOpen}
                 onClose={() => setIsDriverModalOpen(false)}
                 orderId={targetOrderIdForDriver}
-                assignedDriver={order.assignedDriver}
+                assignedDriver={order.driver}
                 onDriverAssigned={fetchOrderDetails}
             />
         </div>
