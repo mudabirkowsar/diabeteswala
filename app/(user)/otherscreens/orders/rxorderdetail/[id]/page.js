@@ -42,6 +42,10 @@ import {
 // API Service & Notification Context
 import UserAPI from '../../../../../services/UserAPI';
 import { useNotification } from '../../../../../context/NotificationContext';
+import CacleAndReturn from '../components/CacleAndReturn';
+
+// Import Cancel & Return Modal Component
+// import CacleAndReturn from './components/CacleAndReturn';
 
 // --- MEDIA URL HELPER ---
 const BASE_SERVER_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.3:5002";
@@ -94,19 +98,9 @@ export default function RxOrderDetailPage() {
     const [paying, setPaying] = useState(false);
     const [confirmedOrderData, setConfirmedOrderData] = useState(null);
 
-    // --- Modals State ---
-    // 1. Cancel Modal
+    // --- Modals Open / Close State ---
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-    const [cancelReason, setCancelReason] = useState("");
-    const [cancelling, setCancelling] = useState(false);
-
-    // 2. Return / Replacement Modal
     const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
-    const [returnRequestType, setReturnRequestType] = useState("Return"); // "Return" | "Replacement"
-    const [returnReason, setReturnReason] = useState("");
-    const [userComments, setUserComments] = useState("");
-    const [proofFiles, setProofFiles] = useState([]);
-    const [submittingReturn, setSubmittingReturn] = useState(false);
 
     // --- Fetch Request Details ---
     const fetchDetails = useCallback(async (isRefresh = false) => {
@@ -319,110 +313,6 @@ export default function RxOrderDetailPage() {
         }
     };
 
-    // --- 2. Cancel Order Handler ---
-    const handleCancelOrderSubmit = async (e) => {
-        e.preventDefault();
-        if (!targetOrderId) {
-            showNotification("Order identifier missing.", "error");
-            return;
-        }
-
-        setCancelling(true);
-        try {
-            const payload = {
-                orderId: targetOrderId,
-                reason: cancelReason || "Cancelled by customer before dispatch."
-            };
-
-            const res = await UserAPI.cancelUserPharmacyOrder(payload);
-
-            if (res && res.success) {
-                showNotification(res.message || "Order cancelled successfully.", "success");
-                setIsCancelModalOpen(false);
-                setCancelReason("");
-                fetchDetails(true);
-            } else {
-                showNotification(res?.message || "Failed to cancel order.", "error");
-            }
-        } catch (err) {
-            console.error("Cancel Order Error:", err);
-            const errMsg = err?.response?.data?.message || err?.message || "Failed to cancel order.";
-            showNotification(errMsg, "error");
-        } finally {
-            setCancelling(false);
-        }
-    };
-
-    // --- 3. Return / Replacement File Handler ---
-    const handleProofFileChange = (e) => {
-        const selected = Array.from(e.target.files || []);
-        if (proofFiles.length + selected.length > 5) {
-            showNotification("You can upload a maximum of 5 proof images.", "error");
-            return;
-        }
-
-        // Validate image types
-        const validImages = selected.filter(file => file.type.startsWith('image/'));
-        if (validImages.length !== selected.length) {
-            showNotification("Only image files (JPG, PNG, WEBP) are permitted.", "error");
-        }
-
-        setProofFiles(prev => [...prev, ...validImages].slice(0, 5));
-    };
-
-    const removeProofFile = (indexToRemove) => {
-        setProofFiles(prev => prev.filter((_, idx) => idx !== indexToRemove));
-    };
-
-    // --- 4. Return / Replacement Submit Handler ---
-    const handleReturnSubmit = async (e) => {
-        e.preventDefault();
-        if (!returnReason.trim()) {
-            showNotification("Please select or enter a primary reason for return/replacement.", "error");
-            return;
-        }
-
-        if (!targetOrderId) {
-            showNotification("Order identifier missing.", "error");
-            return;
-        }
-
-        setSubmittingReturn(true);
-
-        try {
-            const formData = new FormData();
-            formData.append("requestType", returnRequestType); // "Return" or "Replacement"
-            formData.append("reason", returnReason);
-            if (userComments.trim()) {
-                formData.append("userComments", userComments.trim());
-            }
-
-            // Append proof images
-            proofFiles.forEach((file) => {
-                formData.append("proofImages", file);
-            });
-
-            const res = await UserAPI.requestPharmacyOrderReturn(targetOrderId, formData);
-
-            if (res && res.success) {
-                showNotification(res.message || "Return request submitted successfully!", "success");
-                setIsReturnModalOpen(false);
-                setReturnReason("");
-                setUserComments("");
-                setProofFiles([]);
-                fetchDetails(true);
-            } else {
-                showNotification(res?.message || "Could not submit return request.", "error");
-            }
-        } catch (err) {
-            console.error("Return Request Error:", err);
-            const errMsg = err?.response?.data?.message || err?.message || "Failed to submit return request.";
-            showNotification(errMsg, "error");
-        } finally {
-            setSubmittingReturn(false);
-        }
-    };
-
     if (loading) {
         return (
             <div className="min-h-[60vh] flex flex-col items-center justify-center p-4 space-y-3">
@@ -454,8 +344,81 @@ export default function RxOrderDetailPage() {
 
     const driver = request.driver;
     const deliveryAddress = request.deliveryAddress || request.address;
-    const timeline = request.trackingTimeline || [];
-    const currentTimelineStep = timeline.find(t => t.isCurrent) || timeline[timeline.length - 1];
+
+    // --- TIMELINE BUILDER (Synchronized with 6. Tracking Timeline Stepper Docs) ---
+    const getTrackingTimeline = () => {
+        if (Array.isArray(request.trackingTimeline) && request.trackingTimeline.length > 0) {
+            return request.trackingTimeline;
+        }
+
+        if (isOrderPlaced) {
+            const currentStage = (request.liveTracking?.currentStage || normalizedDeliveryStatus || normalizedStatus || "").toUpperCase();
+
+            let currentStepIndex = 0;
+            if (currentStage.includes('DELIVERED')) currentStepIndex = 5;
+            else if (currentStage.includes('REACHED')) currentStepIndex = 4;
+            else if (currentStage.includes('OUT_FOR_DELIVERY') || currentStage.includes('OUTFOR') || currentStage.includes('SHIPPED')) currentStepIndex = 3;
+            else if (currentStage.includes('DRIVER') || currentStage.includes('ASSIGNED')) currentStepIndex = 2;
+            else if (currentStage.includes('PACKED')) currentStepIndex = 1;
+            else currentStepIndex = 0;
+
+            const standardMilestones = [
+                {
+                    step: 1,
+                    key: "ORDER_PLACED",
+                    title: "Order Placed",
+                    description: "Prescription verified and order placed",
+                    formattedTime: null
+                },
+                {
+                    step: 2,
+                    key: "ORDER_PACKED",
+                    title: "Order Packed",
+                    description: "Medicines packed by licensed pharmacist",
+                    formattedTime: null
+                },
+                {
+                    step: 3,
+                    key: "DRIVER_ASSIGNED",
+                    title: "Driver Assigned",
+                    description: driver?.name ? `Assigned to ${driver.name}` : "Delivery partner assigned for pickup",
+                    formattedTime: null
+                },
+                {
+                    step: 4,
+                    key: "OUT_FOR_DELIVERY",
+                    title: "Out for Delivery",
+                    description: "Medicines are on the way to your doorstep",
+                    formattedTime: null
+                },
+                {
+                    step: 5,
+                    key: "REACHED_LOCATION",
+                    title: "Reached Location",
+                    description: "Delivery partner has arrived at your address",
+                    formattedTime: null
+                },
+                {
+                    step: 6,
+                    key: "DELIVERED",
+                    title: "Delivered",
+                    description: "Order completed with OTP verification",
+                    formattedTime: null
+                }
+            ];
+
+            return standardMilestones.map((m, idx) => ({
+                ...m,
+                isCompleted: idx < currentStepIndex,
+                isCurrent: idx === currentStepIndex
+            }));
+        }
+
+        return [];
+    };
+
+    const timeline = getTrackingTimeline();
+    const currentTimelineStep = timeline.find(t => t.isCurrent) || timeline.find(t => !t.isCompleted) || timeline[timeline.length - 1];
 
     return (
         <div className="max-w-[1200px] mx-auto py-3 sm:py-6 px-3 sm:px-6 space-y-4 text-left select-none antialiased">
@@ -661,7 +624,7 @@ export default function RxOrderDetailPage() {
                                         const isCurrent = stepItem.isCurrent;
 
                                         return (
-                                            <div key={stepItem.step || idx} className="relative flex items-start gap-2.5">
+                                            <div key={stepItem.key || stepItem.step || idx} className="relative flex items-start gap-2.5">
                                                 <div
                                                     className={`absolute -left-5 sm:-left-7 w-5 sm:w-6 h-5 sm:h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all shadow-2xs ${
                                                         isCompleted
@@ -1051,238 +1014,19 @@ export default function RxOrderDetailPage() {
             </div>
 
             {/* ========================================================================= */}
-            {/* 🛑 CANCEL ORDER MODAL                                                     */}
+            {/* 🛑 CANCEL & 🔄 RETURN/REPLACEMENT MODAL COMPONENT                           */}
             {/* ========================================================================= */}
-            {isCancelModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-                    <div className="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
-                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                            <div className="flex items-center gap-2 text-rose-600">
-                                <div className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center">
-                                    <Ban size={16} />
-                                </div>
-                                <h3 className="text-sm font-black text-slate-900">Cancel Prescription Order</h3>
-                            </div>
-                            <button
-                                onClick={() => setIsCancelModalOpen(false)}
-                                className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 cursor-pointer"
-                            >
-                                <X size={15} />
-                            </button>
-                        </div>
-
-                        <p className="text-xs text-slate-500 leading-relaxed">
-                            Orders can only be cancelled before dispatch begins. Any reserved inventory stock will be restored to the chemist.
-                        </p>
-
-                        <form onSubmit={handleCancelOrderSubmit} className="space-y-4">
-                            <div>
-                                <label className="block text-[11px] font-black uppercase text-slate-500 tracking-wider mb-1">
-                                    Reason for Cancellation
-                                </label>
-                                <textarea
-                                    rows={3}
-                                    value={cancelReason}
-                                    onChange={(e) => setCancelReason(e.target.value)}
-                                    placeholder="e.g. Ordered wrong dosage by mistake or doctor modified prescription."
-                                    className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-hidden transition resize-none"
-                                />
-                            </div>
-
-                            <div className="flex items-center gap-2 pt-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsCancelModalOpen(false)}
-                                    className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
-                                >
-                                    Dismiss
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={cancelling}
-                                    className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black uppercase shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-                                >
-                                    {cancelling ? (
-                                        <>
-                                            <Loader2 size={13} className="animate-spin" />
-                                            <span>Cancelling...</span>
-                                        </>
-                                    ) : (
-                                        <span>Confirm Cancel</span>
-                                    )}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* ========================================================================= */}
-            {/* 🔄 RETURN / REPLACEMENT MODAL                                             */}
-            {/* ========================================================================= */}
-            {isReturnModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-                    <div className="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl space-y-4 my-8 animate-in fade-in zoom-in-95 duration-200">
-                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                            <div className="flex items-center gap-2 text-indigo-900">
-                                <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-[#3d3f96]">
-                                    <RotateCcw size={16} />
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-black text-slate-900">Request Return or Replacement</h3>
-                                    <p className="text-[10px] text-slate-400">Order #{targetOrderId}</p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setIsReturnModalOpen(false)}
-                                className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 cursor-pointer"
-                            >
-                                <X size={15} />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleReturnSubmit} className="space-y-4">
-                            {/* Request Type Choice */}
-                            <div>
-                                <label className="block text-[11px] font-black uppercase text-slate-500 tracking-wider mb-1.5">
-                                    Action Requested
-                                </label>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setReturnRequestType("Return")}
-                                        className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                                            returnRequestType === "Return"
-                                                ? "border-[#3d3f96] bg-indigo-50/50 text-[#3d3f96]"
-                                                : "border-slate-200 text-slate-600 hover:bg-slate-50"
-                                        }`}
-                                    >
-                                        <RotateCcw size={13} />
-                                        <span>Return &amp; Refund</span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setReturnRequestType("Replacement")}
-                                        className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                                            returnRequestType === "Replacement"
-                                                ? "border-[#3d3f96] bg-indigo-50/50 text-[#3d3f96]"
-                                                : "border-slate-200 text-slate-600 hover:bg-slate-50"
-                                        }`}
-                                    >
-                                        <RefreshCw size={13} />
-                                        <span>Item Replacement</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Reason for Return */}
-                            <div>
-                                <label className="block text-[11px] font-black uppercase text-slate-500 tracking-wider mb-1">
-                                    Primary Reason <span className="text-rose-500">*</span>
-                                </label>
-                                <select
-                                    required
-                                    value={returnReason}
-                                    onChange={(e) => setReturnReason(e.target.value)}
-                                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-[#3d3f96] outline-hidden bg-white cursor-pointer"
-                                >
-                                    <option value="">Select reason...</option>
-                                    <option value="Damaged or Leaked Medicine">Damaged or Leaked Medicine</option>
-                                    <option value="Expired Product Delivered">Expired Product Delivered</option>
-                                    <option value="Incorrect Medicine / Dosage Sent">Incorrect Medicine / Dosage Sent</option>
-                                    <option value="Seal Broken or Packaging Tampered">Seal Broken or Packaging Tampered</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
-
-                            {/* Additional Comments */}
-                            <div>
-                                <label className="block text-[11px] font-black uppercase text-slate-500 tracking-wider mb-1">
-                                    Customer Comments (Optional)
-                                </label>
-                                <textarea
-                                    rows={2}
-                                    value={userComments}
-                                    onChange={(e) => setUserComments(e.target.value)}
-                                    placeholder="Explain specifics (e.g. seal broken on syrup bottle)..."
-                                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-[#3d3f96] outline-hidden transition resize-none"
-                                />
-                            </div>
-
-                            {/* Proof Images Upload (Max 5) */}
-                            <div>
-                                <div className="flex justify-between items-center mb-1">
-                                    <label className="text-[11px] font-black uppercase text-slate-500 tracking-wider">
-                                        Proof Images (Up to 5)
-                                    </label>
-                                    <span className="text-[10px] text-slate-400 font-bold">{proofFiles.length}/5 images</span>
-                                </div>
-
-                                <label className="border-2 border-dashed border-slate-200 hover:border-[#3d3f96] rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer bg-slate-50/50 hover:bg-indigo-50/20 transition">
-                                    <UploadCloud size={22} className="text-[#3d3f96] mb-1" />
-                                    <span className="text-xs font-bold text-slate-700">Click to upload photos</span>
-                                    <span className="text-[10px] text-slate-400">Photos of batch, damage, or expiry date</span>
-                                    <input
-                                        type="file"
-                                        multiple
-                                        accept="image/*"
-                                        onChange={handleProofFileChange}
-                                        disabled={proofFiles.length >= 5}
-                                        className="hidden"
-                                    />
-                                </label>
-
-                                {/* Image Previews */}
-                                {proofFiles.length > 0 && (
-                                    <div className="grid grid-cols-5 gap-2 mt-2">
-                                        {proofFiles.map((file, idx) => (
-                                            <div key={idx} className="relative group w-full aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
-                                                <img
-                                                    src={URL.createObjectURL(file)}
-                                                    alt="proof"
-                                                    className="w-full h-full object-cover"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeProofFile(idx)}
-                                                    className="absolute top-1 right-1 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center shadow-xs cursor-pointer hover:bg-rose-700"
-                                                >
-                                                    <X size={10} />
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Modal Actions */}
-                            <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsReturnModalOpen(false)}
-                                    className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={submittingReturn}
-                                    className="flex-1 py-2.5 rounded-xl bg-[#3d3f96] hover:bg-[#2d2f75] text-white text-xs font-black uppercase shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-                                >
-                                    {submittingReturn ? (
-                                        <>
-                                            <Loader2 size={13} className="animate-spin" />
-                                            <span>Submitting...</span>
-                                        </>
-                                    ) : (
-                                        <span>Submit Ticket</span>
-                                    )}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            <CacleAndReturn
+                targetOrderId={targetOrderId}
+                isCancelOpen={isCancelModalOpen}
+                onCloseCancel={() => setIsCancelModalOpen(false)}
+                isReturnOpen={isReturnModalOpen}
+                onCloseReturn={() => setIsReturnModalOpen(false)}
+                onSuccess={() => fetchDetails(true)}
+                UserAPI={UserAPI}
+                showNotification={showNotification}
+                returnDetails={request?.returnDetails}
+            />
 
         </div>
     );
