@@ -347,6 +347,20 @@ const UserAPI = {
         return response.data
     },
 
+    // --- Get Latest Added Medicines (Public / Paginated) ---
+    getLatestAddedMedicines: async (params) => {
+        // params (optional): { page: 1, limit: 20 }
+        const response = await publicApi.get('/user/pharmacy/latest-added-medicines', { params });
+        return response.data;
+    },
+
+      // --- Get Highest Discount Medicines (Public / Paginated) ---
+    getHighestDiscountMedicines: async (params) => {
+        // params (optional): { page: 1, limit: 20 }
+        const response = await publicApi.get('/user/pharmacy/highest-discount-medicines', { params });
+        return response.data;
+    },
+
     getProductFullDetail: async (productId, params) => {
         const response = await publicApi.get(`/user/pharmacy/medicine-details/${productId}`, { params });
         return response.data;
