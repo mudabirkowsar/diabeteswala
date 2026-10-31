@@ -54,6 +54,62 @@ const LabVendorAPI = {
     },
 
     // =========================================================================
+    // LAB VENDOR: COUPON MANAGEMENT
+    // =========================================================================
+
+    // --- 1. Create Lab Coupon ---
+    labVendorCreateCoupon: async (data) => {
+        // data: { 
+        //   couponName: "LABHEALTH20", 
+        //   discountPercentage: 20, 
+        //   maxDiscount: 300, 
+        //   expiryDate: "2026-12-31T23:59:59.000Z", 
+        //   minOrderAmount: 799, 
+        //   maxUsagePerUser: 2, 
+        //   startDate: "2026-11-01T00:00:00.000Z" 
+        // }
+        const response = await authApi.post('/provider/coupons/add', data);
+        return response.data;
+    },
+
+    // --- 2. Get All Lab Coupons (Including Global Admin Coupons) ---
+    labVendorGetMyCoupons: async () => {
+        const response = await authApi.get('/provider/coupons/list');
+        return response.data;
+    },
+
+    // --- 3. Toggle Lab Coupon Status (Active / Inactive) ---
+    labVendorToggleCoupon: async (id) => {
+        // id: Coupon MongoDB Document _id
+        const response = await authApi.patch(`/provider/coupons/toggle/${id}`);
+        return response.data;
+    },
+
+    // --- 4. Update Lab Coupon ---
+    labVendorUpdateCoupon: async (id, data) => {
+        // id: Coupon MongoDB Document _id
+        // data (all optional): { 
+        //   couponName: "LABHEALTH20", 
+        //   discountPercentage: 25, 
+        //   maxDiscount: 400, 
+        //   minOrderAmount: 999, 
+        //   maxUsagePerUser: 2, 
+        //   startDate: "...", 
+        //   expiryDate: "2027-01-31T23:59:59.000Z", 
+        //   isActive: true 
+        // }
+        const response = await authApi.put(`/provider/coupons/update/${id}`, data);
+        return response.data;
+    },
+
+    // --- 5. Delete Lab Coupon ---
+    labVendorDeleteCoupon: async (id) => {
+        // id: Coupon MongoDB Document _id
+        const response = await authApi.delete(`/provider/coupons/delete/${id}`);
+        return response.data;
+    },
+
+    // =========================================================================
     // LAB VENDOR: PHLEBOTOMIST & DRIVER MANAGEMENT
     // =========================================================================
 

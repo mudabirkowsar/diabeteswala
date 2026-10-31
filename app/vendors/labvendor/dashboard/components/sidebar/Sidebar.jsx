@@ -12,7 +12,7 @@ import {
     FaTrophy,
     FaHandHoldingMedical,
     FaClock,
-    FaFileMedical
+    FaFileMedical,FaTicketAlt,FaTruck
 } from "react-icons/fa";
 import Image from "next/image";
 
@@ -37,9 +37,9 @@ export default function ClinicSidebar({ sidebarOpen }) {
         // { name: "Add New Doctor", route: "/vendors/clinic/dashboard/addDoctors", icon: FaUserMd },
         // { name: "Appointments", route: "/vendors/clinic/dashboard/appointments", icon: FaCalendarCheck },
         // { name: "Achievements", route: "/vendors/clinic/dashboard/achievements", icon: FaTrophy },
-        // { name: "Services", route: "/vendors/clinic/dashboard/services", icon: FaHandHoldingMedical },
+        { name: "Manage Coupons", route: "/vendors/labvendor/dashboard/managecoupon", icon: FaTicketAlt },
         // { name: "Clinic Timings", route: "/vendors/clinic/dashboard/clinictiming", icon: FaClock },
-        { name: "Manage Drivers", route: "/vendors/labvendor/dashboard/managedrivers", icon: FaFileMedical },
+        { name: "Manage Drivers", route: "/vendors/labvendor/dashboard/managedrivers", icon: FaTruck },
     ];
 
     const isActive = (route) => pathname === route;
