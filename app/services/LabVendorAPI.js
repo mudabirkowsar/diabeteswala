@@ -54,6 +54,35 @@ const LabVendorAPI = {
     },
 
     // =========================================================================
+    // LAB VENDOR: PROFILE MANAGEMENT & ADMIN REVIEW REQUESTS
+    // =========================================================================
+
+    // --- 1. Get Lab Profile ---
+    labVendorGetProfile: async () => {
+        const response = await authApi.get('/provider/labs/profile');
+        return response.data;
+    },
+
+    // --- 2. Update Lab Profile (Submits for Admin Approval, Multipart Form-Data) ---
+    labVendorUpdateProfile: async (formData) => {
+        // formData: FormData object containing optional fields:
+        //   - Text fields: 'name', 'about', 'address', 'city', 'state', 'country', 'lat', 'lng', 
+        //                  'alternatePhone', 'nablNumber', 'isHomeCollectionAvailable', 
+        //                  'isRapidServiceAvailable', 'isInsuranceAccepted', 'acceptedInsurances', 'is24x7'
+        //   - File fields: 'profileImage', 'signatureImage'
+        const response = await authApi.put('/provider/labs/profile/update', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
+
+    // --- 3. Get Latest Profile Update Request Status ---
+    labVendorGetProfileUpdateStatus: async () => {
+        const response = await authApi.get('/provider/labs/profile/update-status');
+        return response.data;
+    },
+
+    // =========================================================================
     // LAB VENDOR: COUPON MANAGEMENT
     // =========================================================================
 
