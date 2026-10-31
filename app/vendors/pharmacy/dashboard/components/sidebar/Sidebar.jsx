@@ -33,7 +33,7 @@ export default function ClinicSidebar({ sidebarOpen }) {
 
     // Menu list exactly as shown in your screen layout
     const menuItems = [
-        { name: "Dashboard", route: "/vendors/clinic/dashboard", icon: FaTachometerAlt },
+        { name: "Dashboard", route: "/vendors/pharmacy/dashboard", icon: FaTachometerAlt },
         // { name: "Revenue", route: "/vendors/clinic/dashboard/revenue", icon: FaRupeeSign },
         { name: "Manage Orders", route: "/vendors/pharmacy/dashboard/manageorders", icon: FaFirstOrder },
         { name: "Manage Medicine", route: "/vendors/pharmacy/dashboard/managemedicine", icon: FaPills },

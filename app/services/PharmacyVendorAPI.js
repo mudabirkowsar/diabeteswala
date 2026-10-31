@@ -49,6 +49,12 @@ const PharmacyVendorAPI = {
         return response.data;
     },
 
+     // --- Get Pharmacy Dashboard Real-Time Metrics & Counters ---
+    getPharmacyDashboardStats: async () => {
+        const response = await authApi.get('/provider/pharmacy/orders/dashboard-stats');
+        return response.data;
+    },
+
     // --- 1. Get Pharmacy Provider Profile ---
     getPharmacyProfile: async () => {
         const response = await authApi.get('/provider/pharmacy/profile');
