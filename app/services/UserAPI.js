@@ -342,6 +342,13 @@ const UserAPI = {
         return response.data;
     },
 
+    // --- Search Medicines by Name / Salt with Live Vendor Stock ---
+    searchMedicines: async (data) => {
+        // data (all optional): { query: "Dolo", category: "All", page: 1 }
+        const response = await publicApi.post('/user/medicine/search', data);
+        return response.data;
+    },
+
     getNonPrescriptionMedicinse: async (params) => {
         const response = await publicApi.get('/user/pharmacy/non-prescription-list', { params });
         return response.data
