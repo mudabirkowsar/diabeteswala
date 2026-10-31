@@ -30,16 +30,16 @@ export default function ClinicSidebar({ sidebarOpen }) {
 
     // Menu list exactly as shown in your screen layout
     const menuItems = [
-        { name: "Dashboard", route: "/vendors/clinic/dashboard", icon: FaTachometerAlt },
-        { name: "Revenue", route: "/vendors/clinic/dashboard/revenue", icon: FaRupeeSign },
-        { name: "Manage Bank Details", route: "/vendors/clinic/dashboard/managebank", icon: FaUniversity },
-        { name: "Clinic Doctors", route: "/vendors/clinic/dashboard/clinicdoctor", icon: FaUserMd },
-        { name: "Add New Doctor", route: "/vendors/clinic/dashboard/addDoctors", icon: FaUserMd },
-        { name: "Appointments", route: "/vendors/clinic/dashboard/appointments", icon: FaCalendarCheck },
-        { name: "Achievements", route: "/vendors/clinic/dashboard/achievements", icon: FaTrophy },
-        { name: "Services", route: "/vendors/clinic/dashboard/services", icon: FaHandHoldingMedical },
-        { name: "Clinic Timings", route: "/vendors/clinic/dashboard/clinictiming", icon: FaClock },
-        { name: "Documents", route: "/vendors/clinic/dashboard/documents", icon: FaFileMedical },
+        { name: "Dashboard", route: "/vendors/labvendor/dashboard", icon: FaTachometerAlt },
+        // { name: "Revenue", route: "/vendors/clinic/dashboard/revenue", icon: FaRupeeSign },
+        // { name: "Manage Bank Details", route: "/vendors/clinic/dashboard/managebank", icon: FaUniversity },
+        // { name: "Clinic Doctors", route: "/vendors/clinic/dashboard/clinicdoctor", icon: FaUserMd },
+        // { name: "Add New Doctor", route: "/vendors/clinic/dashboard/addDoctors", icon: FaUserMd },
+        // { name: "Appointments", route: "/vendors/clinic/dashboard/appointments", icon: FaCalendarCheck },
+        // { name: "Achievements", route: "/vendors/clinic/dashboard/achievements", icon: FaTrophy },
+        // { name: "Services", route: "/vendors/clinic/dashboard/services", icon: FaHandHoldingMedical },
+        // { name: "Clinic Timings", route: "/vendors/clinic/dashboard/clinictiming", icon: FaClock },
+        { name: "Manage Drivers", route: "/vendors/labvendor/dashboard/managedrivers", icon: FaFileMedical },
     ];
 
     const isActive = (route) => pathname === route;

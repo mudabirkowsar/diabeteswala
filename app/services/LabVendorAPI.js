@@ -53,6 +53,68 @@ const LabVendorAPI = {
         return response.data;
     },
 
+    // =========================================================================
+    // LAB VENDOR: PHLEBOTOMIST & DRIVER MANAGEMENT
+    // =========================================================================
+
+    // --- 1. Register Lab Phlebotomist / Driver (Multipart Form-Data) ---
+    labVendorAddDriver: async (formData) => {
+        // formData: FormData object containing:
+        //   - Required: 'name', 'phone', 'username', 'password'
+        //   - Optional: 'alternateNumber', 'vehicleType' ('Bike'|'Scooter'|'Van'), 'vehicleNumber', 'aadhaarNumber', 'address', 'city', 'state', 'country'
+        //   - Files: 'profilePic', 'certificate', 'license', 'rcImage'
+        const response = await authApi.post('/provider/driver/add', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
+
+    // --- 2. Get Lab Drivers & Phlebotomists (Paginated List) ---
+    labVendorGetDriversList: async (params) => {
+        // params (optional): { page: 1 }
+        const response = await authApi.get('/provider/driver/list', { params });
+        return response.data;
+    },
+
+    // --- 3. Search Lab Drivers & Phlebotomists ---
+    labVendorSearchDrivers: async (data) => {
+        // data: { query: "Rahul" }
+        const response = await authApi.post('/provider/driver/search', data);
+        return response.data;
+    },
+
+    // --- 4. Get Lab Driver Details By ID ---
+    labVendorGetDriverDetailsById: async (id) => {
+        // id: MongoDB Document _id
+        const response = await authApi.get(`/provider/driver/details/${id}`);
+        return response.data;
+    },
+
+    // --- 5. Update Lab Driver / Phlebotomist (Multipart Form-Data) ---
+    labVendorUpdateDriver: async (id, formData) => {
+        // id: MongoDB Document _id
+        // formData: FormData object with optional updated text and replacement files ('profilePic', 'certificate', 'license', 'rcImage')
+        const response = await authApi.put(`/provider/driver/update/${id}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
+
+    // --- 6. Delete Lab Driver / Phlebotomist ---
+    labVendorDeleteDriver: async (id) => {
+        // id: MongoDB Document _id (Blocked if actively assigned to a home sample collection/pickup)
+        const response = await authApi.delete(`/provider/driver/delete/${id}`);
+        return response.data;
+    },
+
+    // --- 7. Toggle Lab Driver Status (Available / Busy / Offline) ---
+    labVendorToggleDriverStatus: async (id, data) => {
+        // id: MongoDB Document _id
+        // data: { status: "Available" | "Busy" | "Offline" }
+        const response = await authApi.patch(`/provider/driver/status/${id}`, data);
+        return response.data;
+    },
+
 }
 
 export default LabVendorAPI;
