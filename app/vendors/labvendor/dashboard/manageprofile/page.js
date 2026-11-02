@@ -1,10 +1,6 @@
 "use client";
 
-<<<<<<< HEAD
-import React, { useState, useEffect } from 'react';
-=======
 import React, { useState, useEffect, useMemo } from 'react';
->>>>>>> 040dd13 (ADDDED coupon lab)
 import {
     Building2,
     ShieldCheck,
@@ -25,12 +21,6 @@ import {
     Landmark,
     Plus,
     X,
-<<<<<<< HEAD
-    Sparkles
-} from 'lucide-react';
-import { toast, Toaster } from 'react-hot-toast';
-
-=======
     Sparkles,
     Compass,
     Crosshair
@@ -40,7 +30,6 @@ import { toast, Toaster } from 'react-hot-toast';
 // Import Country, State, City from library
 import { Country, State, City } from 'country-state-city';
 
->>>>>>> 040dd13 (ADDDED coupon lab)
 // Import Lab Vendor API service functions
 import LabVendorAPI from '../../../../services/LabVendorAPI';
 
@@ -59,10 +48,7 @@ export default function LabProfilePage() {
     const [updateStatus, setUpdateStatus] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-<<<<<<< HEAD
-=======
     const [resolvingGeo, setResolvingGeo] = useState(false);
->>>>>>> 040dd13 (ADDDED coupon lab)
 
     // --- Form States ---
     const [name, setName] = useState('');
@@ -70,11 +56,6 @@ export default function LabProfilePage() {
     const [alternatePhone, setAlternatePhone] = useState('');
     const [nablNumber, setNablNumber] = useState('');
     const [address, setAddress] = useState('');
-<<<<<<< HEAD
-    const [city, setCity] = useState('');
-    const [state, setState] = useState('');
-    const [country, setCountry] = useState('India');
-=======
 
     // --- Country State City Selector States ---
     const [selectedCountryCode, setSelectedCountryCode] = useState('IN');
@@ -84,7 +65,6 @@ export default function LabProfilePage() {
     const [city, setCity] = useState('');
 
     // Coordinates (Auto-populated)
->>>>>>> 040dd13 (ADDDED coupon lab)
     const [lat, setLat] = useState('');
     const [lng, setLng] = useState('');
 
@@ -104,8 +84,6 @@ export default function LabProfilePage() {
     const [signatureImageFile, setSignatureImageFile] = useState(null);
     const [signatureImagePreview, setSignatureImagePreview] = useState('');
 
-<<<<<<< HEAD
-=======
     // --- Cached Country, State, City Lists ---
     const allCountries = useMemo(() => Country.getAllCountries(), []);
     const availableStates = useMemo(() => {
@@ -135,7 +113,7 @@ export default function LabProfilePage() {
                 return;
             }
 
-            // Step 2: Instant fallback to State coordinates from country-state-city
+            // Step 2: Fallback to State coordinates from country-state-city
             const stateObj = State.getStateByCodeAndCountry(stateCode, countryCode);
             if (stateObj && stateObj.latitude && stateObj.longitude) {
                 setLat(String(stateObj.latitude));
@@ -192,7 +170,6 @@ export default function LabProfilePage() {
         );
     };
 
->>>>>>> 040dd13 (ADDDED coupon lab)
     // --- 1. Fetch Profile & Review Status ---
     const fetchData = async () => {
         setLoading(true);
@@ -212,13 +189,6 @@ export default function LabProfilePage() {
                 setAlternatePhone(data.alternatePhone || '');
                 setNablNumber(data.documents?.nablNumber || data.nablNumber || '');
                 setAddress(data.address || '');
-<<<<<<< HEAD
-                setCity(data.city || '');
-                setState(data.state || '');
-                setCountry(data.country || 'India');
-                setLat(data.location?.lat !== undefined ? String(data.location.lat) : '');
-                setLng(data.location?.lng !== undefined ? String(data.location.lng) : '');
-=======
 
                 // Match Country
                 const matchedCountry = allCountries.find(
@@ -248,7 +218,6 @@ export default function LabProfilePage() {
                 if (data.location?.lng && data.location?.lng !== 0) {
                     setLng(String(data.location.lng));
                 }
->>>>>>> 040dd13 (ADDDED coupon lab)
 
                 setIsHomeCollectionAvailable(Boolean(data.isHomeCollectionAvailable));
                 setIsRapidServiceAvailable(Boolean(data.isRapidServiceAvailable));
@@ -279,9 +248,6 @@ export default function LabProfilePage() {
         fetchData();
     }, []);
 
-<<<<<<< HEAD
-    // --- Handle Image Upload Selects ---
-=======
     // --- On Country Change ---
     const handleCountryChange = (e) => {
         const countryIso = e.target.value;
@@ -324,7 +290,6 @@ export default function LabProfilePage() {
     };
 
     // --- Image Upload Handlers ---
->>>>>>> 040dd13 (ADDDED coupon lab)
     const handleProfilePicChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -366,11 +331,7 @@ export default function LabProfilePage() {
         setInsurances(prev => prev.filter((_, idx) => idx !== indexToRemove));
     };
 
-<<<<<<< HEAD
-    // --- 2. Submit Profile Update (Multipart Form) ---
-=======
     // --- Submit Profile Update ---
->>>>>>> 040dd13 (ADDDED coupon lab)
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -394,24 +355,13 @@ export default function LabProfilePage() {
             if (lat !== '') formData.append('lat', parseFloat(lat) || 0);
             if (lng !== '') formData.append('lng', parseFloat(lng) || 0);
 
-<<<<<<< HEAD
-            // Boolean Flags as String values
-=======
->>>>>>> 040dd13 (ADDDED coupon lab)
             formData.append('isHomeCollectionAvailable', String(isHomeCollectionAvailable));
             formData.append('isRapidServiceAvailable', String(isRapidServiceAvailable));
             formData.append('isInsuranceAccepted', String(isInsuranceAccepted));
             formData.append('is24x7', String(is24x7));
 
-<<<<<<< HEAD
-            // Accepted Insurances as JSON stringified array
             formData.append('acceptedInsurances', JSON.stringify(insurances));
 
-            // Replacement files
-=======
-            formData.append('acceptedInsurances', JSON.stringify(insurances));
-
->>>>>>> 040dd13 (ADDDED coupon lab)
             if (profileImageFile) formData.append('profileImage', profileImageFile);
             if (signatureImageFile) formData.append('signatureImage', signatureImageFile);
 
@@ -512,10 +462,6 @@ export default function LabProfilePage() {
                     {/* --- TOP PROFILE HERO CARD --- */}
                     <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-<<<<<<< HEAD
-                            {/* Profile Picture Upload Container */}
-=======
->>>>>>> 040dd13 (ADDDED coupon lab)
                             <div className="relative group shrink-0">
                                 <div className="w-24 h-24 rounded-3xl border-2 border-dashed border-[#3d3f96]/30 bg-slate-50 overflow-hidden flex items-center justify-center shadow-inner">
                                     {profileImagePreview ? (
@@ -543,10 +489,6 @@ export default function LabProfilePage() {
                                 </label>
                             </div>
 
-<<<<<<< HEAD
-                            {/* Essential Details */}
-=======
->>>>>>> 040dd13 (ADDDED coupon lab)
                             <div className="space-y-1.5">
                                 <div className="flex items-center gap-2.5 flex-wrap">
                                     <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
@@ -578,10 +520,6 @@ export default function LabProfilePage() {
                             </div>
                         </div>
 
-<<<<<<< HEAD
-                        {/* Save Action Button */}
-=======
->>>>>>> 040dd13 (ADDDED coupon lab)
                         <div className="self-end sm:self-center">
                             <button
                                 type="submit"
@@ -679,11 +617,7 @@ export default function LabProfilePage() {
                                 </div>
                             </div>
 
-<<<<<<< HEAD
-                            {/* Section 2: Address & Geographic Location */}
-=======
                             {/* Section 2: Address & Auto-Geocoded GPS Coordinates */}
->>>>>>> 040dd13 (ADDDED coupon lab)
                             <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-sm space-y-5">
                                 <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
                                     <div className="w-8 h-8 rounded-xl bg-indigo-50 text-[#3d3f96] flex items-center justify-center shrink-0">
@@ -691,17 +625,10 @@ export default function LabProfilePage() {
                                     </div>
                                     <div>
                                         <h3 className="font-extrabold text-slate-900 text-sm sm:text-base tracking-tight uppercase">
-<<<<<<< HEAD
-                                            2. Physical Address &amp; Coordinates
-                                        </h3>
-                                        <p className="text-[11px] text-slate-400 font-semibold">
-                                            Premises street address and latitude/longitude coordinates for patient navigation
-=======
                                             2. Physical Address &amp; Geographic Location
                                         </h3>
                                         <p className="text-[11px] text-slate-400 font-semibold">
                                             Select Country, State, and City — exact coordinates are auto-detected instantly
->>>>>>> 040dd13 (ADDDED coupon lab)
                                         </p>
                                     </div>
                                 </div>
@@ -722,82 +649,11 @@ export default function LabProfilePage() {
                                         />
                                     </div>
 
-<<<<<<< HEAD
-                                    {/* City */}
-                                    <div className="space-y-1">
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">
-                                            City
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={city}
-                                            onChange={(e) => setCity(e.target.value)}
-                                            placeholder="e.g. Mohali"
-                                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-[#3d3f96]"
-                                        />
-                                    </div>
-
-                                    {/* State */}
-                                    <div className="space-y-1">
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">
-                                            State
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={state}
-                                            onChange={(e) => setState(e.target.value)}
-                                            placeholder="e.g. Punjab"
-                                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-[#3d3f96]"
-                                        />
-                                    </div>
-
-                                    {/* Country */}
-=======
                                     {/* Country Dropdown */}
->>>>>>> 040dd13 (ADDDED coupon lab)
                                     <div className="space-y-1">
                                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">
                                             Country
                                         </label>
-<<<<<<< HEAD
-                                        <input
-                                            type="text"
-                                            value={country}
-                                            onChange={(e) => setCountry(e.target.value)}
-                                            placeholder="e.g. India"
-                                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-[#3d3f96]"
-                                        />
-                                    </div>
-
-                                    {/* Latitude */}
-                                    <div className="space-y-1 sm:col-span-1.5">
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">
-                                            Latitude (GPS)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            step="any"
-                                            value={lat}
-                                            onChange={(e) => setLat(e.target.value)}
-                                            placeholder="e.g. 30.7046"
-                                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-mono font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-[#3d3f96]"
-                                        />
-                                    </div>
-
-                                    {/* Longitude */}
-                                    <div className="space-y-1 sm:col-span-1.5">
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">
-                                            Longitude (GPS)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            step="any"
-                                            value={lng}
-                                            onChange={(e) => setLng(e.target.value)}
-                                            placeholder="e.g. 76.7179"
-                                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-mono font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-[#3d3f96]"
-                                        />
-=======
                                         <select
                                             value={selectedCountryCode}
                                             onChange={handleCountryChange}
@@ -920,7 +776,6 @@ export default function LabProfilePage() {
                                                 />
                                             </div>
                                         </div>
->>>>>>> 040dd13 (ADDDED coupon lab)
                                     </div>
 
                                 </div>
@@ -1062,11 +917,7 @@ export default function LabProfilePage() {
 
                         </div>
 
-<<<<<<< HEAD
-                        {/* --- RIGHT 1 COL: DIGITAL SIGNATURE & VERIFIED SYSTEM DETAILS --- */}
-=======
                         {/* --- RIGHT 1 COL: DIGITAL SIGNATURE & REGISTRY DETAILS --- */}
->>>>>>> 040dd13 (ADDDED coupon lab)
                         <div className="space-y-6">
 
                             {/* Section 4: Authorized Digital Signature */}
@@ -1116,11 +967,7 @@ export default function LabProfilePage() {
                                 </div>
                             </div>
 
-<<<<<<< HEAD
-                            {/* Section 5: Operating Hours & Bank Details (Read-only / Audit) */}
-=======
                             {/* Section 5: Operating Hours & Bank Details */}
->>>>>>> 040dd13 (ADDDED coupon lab)
                             <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-sm space-y-4">
                                 <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
                                     <div className="w-8 h-8 rounded-xl bg-indigo-50 text-[#3d3f96] flex items-center justify-center shrink-0">
@@ -1207,4 +1054,4 @@ export default function LabProfilePage() {
 
         </div>
     );
-}
+}a
