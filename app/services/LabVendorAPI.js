@@ -46,7 +46,7 @@ const LabVendorAPI = {
     loginLab: async (credentials) => {
         const response = await publicApi.post('api/auth/provider/login', credentials);
         return response.data;
-    },
+    }, 
 
     getLabProfile: async () => {
         const response = await authApi.get('/api/auth/provider/profile');
