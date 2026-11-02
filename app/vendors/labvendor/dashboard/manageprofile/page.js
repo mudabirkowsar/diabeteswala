@@ -1,6 +1,10 @@
 "use client";
 
+<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
+=======
+import React, { useState, useEffect, useMemo } from 'react';
+>>>>>>> 040dd13 (ADDDED coupon lab)
 import {
     Building2,
     ShieldCheck,
@@ -21,10 +25,22 @@ import {
     Landmark,
     Plus,
     X,
+<<<<<<< HEAD
     Sparkles
 } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
 
+=======
+    Sparkles,
+    Compass,
+    Crosshair
+} from 'lucide-react';
+import { toast, Toaster } from 'react-hot-toast';
+
+// Import Country, State, City from library
+import { Country, State, City } from 'country-state-city';
+
+>>>>>>> 040dd13 (ADDDED coupon lab)
 // Import Lab Vendor API service functions
 import LabVendorAPI from '../../../../services/LabVendorAPI';
 
@@ -43,6 +59,10 @@ export default function LabProfilePage() {
     const [updateStatus, setUpdateStatus] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+<<<<<<< HEAD
+=======
+    const [resolvingGeo, setResolvingGeo] = useState(false);
+>>>>>>> 040dd13 (ADDDED coupon lab)
 
     // --- Form States ---
     const [name, setName] = useState('');
@@ -50,9 +70,21 @@ export default function LabProfilePage() {
     const [alternatePhone, setAlternatePhone] = useState('');
     const [nablNumber, setNablNumber] = useState('');
     const [address, setAddress] = useState('');
+<<<<<<< HEAD
     const [city, setCity] = useState('');
     const [state, setState] = useState('');
     const [country, setCountry] = useState('India');
+=======
+
+    // --- Country State City Selector States ---
+    const [selectedCountryCode, setSelectedCountryCode] = useState('IN');
+    const [country, setCountry] = useState('India');
+    const [selectedStateCode, setSelectedStateCode] = useState('');
+    const [state, setState] = useState('');
+    const [city, setCity] = useState('');
+
+    // Coordinates (Auto-populated)
+>>>>>>> 040dd13 (ADDDED coupon lab)
     const [lat, setLat] = useState('');
     const [lng, setLng] = useState('');
 
@@ -72,6 +104,95 @@ export default function LabProfilePage() {
     const [signatureImageFile, setSignatureImageFile] = useState(null);
     const [signatureImagePreview, setSignatureImagePreview] = useState('');
 
+<<<<<<< HEAD
+=======
+    // --- Cached Country, State, City Lists ---
+    const allCountries = useMemo(() => Country.getAllCountries(), []);
+    const availableStates = useMemo(() => {
+        return selectedCountryCode ? State.getStatesOfCountry(selectedCountryCode) : [];
+    }, [selectedCountryCode]);
+    const availableCities = useMemo(() => {
+        return (selectedCountryCode && selectedStateCode) 
+            ? City.getCitiesOfState(selectedCountryCode, selectedStateCode) 
+            : [];
+    }, [selectedCountryCode, selectedStateCode]);
+
+    // --- SMART GEOCODING FUNCTION (Guarantees Lat & Lng) ---
+    const fetchAccurateCoordinates = async (cityName, stateCode, countryCode) => {
+        if (!countryCode) return;
+        setResolvingGeo(true);
+
+        try {
+            // Step 1: Check if country-state-city has coordinates for the city
+            const cities = City.getCitiesOfState(countryCode, stateCode);
+            const cityObj = cities.find(c => c.name.toLowerCase() === (cityName || '').toLowerCase());
+
+            if (cityObj && cityObj.latitude && cityObj.longitude && Number(cityObj.latitude) !== 0) {
+                setLat(String(cityObj.latitude));
+                setLng(String(cityObj.longitude));
+                toast.success(`Coordinates auto-detected for ${cityName}`, { id: 'geo', duration: 2500 });
+                setResolvingGeo(false);
+                return;
+            }
+
+            // Step 2: Instant fallback to State coordinates from country-state-city
+            const stateObj = State.getStateByCodeAndCountry(stateCode, countryCode);
+            if (stateObj && stateObj.latitude && stateObj.longitude) {
+                setLat(String(stateObj.latitude));
+                setLng(String(stateObj.longitude));
+            } else {
+                const countryObj = Country.getCountryByCode(countryCode);
+                if (countryObj && countryObj.latitude && countryObj.longitude) {
+                    setLat(String(countryObj.latitude));
+                    setLng(String(countryObj.longitude));
+                }
+            }
+
+            // Step 3: If city coordinate was null/missing in the package, query OpenStreetMap
+            if (cityName) {
+                const query = `${cityName}, ${stateObj?.name || ''}, ${countryCode}`;
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+                const data = await res.json();
+                if (data && data.length > 0) {
+                    setLat(String(data[0].lat));
+                    setLng(String(data[0].lon));
+                    toast.success(`Accurate GPS resolved for ${cityName}`, { id: 'geo', duration: 2500 });
+                }
+            }
+        } catch (err) {
+            console.warn("Geocoding resolution fallback error:", err);
+        } finally {
+            setResolvingGeo(false);
+        }
+    };
+
+    // --- Device GPS Auto-Detection ---
+    const handleDetectCurrentLocation = () => {
+        if (!navigator.geolocation) {
+            toast.error("Geolocation is not supported by your browser");
+            return;
+        }
+
+        setResolvingGeo(true);
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const deviceLat = pos.coords.latitude.toFixed(6);
+                const deviceLng = pos.coords.longitude.toFixed(6);
+                setLat(String(deviceLat));
+                setLng(String(deviceLng));
+                toast.success("Device GPS coordinates captured!");
+                setResolvingGeo(false);
+            },
+            (err) => {
+                console.error(err);
+                toast.error("Could not capture device location. Please allow location access.");
+                setResolvingGeo(false);
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    };
+
+>>>>>>> 040dd13 (ADDDED coupon lab)
     // --- 1. Fetch Profile & Review Status ---
     const fetchData = async () => {
         setLoading(true);
@@ -91,11 +212,43 @@ export default function LabProfilePage() {
                 setAlternatePhone(data.alternatePhone || '');
                 setNablNumber(data.documents?.nablNumber || data.nablNumber || '');
                 setAddress(data.address || '');
+<<<<<<< HEAD
                 setCity(data.city || '');
                 setState(data.state || '');
                 setCountry(data.country || 'India');
                 setLat(data.location?.lat !== undefined ? String(data.location.lat) : '');
                 setLng(data.location?.lng !== undefined ? String(data.location.lng) : '');
+=======
+
+                // Match Country
+                const matchedCountry = allCountries.find(
+                    c => c.name.toLowerCase() === (data.country || 'India').toLowerCase()
+                ) || allCountries.find(c => c.isoCode === 'IN');
+
+                const cCode = matchedCountry ? matchedCountry.isoCode : 'IN';
+                setSelectedCountryCode(cCode);
+                setCountry(matchedCountry ? matchedCountry.name : (data.country || 'India'));
+
+                // Match State
+                const statesOfCountry = State.getStatesOfCountry(cCode);
+                const matchedState = statesOfCountry.find(
+                    s => s.name.toLowerCase() === (data.state || '').toLowerCase()
+                );
+                const sCode = matchedState ? matchedState.isoCode : '';
+                setSelectedStateCode(sCode);
+                setState(matchedState ? matchedState.name : (data.state || ''));
+
+                // Match City
+                setCity(data.city || '');
+
+                // Coordinates
+                if (data.location?.lat && data.location?.lat !== 0) {
+                    setLat(String(data.location.lat));
+                }
+                if (data.location?.lng && data.location?.lng !== 0) {
+                    setLng(String(data.location.lng));
+                }
+>>>>>>> 040dd13 (ADDDED coupon lab)
 
                 setIsHomeCollectionAvailable(Boolean(data.isHomeCollectionAvailable));
                 setIsRapidServiceAvailable(Boolean(data.isRapidServiceAvailable));
@@ -126,7 +279,52 @@ export default function LabProfilePage() {
         fetchData();
     }, []);
 
+<<<<<<< HEAD
     // --- Handle Image Upload Selects ---
+=======
+    // --- On Country Change ---
+    const handleCountryChange = (e) => {
+        const countryIso = e.target.value;
+        const countryObj = allCountries.find(c => c.isoCode === countryIso);
+        
+        setSelectedCountryCode(countryIso);
+        setCountry(countryObj ? countryObj.name : '');
+        setSelectedStateCode('');
+        setState('');
+        setCity('');
+
+        if (countryObj && countryObj.latitude && countryObj.longitude) {
+            setLat(String(countryObj.latitude));
+            setLng(String(countryObj.longitude));
+        }
+    };
+
+    // --- On State Change ---
+    const handleStateChange = (e) => {
+        const stateIso = e.target.value;
+        const stateObj = availableStates.find(s => s.isoCode === stateIso);
+
+        setSelectedStateCode(stateIso);
+        setState(stateObj ? stateObj.name : '');
+        setCity('');
+
+        if (stateObj && stateObj.latitude && stateObj.longitude) {
+            setLat(String(stateObj.latitude));
+            setLng(String(stateObj.longitude));
+        }
+    };
+
+    // --- On City Change ---
+    const handleCityChange = (e) => {
+        const cityName = e.target.value;
+        setCity(cityName);
+        if (cityName) {
+            fetchAccurateCoordinates(cityName, selectedStateCode, selectedCountryCode);
+        }
+    };
+
+    // --- Image Upload Handlers ---
+>>>>>>> 040dd13 (ADDDED coupon lab)
     const handleProfilePicChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -168,7 +366,11 @@ export default function LabProfilePage() {
         setInsurances(prev => prev.filter((_, idx) => idx !== indexToRemove));
     };
 
+<<<<<<< HEAD
     // --- 2. Submit Profile Update (Multipart Form) ---
+=======
+    // --- Submit Profile Update ---
+>>>>>>> 040dd13 (ADDDED coupon lab)
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -192,16 +394,24 @@ export default function LabProfilePage() {
             if (lat !== '') formData.append('lat', parseFloat(lat) || 0);
             if (lng !== '') formData.append('lng', parseFloat(lng) || 0);
 
+<<<<<<< HEAD
             // Boolean Flags as String values
+=======
+>>>>>>> 040dd13 (ADDDED coupon lab)
             formData.append('isHomeCollectionAvailable', String(isHomeCollectionAvailable));
             formData.append('isRapidServiceAvailable', String(isRapidServiceAvailable));
             formData.append('isInsuranceAccepted', String(isInsuranceAccepted));
             formData.append('is24x7', String(is24x7));
 
+<<<<<<< HEAD
             // Accepted Insurances as JSON stringified array
             formData.append('acceptedInsurances', JSON.stringify(insurances));
 
             // Replacement files
+=======
+            formData.append('acceptedInsurances', JSON.stringify(insurances));
+
+>>>>>>> 040dd13 (ADDDED coupon lab)
             if (profileImageFile) formData.append('profileImage', profileImageFile);
             if (signatureImageFile) formData.append('signatureImage', signatureImageFile);
 
@@ -302,7 +512,10 @@ export default function LabProfilePage() {
                     {/* --- TOP PROFILE HERO CARD --- */}
                     <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+<<<<<<< HEAD
                             {/* Profile Picture Upload Container */}
+=======
+>>>>>>> 040dd13 (ADDDED coupon lab)
                             <div className="relative group shrink-0">
                                 <div className="w-24 h-24 rounded-3xl border-2 border-dashed border-[#3d3f96]/30 bg-slate-50 overflow-hidden flex items-center justify-center shadow-inner">
                                     {profileImagePreview ? (
@@ -330,7 +543,10 @@ export default function LabProfilePage() {
                                 </label>
                             </div>
 
+<<<<<<< HEAD
                             {/* Essential Details */}
+=======
+>>>>>>> 040dd13 (ADDDED coupon lab)
                             <div className="space-y-1.5">
                                 <div className="flex items-center gap-2.5 flex-wrap">
                                     <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
@@ -362,7 +578,10 @@ export default function LabProfilePage() {
                             </div>
                         </div>
 
+<<<<<<< HEAD
                         {/* Save Action Button */}
+=======
+>>>>>>> 040dd13 (ADDDED coupon lab)
                         <div className="self-end sm:self-center">
                             <button
                                 type="submit"
@@ -460,7 +679,11 @@ export default function LabProfilePage() {
                                 </div>
                             </div>
 
+<<<<<<< HEAD
                             {/* Section 2: Address & Geographic Location */}
+=======
+                            {/* Section 2: Address & Auto-Geocoded GPS Coordinates */}
+>>>>>>> 040dd13 (ADDDED coupon lab)
                             <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-sm space-y-5">
                                 <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
                                     <div className="w-8 h-8 rounded-xl bg-indigo-50 text-[#3d3f96] flex items-center justify-center shrink-0">
@@ -468,10 +691,17 @@ export default function LabProfilePage() {
                                     </div>
                                     <div>
                                         <h3 className="font-extrabold text-slate-900 text-sm sm:text-base tracking-tight uppercase">
+<<<<<<< HEAD
                                             2. Physical Address &amp; Coordinates
                                         </h3>
                                         <p className="text-[11px] text-slate-400 font-semibold">
                                             Premises street address and latitude/longitude coordinates for patient navigation
+=======
+                                            2. Physical Address &amp; Geographic Location
+                                        </h3>
+                                        <p className="text-[11px] text-slate-400 font-semibold">
+                                            Select Country, State, and City — exact coordinates are auto-detected instantly
+>>>>>>> 040dd13 (ADDDED coupon lab)
                                         </p>
                                     </div>
                                 </div>
@@ -492,6 +722,7 @@ export default function LabProfilePage() {
                                         />
                                     </div>
 
+<<<<<<< HEAD
                                     {/* City */}
                                     <div className="space-y-1">
                                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">
@@ -521,10 +752,14 @@ export default function LabProfilePage() {
                                     </div>
 
                                     {/* Country */}
+=======
+                                    {/* Country Dropdown */}
+>>>>>>> 040dd13 (ADDDED coupon lab)
                                     <div className="space-y-1">
                                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">
                                             Country
                                         </label>
+<<<<<<< HEAD
                                         <input
                                             type="text"
                                             value={country}
@@ -562,6 +797,130 @@ export default function LabProfilePage() {
                                             placeholder="e.g. 76.7179"
                                             className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-mono font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-[#3d3f96]"
                                         />
+=======
+                                        <select
+                                            value={selectedCountryCode}
+                                            onChange={handleCountryChange}
+                                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-[#3d3f96] cursor-pointer"
+                                        >
+                                            <option value="">Select Country</option>
+                                            {allCountries.map((c) => (
+                                                <option key={c.isoCode} value={c.isoCode}>
+                                                    {c.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* State Dropdown */}
+                                    <div className="space-y-1">
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">
+                                            State / Province
+                                        </label>
+                                        <select
+                                            value={selectedStateCode}
+                                            onChange={handleStateChange}
+                                            disabled={!selectedCountryCode}
+                                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-[#3d3f96] cursor-pointer disabled:opacity-50"
+                                        >
+                                            <option value="">{state || 'Select State'}</option>
+                                            {availableStates.map((s) => (
+                                                <option key={s.isoCode} value={s.isoCode}>
+                                                    {s.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* City Dropdown */}
+                                    <div className="space-y-1">
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">
+                                            City
+                                        </label>
+                                        {availableCities.length > 0 ? (
+                                            <select
+                                                value={city}
+                                                onChange={handleCityChange}
+                                                disabled={!selectedStateCode}
+                                                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-[#3d3f96] cursor-pointer disabled:opacity-50"
+                                            >
+                                                <option value="">Select City</option>
+                                                {availableCities.map((ct) => (
+                                                    <option key={ct.name} value={ct.name}>
+                                                        {ct.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <input
+                                                type="text"
+                                                value={city}
+                                                onChange={(e) => {
+                                                    setCity(e.target.value);
+                                                    if (e.target.value.length > 2) {
+                                                        fetchAccurateCoordinates(e.target.value, selectedStateCode, selectedCountryCode);
+                                                    }
+                                                }}
+                                                placeholder="Enter City"
+                                                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-[#3d3f96]"
+                                            />
+                                        )}
+                                    </div>
+
+                                    {/* Auto-detected GPS Coordinates Container with Detect Device GPS Button */}
+                                    <div className="sm:col-span-3 p-4 bg-indigo-50/60 border border-indigo-100 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                        <div className="flex items-center gap-3 text-[#3d3f96]">
+                                            <Compass size={22} className={`shrink-0 ${resolvingGeo ? 'animate-spin' : ''}`} />
+                                            <div>
+                                                <span className="text-xs font-black uppercase tracking-wider block">
+                                                    Automated Geographic Geocoding
+                                                </span>
+                                                <span className="text-[11px] text-slate-500 font-semibold">
+                                                    {resolvingGeo ? "Fetching precise coordinates..." : "Auto-derived from selected municipality"}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+                                            <button
+                                                type="button"
+                                                onClick={handleDetectCurrentLocation}
+                                                className="px-3 py-2 bg-white border border-indigo-200 text-[#3d3f96] hover:bg-indigo-50 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition active:scale-95 shadow-sm cursor-pointer whitespace-nowrap"
+                                                title="Capture exact GPS location from device"
+                                            >
+                                                <Crosshair size={13} />
+                                                <span>Current GPS</span>
+                                            </button>
+
+                                            <div className="space-y-0.5">
+                                                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block ml-1">
+                                                    Lat
+                                                </span>
+                                                <input
+                                                    type="number"
+                                                    step="any"
+                                                    value={lat}
+                                                    onChange={(e) => setLat(e.target.value)}
+                                                    placeholder="0.0000"
+                                                    className="w-24 sm:w-28 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:border-[#3d3f96] outline-none"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-0.5">
+                                                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block ml-1">
+                                                    Lng
+                                                </span>
+                                                <input
+                                                    type="number"
+                                                    step="any"
+                                                    value={lng}
+                                                    onChange={(e) => setLng(e.target.value)}
+                                                    placeholder="0.0000"
+                                                    className="w-24 sm:w-28 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:border-[#3d3f96] outline-none"
+                                                />
+                                            </div>
+                                        </div>
+>>>>>>> 040dd13 (ADDDED coupon lab)
                                     </div>
 
                                 </div>
@@ -703,7 +1062,11 @@ export default function LabProfilePage() {
 
                         </div>
 
+<<<<<<< HEAD
                         {/* --- RIGHT 1 COL: DIGITAL SIGNATURE & VERIFIED SYSTEM DETAILS --- */}
+=======
+                        {/* --- RIGHT 1 COL: DIGITAL SIGNATURE & REGISTRY DETAILS --- */}
+>>>>>>> 040dd13 (ADDDED coupon lab)
                         <div className="space-y-6">
 
                             {/* Section 4: Authorized Digital Signature */}
@@ -753,7 +1116,11 @@ export default function LabProfilePage() {
                                 </div>
                             </div>
 
+<<<<<<< HEAD
                             {/* Section 5: Operating Hours & Bank Details (Read-only / Audit) */}
+=======
+                            {/* Section 5: Operating Hours & Bank Details */}
+>>>>>>> 040dd13 (ADDDED coupon lab)
                             <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-sm space-y-4">
                                 <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
                                     <div className="w-8 h-8 rounded-xl bg-indigo-50 text-[#3d3f96] flex items-center justify-center shrink-0">
