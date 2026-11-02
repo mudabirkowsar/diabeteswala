@@ -53,6 +53,34 @@ const LabVendorAPI = {
         return response.data;
     },
 
+    // 1. Set or update lab slot configuration
+    setLabSlots: async (slotData) => {
+        const response = await authApi.post('/provider/availability/set-slots', slotData);
+        return response.data;
+    },
+
+    // 2. Fetch lab slot configuration & generated time slots
+    getLabSlots: async () => {
+        const response = await authApi.get('/provider/availability/my-slots');
+        return response.data;
+    },
+
+    // 3. Block / Hide a specific lab slot (e.g., lunch break/maintenance)
+    // Accepts either "13:30" or { time: "13:30" }
+    blockLabSlot: async (slotTime) => {
+        const payload = typeof slotTime === 'string' ? { time: slotTime } : slotTime;
+        const response = await authApi.post('/provider/availability/block-slot', payload);
+        return response.data;
+    },
+
+    // 4. Unblock / Restore a previously blocked lab slot
+    // Accepts either "13:30" or { time: "13:30" }
+    unblockLabSlot: async (slotTime) => {
+        const payload = typeof slotTime === 'string' ? { time: slotTime } : slotTime;
+        const response = await authApi.post('/provider/availability/unblock-slot', payload);
+        return response.data;
+    },
+
     // =========================================================================
     // LAB VENDOR: PROFILE MANAGEMENT & ADMIN REVIEW REQUESTS
     // =========================================================================
