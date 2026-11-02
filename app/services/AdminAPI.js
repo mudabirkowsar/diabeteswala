@@ -341,42 +341,34 @@ const AdminAPI = {
         return response.data;
     },
 
-    // 1. Create a new master health package
-    // Accepts either the payload object directly or { type: "package", payload: { ... } }
-    createMasterPackage: async (packageData) => {
-        const body = packageData.type && packageData.payload 
-            ? packageData 
-            : { type: 'package', payload: packageData };
-        const response = await authApi.post('/admin/lab/tests/create', body);
+    // 1. Fetch pending lab test & package requests
+    getPendingLabPackageRequest: async () => {
+        const response = await authApi.get('/admin/lab/tests/requests/pending');
         return response.data;
     },
 
-    // 2. Get paginated master packages list (with populated tests)
-    getMasterPackagesList: async (page = 1) => {
-        const response = await authApi.get('/admin/lab/tests/list/package', {
-            params: { page },
+    // 2. Approve or Reject a lab package/test request
+    // payload: { status: 'Approved' | 'Rejected', adminComment: '...' }
+    reviewLabPackageRequest: async (requestId, payload) => {
+        const response = await authApi.put(`/admin/lab/tests/requests/approve/${requestId}`, payload);
+        return response.data;
+    },
+
+    // 3. Approve a lab package/test request
+    approveLabPackageRequest: async (requestId, adminComment = 'Approved and added to master catalog.') => {
+        const response = await authApi.put(`/admin/lab/tests/requests/approve/${requestId}`, {
+            status: 'Approved',
+            adminComment,
         });
         return response.data;
     },
 
-    // 3. Search master packages by name
-    searchMasterPackages: async (query) => {
-        const response = await authApi.post('/admin/lab/tests/search', {
-            type: 'package',
-            query,
+    // 4. Reject a lab package/test request with a reason
+    rejectLabPackageRequest: async (requestId, adminComment) => {
+        const response = await authApi.put(`/admin/lab/tests/requests/approve/${requestId}`, {
+            status: 'Rejected',
+            adminComment,
         });
-        return response.data;
-    },
-
-    // 4. Edit master package details by ID
-    editMasterPackage: async (id, packageData) => {
-        const response = await authApi.put(`/admin/lab/tests/edit/package/${id}`, packageData);
-        return response.data;
-    },
-
-    // 5. Delete a master health package by ID
-    deleteMasterPackage: async (id) => {
-        const response = await authApi.delete(`/admin/lab/tests/delete/package/${id}`);
         return response.data;
     },
 
