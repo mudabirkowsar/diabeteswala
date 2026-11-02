@@ -1054,4 +1054,4 @@ export default function LabProfilePage() {
 
         </div>
     );
-}a
+}
