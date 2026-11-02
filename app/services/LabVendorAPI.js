@@ -270,6 +270,35 @@ const LabVendorAPI = {
         return response.data;
     },
 
+
+    // Step 2: Create a custom lab package by selecting tests
+    // Supports both JSON object and FormData (if uploading a banner/photo)
+    saveLabPackage: async (packageData) => {
+        const isFormData = packageData instanceof FormData;
+        const response = await authApi.post('/provider/labs/services/packages/save', packageData, {
+            headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+        });
+        return response.data;
+    },
+
+    // Step 3: Fetch all packages created by and listed under the logged-in lab
+    getMyLabPackages: async () => {
+        const response = await authApi.get('/provider/labs/services/packages/my-packages');
+        return response.data;
+    },
+
+    // Step 4: Update custom package details, tests list, pricing, or turnaround time
+    updateLabPackage: async (updateData) => {
+        const response = await authApi.put('/provider/labs/services/update-package', updateData);
+        return response.data;
+    },
+
+    // Step 5: Permanently delete a custom package from the lab's catalog
+    deleteLabPackage: async (id) => {
+        const response = await authApi.delete(`/provider/labs/services/delete/package/${id}`);
+        return response.data;
+    },
+
 }
 
 export default LabVendorAPI;
