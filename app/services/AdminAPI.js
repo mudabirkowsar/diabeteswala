@@ -341,6 +341,45 @@ const AdminAPI = {
         return response.data;
     },
 
+    // 1. Create a new master health package
+    // Accepts either the payload object directly or { type: "package", payload: { ... } }
+    createMasterPackage: async (packageData) => {
+        const body = packageData.type && packageData.payload 
+            ? packageData 
+            : { type: 'package', payload: packageData };
+        const response = await authApi.post('/admin/lab/tests/create', body);
+        return response.data;
+    },
+
+    // 2. Get paginated master packages list (with populated tests)
+    getMasterPackagesList: async (page = 1) => {
+        const response = await authApi.get('/admin/lab/tests/list/package', {
+            params: { page },
+        });
+        return response.data;
+    },
+
+    // 3. Search master packages by name
+    searchMasterPackages: async (query) => {
+        const response = await authApi.post('/admin/lab/tests/search', {
+            type: 'package',
+            query,
+        });
+        return response.data;
+    },
+
+    // 4. Edit master package details by ID
+    editMasterPackage: async (id, packageData) => {
+        const response = await authApi.put(`/admin/lab/tests/edit/package/${id}`, packageData);
+        return response.data;
+    },
+
+    // 5. Delete a master health package by ID
+    deleteMasterPackage: async (id) => {
+        const response = await authApi.delete(`/admin/lab/tests/delete/package/${id}`);
+        return response.data;
+    },
+
     // ==========================================
     // --- PHARMACY APPROVAL WORKFLOW APIS -----
     // ==========================================

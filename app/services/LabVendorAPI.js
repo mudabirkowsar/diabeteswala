@@ -228,6 +228,48 @@ const LabVendorAPI = {
         return response.data;
     },
 
+    // Step 1: Browse or search platform master tests created by Admin
+    // Accepts query params object: { search: "CBC", mainCategory: "Pathology" }
+    getMasterTests: async (params = {}) => {
+        const response = await authApi.get('/provider/labs/services/tests/master-tests', {
+            params,
+        });
+        return response.data;
+    },
+
+    // Step 2: Get single master test details by ID to auto-fill form
+    getMasterTestDetails: async (masterTestId) => {
+        const response = await authApi.get(`/provider/labs/services/tests/master-details/${masterTestId}`);
+        return response.data;
+    },
+
+    // Step 3: Add a master test to vendor inventory with custom pricing & TAT
+    saveLabTest: async (testData) => {
+        const response = await authApi.post('/provider/labs/services/tests/save', testData);
+        return response.data;
+    },
+
+    // Step 4: View active tests in lab's personal inventory
+    // Accepts optional filter params object: { mainCategory: "Pathology" }
+    getMyLabTests: async (params = {}) => {
+        const response = await authApi.get('/provider/labs/services/tests/my-tests', {
+            params,
+        });
+        return response.data;
+    },
+
+    // Step 5: Update custom pricing, discount, TAT, or service type in inventory
+    updateLabTest: async (updateData) => {
+        const response = await authApi.put('/provider/labs/services/update-test', updateData);
+        return response.data;
+    },
+
+    // Step 6: Delete / Remove a test from the lab's personal inventory
+    deleteLabTest: async (id) => {
+        const response = await authApi.delete(`/provider/labs/services/delete/test/${id}`);
+        return response.data;
+    },
+
 }
 
 export default LabVendorAPI;
