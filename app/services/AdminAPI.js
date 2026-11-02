@@ -303,6 +303,44 @@ const AdminAPI = {
         return response.data;
     },
 
+    // 1. Bulk upload master tests via Excel/CSV spreadsheet
+    uploadMasterTests: async (fileOrFormData) => {
+        let formData;
+        if (fileOrFormData instanceof FormData) {
+            formData = fileOrFormData;
+        } else {
+            formData = new FormData();
+            formData.append('file', fileOrFormData);
+        }
+
+        const response = await authApi.post('/admin/lab/tests/upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    // 2. Get paginated master test list (defaults to page 1)
+    getMasterTestsList: async (page = 1) => {
+        const response = await authApi.get('/admin/lab/tests/list/test', {
+            params: { page },
+        });
+        return response.data;
+    },
+
+    // 3. Edit master test details by ID
+    editMasterTest: async (id, testData) => {
+        const response = await authApi.put(`/admin/lab/tests/edit/test/${id}`, testData);
+        return response.data;
+    },
+
+    // 4. Delete a master test by ID
+    deleteMasterTest: async (id) => {
+        const response = await authApi.delete(`/admin/lab/tests/delete/test/${id}`);
+        return response.data;
+    },
+
     // ==========================================
     // --- PHARMACY APPROVAL WORKFLOW APIS -----
     // ==========================================

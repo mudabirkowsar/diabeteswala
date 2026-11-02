@@ -266,7 +266,7 @@ export default function Sidebar({ sidebarOpen }) {
                         >
                             {isParentActive("/admin/managepackages") && <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-md" style={{ backgroundColor: theme.primary }} />}
                             <IconChip icon={FaBoxes} active={isParentActive("/admin/managepackages")} />
-                            {isExpanded && <span className="truncate">Lab Vendor</span>}
+                            {isExpanded && <span className="truncate">Labs</span>}
                             {isExpanded && (
                                 openMenu === "managepackages"
                                     ? <FaChevronDown className="ml-auto text-[11px] text-gray-400 transition-transform duration-200 rotate-90" />
@@ -284,8 +284,8 @@ export default function Sidebar({ sidebarOpen }) {
                         )}
                         {openMenu === "managepackages" && isExpanded && (
                             <div className="flex flex-col gap-1 mt-1 mb-1 pl-4 border-l-2 border-gray-100 transition-all duration-200">
-                                <Link href="/admin/lab/labtestcreate" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/lab/labtestcreate") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
-                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/lab/labtestcreate") ? theme.primary : "#D1D5DB" }} /> Lab Test Create
+                                <Link href="/admin/lab/managelabtests" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/lab/managelabtests") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/lab/managelabtests") ? theme.primary : "#D1D5DB" }} /> Manage Lab Tests
                                 </Link>
 
                             </div>
