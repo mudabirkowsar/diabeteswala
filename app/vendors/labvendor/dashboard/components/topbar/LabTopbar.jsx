@@ -5,6 +5,7 @@ import { FaUserEdit, FaSignOutAlt, FaUser } from "react-icons/fa";
 import { HiMenuAlt2 } from "react-icons/hi";
 import { Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import LabVendorAPI from "../../../../../services/LabVendorAPI"; // Adjust relative path if needed (e.g. ../../services/LabVendorAPI)
 
 const LabTopbar = ({ heading, toggleSidebar }) => {
     const [openProfile, setOpenProfile] = useState(false);
@@ -12,20 +13,46 @@ const LabTopbar = ({ heading, toggleSidebar }) => {
     const themeColor = "#3D3F96";
     const router = useRouter();
 
-    // Dynamic Clinic Vendor details based on your screenshot
-    const clinicData = {
-        name: "Diabetic Lab",
-        email: "diabeticlab@yopmail.com",
-        role: "Lab Vendor",
-        initial: "D"
-    };
+    // Lab profile state fetched from API
+    const [clinicData, setClinicData] = useState({
+        _id: "",
+        name: "",
+        email: "",
+        phone: "",
+        role: "",
+        initial: ""
+    });
+
+    // Fetch topbar profile details on mount
+    useEffect(() => {
+        const fetchProfileHeader = async () => {
+            try {
+                const res = await LabVendorAPI.getTopbarDetail();
+                if (res && res.success && res.data) {
+                    const data = res.data;
+                    setClinicData({
+                        _id: data._id || "",
+                        name: data.name || "",
+                        email: data.email || "",
+                        phone: data.phone || "",
+                        role: data.role || "Lab Vendor",
+                        initial: data.name ? data.name.trim().charAt(0).toUpperCase() : "L"
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to fetch topbar detail:", err);
+            }
+        };
+
+        fetchProfileHeader();
+    }, []);
 
     const handleSignOut = () => {
         // Clear clinic token from localStorage
         localStorage.removeItem('labToken');
         // Redirect to login page or any other action
         window.location.href = '/authFiles/login'; // Adjust the path as needed
-    }
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -63,7 +90,7 @@ const LabTopbar = ({ heading, toggleSidebar }) => {
                     <div className="hidden lg:block">
                         <h2 className="text-lg font-black text-gray-800 leading-none">{heading}</h2>
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-1">
-                            Clinic Suite / {heading}
+                            {heading}
                         </p>
                     </div>
                 </div>
@@ -71,12 +98,12 @@ const LabTopbar = ({ heading, toggleSidebar }) => {
                 {/* CENTER IDENTITY SECTION */}
                 <div className="absolute left-1/2 -translate-x-1/2 text-center hidden md:flex flex-col items-center">
                     <h3 className="text-base font-black text-gray-800 tracking-tight leading-none uppercase">
-                        {clinicData.name}
+                        {clinicData.name || "Loading..."}
                     </h3>
                     <div className="flex items-center gap-2 mt-1.5">
                         <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-emerald-500"></span>
                         <p className="text-[10px] font-black uppercase tracking-[0.25em]" style={{ color: themeColor }}>
-                            {clinicData.role}
+                            {clinicData.role || "Lab"}
                         </p>
                     </div>
                 </div>
@@ -94,7 +121,7 @@ const LabTopbar = ({ heading, toggleSidebar }) => {
                             className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-slate-900 text-white shadow-lg hover:scale-[1.02] active:scale-95 transition-all focus:outline-none"
                         >
                             <div className="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-black text-white" style={{ backgroundColor: themeColor }}>
-                                {clinicData.initial}
+                                {clinicData.initial || "L"}
                             </div>
                             <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">Account</span>
                         </button>
@@ -102,8 +129,11 @@ const LabTopbar = ({ heading, toggleSidebar }) => {
                         {openProfile && (
                             <div className="absolute right-0 mt-4 w-64 bg-white rounded-[1.5rem] shadow-2xl border border-gray-100 py-3 transition-all duration-200">
                                 <div className="px-6 py-3 border-b border-gray-50 mb-2">
-                                    <p className="text-xs font-black text-gray-800 truncate">{clinicData.name}</p>
-                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">{clinicData.email}</p>
+                                    <p className="text-xs font-black text-gray-800 truncate">{clinicData.name || "N/A"}</p>
+                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">{clinicData.email || "N/A"}</p>
+                                    {clinicData.phone && (
+                                        <p className="text-[9px] text-gray-400 font-bold tracking-widest mt-0.5">{clinicData.phone}</p>
+                                    )}
                                 </div>
                                 <button
                                     onClick={() => { router.push('/vendors/labvendor/dashboard/manageprofile'); setOpenProfile(false); }}

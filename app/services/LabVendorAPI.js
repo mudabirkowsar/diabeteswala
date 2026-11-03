@@ -53,6 +53,11 @@ const LabVendorAPI = {
         return response.data;
     },
 
+    getTopbarDetail: async () => {
+        const response = await authApi.get('/provider/labs/profile/header');
+        return response.data;
+    },
+
     // 1. Set or update lab slot configuration
     setLabSlots: async (slotData) => {
         const response = await authApi.post('/provider/availability/set-slots', slotData);
