@@ -73,7 +73,7 @@ const Cart = () => {
             name: "Lab Cart",
             count: labCount,
             total: labTotalVal.toLocaleString(),
-            href: "/labs/cart",
+            href: "/otherscreens/carts/labcart",
             icon: <FileText size={16} className="text-[#3d3f96]" />,
             bgLight: "bg-indigo-50/60"
         }] : []),

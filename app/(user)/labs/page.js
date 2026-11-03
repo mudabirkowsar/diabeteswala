@@ -13,7 +13,7 @@ function page() {
             <Hero />
             <LabTestShowcase />
             <EcosystemPromo />
-            <FindTestByOrgan />
+            {/* <FindTestByOrgan /> */}
             <NearbyLabs />
             <LabScienceInsights />
         </>

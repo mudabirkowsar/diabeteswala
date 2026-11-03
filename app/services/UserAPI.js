@@ -176,6 +176,24 @@ const UserAPI = {
         return response.data;
     },
 
+    //Lab APIs
+
+    // 1. Get standard platform tests catalog (paginated, with search & department filters)
+    // params: { page: 1, limit: 20, search: 'CBC', mainCategory: 'Pathology' }
+    getStandardCatalogTests: async (params = {}) => {
+        const response = await publicApi.get('/user/labs/standard-tests', {
+            params,
+        });
+        return response.data;
+    },
+
+    // 2. Get single test medical details & nearby offering labs sorted by distance
+    // location: { lat: 30.7046, lng: 76.7179 } (optional GPS coordinates)
+    getMasterTestDetails: async (id, location = {}) => {
+        const response = await publicApi.post(`/user/labs/standard-tests/details/${id}`, location);
+        return response.data;
+    },
+
     //Science page
     getSciencePageHeroDetail: async () => {
         const response = await publicApi.get('/api/homepage/science')

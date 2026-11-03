@@ -6,7 +6,6 @@ import axios from 'axios';
 const CartContext = createContext(null);
 
 // --- HTTP Request Utility ---
-// Replace this with your standard axios instance or path if importing globally
 const authApi = axios.create({
     baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || '',
     headers: {
@@ -42,7 +41,11 @@ export const CartProvider = ({ children }) => {
     // --- Loading & Error Handling States ---
     const [loading, setLoading] = useState(false);
 
-    // --- 1. Fetch Lab Cart Details ---
+    // ==========================================
+    //           LAB CART OPERATIONS
+    // ==========================================
+
+    // --- 1. Fetch Lab Cart Details (GET /user/cart/lab) ---
     const fetchLabCart = async () => {
         setLoading(true);
         try {
@@ -50,15 +53,21 @@ export const CartProvider = ({ children }) => {
             if (response.data && response.data.success) {
                 setLabCart(response.data.data);
                 setLabCartTotal(response.data.data?.labCartTotal || 0);
+            } else {
+                setLabCart(null);
+                setLabCartTotal(0);
             }
         } catch (err) {
             console.error("Error fetching lab cart:", err);
+            setLabCart(null);
+            setLabCartTotal(0);
         } finally {
             setLoading(false);
         }
     };
 
-    // --- 2. Add Item to Lab Cart ---
+    // --- 2. Add Item to Lab Cart (POST /user/cart/lab/add) ---
+    // Handles multi-lab conflict (canReplace) and radiology bypass (confirmRadiologyBypass)
     const addToLabCart = async (payload) => {
         // payload: { labId, itemId, productType, forceReplace, confirmRadiologyBypass }
         try {
@@ -68,16 +77,21 @@ export const CartProvider = ({ children }) => {
             }
             return response.data;
         } catch (err) {
+            // Backend returns HTTP 400 for canReplace & confirmRadiologyBypass warnings
+            if (err.response && err.response.data) {
+                return err.response.data;
+            }
             console.error("Error adding item to lab cart:", err);
             throw err;
         }
     };
 
-    // --- 3. Update Lab Item Quantity ---
+    // --- 3. Update Lab Item Quantity (PUT /user/cart/quantity) ---
+    // FIXED: Changed endpoint from '/user/cart/lab/quantity' to '/user/cart/quantity'
     const updateLabItemQuantity = async (itemId, action) => {
         // action: 'inc' or 'dec'
         try {
-            const response = await authApi.put('/user/cart/lab/quantity', { itemId, action });
+            const response = await authApi.put('/user/cart/quantity', { itemId, action });
             if (response.data && response.data.success) {
                 await fetchLabCart(); // Synchronize local state
             }
@@ -88,10 +102,11 @@ export const CartProvider = ({ children }) => {
         }
     };
 
-    // --- 4. Remove Lab Cart Item ---
+    // --- 4. Remove Lab Cart Item (DELETE /user/cart/item/:itemId) ---
+    // FIXED: Changed endpoint from '/user/cart/lab/item/:itemId' to '/user/cart/item/:itemId'
     const removeLabCartItem = async (itemId) => {
         try {
-            const response = await authApi.delete(`/user/cart/lab/item/${itemId}`);
+            const response = await authApi.delete(`/user/cart/item/${itemId}`);
             if (response.data && response.data.success) {
                 await fetchLabCart(); // Synchronize local state
             }
@@ -102,7 +117,7 @@ export const CartProvider = ({ children }) => {
         }
     };
 
-    // --- 5. Clear Lab Cart ---
+    // --- 5. Clear Lab Cart (POST /user/cart/lab/clear) ---
     const clearLabCart = async () => {
         try {
             const response = await authApi.post('/user/cart/lab/clear');
@@ -117,7 +132,10 @@ export const CartProvider = ({ children }) => {
         }
     };
 
-    // --- 8. Fetch Pharmacy Cart Details ---
+    // ==========================================
+    //        PHARMACY CART OPERATIONS
+    // ==========================================
+
     const fetchPharmacyCart = async () => {
         setLoading(true);
         try {
@@ -133,13 +151,11 @@ export const CartProvider = ({ children }) => {
         }
     };
 
-    // --- 9. Add Item to Pharmacy Cart ---
     const addToPharmacyCart = async (payload) => {
-        // payload: { pharmacyId, medicineId, quantity, duration, forceReplace, isComboApplied, comboOfferId }
         try {
             const response = await authApi.post('/user/cart/pharmacy/add', payload);
             if (response.data && response.data.success) {
-                await fetchPharmacyCart(); // Synchronize local state
+                await fetchPharmacyCart();
             }
             return response.data;
         } catch (err) {
@@ -148,13 +164,11 @@ export const CartProvider = ({ children }) => {
         }
     };
 
-    // --- 10. Update Pharmacy Item Quantity ---
     const updatePharmacyItemQuantity = async (medicineId, action, isComboApplied = false) => {
-        // action: 'inc' or 'dec'
         try {
             const response = await authApi.put('/user/cart/pharmacy/quantity', { medicineId, action, isComboApplied });
             if (response.data && response.data.success) {
-                await fetchPharmacyCart(); // Synchronize local state
+                await fetchPharmacyCart();
             }
             return response.data;
         } catch (err) {
@@ -163,12 +177,11 @@ export const CartProvider = ({ children }) => {
         }
     };
 
-    // --- 11. Remove Pharmacy Item ---
     const removePharmacyItem = async (medicineId) => {
         try {
             const response = await authApi.delete(`/user/cart/pharmacy/item/${medicineId}`);
             if (response.data && response.data.success) {
-                await fetchPharmacyCart(); // Synchronize local state
+                await fetchPharmacyCart();
             }
             return response.data;
         } catch (err) {
@@ -177,7 +190,6 @@ export const CartProvider = ({ children }) => {
         }
     };
 
-    // --- 12. Clear Pharmacy Cart ---
     const clearPharmacyCart = async () => {
         try {
             const response = await authApi.post('/user/cart/pharmacy/clear');
@@ -192,8 +204,10 @@ export const CartProvider = ({ children }) => {
         }
     };
 
+    // ==========================================
+    //           FOOD CART OPERATIONS
+    // ==========================================
 
-    // --- 15. Fetch Food Cart Details ---
     const fetchFoodCart = async () => {
         setLoading(true);
         try {
@@ -209,9 +223,7 @@ export const CartProvider = ({ children }) => {
         }
     };
 
-    // --- 16. Add Item to Food Cart ---
     const addToFoodCart = async (payload) => {
-        // payload: { foodId, itemId, quantity, forceReplace }
         try {
             const response = await authApi.post('/user/cart/food/add', payload);
             if (response.data && response.data.success) {
@@ -224,13 +236,11 @@ export const CartProvider = ({ children }) => {
         }
     };
 
-    // --- 17. Update Food Item Quantity ---
     const updateFoodItemQuantity = async (itemId, action) => {
-        // action: 'inc' (or 'increment') or 'dec' (or 'decrement')
         try {
             const response = await authApi.put('/user/cart/food/quantity', { itemId, action });
             if (response.data && response.data.success) {
-                await fetchFoodCart(); // Synchronize local state
+                await fetchFoodCart();
             }
             return response.data;
         } catch (err) {
@@ -239,12 +249,11 @@ export const CartProvider = ({ children }) => {
         }
     };
 
-    // --- 18. Remove Specific Item from Food Cart ---
     const removeFoodCartItem = async (itemId) => {
         try {
             const response = await authApi.delete(`/user/cart/food/item/${itemId}`);
             if (response.data && response.data.success) {
-                await fetchFoodCart(); // Synchronize local state
+                await fetchFoodCart();
             }
             return response.data;
         } catch (err) {
@@ -253,7 +262,6 @@ export const CartProvider = ({ children }) => {
         }
     };
 
-    // --- 19. Clear Full Food Cart ---
     const clearFoodCart = async () => {
         try {
             const response = await authApi.post('/user/cart/food/clear');
@@ -268,17 +276,15 @@ export const CartProvider = ({ children }) => {
         }
     };
 
-
     // --- Auto Fetch and Sync Calculations ---
     useEffect(() => {
-        // Fetch cart lists once when the Context Provider is initialized on Client
         const syncCarts = async () => {
             await Promise.allSettled([fetchLabCart(), fetchPharmacyCart(), fetchFoodCart()]);
         };
         syncCarts();
     }, []);
 
-    // Monitor changes and calculate total items in the ecosystem automatically
+    // Monitor changes and calculate total items automatically
     useEffect(() => {
         const labItemsCount = labCart?.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
         const pharmacyItemsCount = pharmacyCart?.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
@@ -305,19 +311,19 @@ export const CartProvider = ({ children }) => {
             fetchPharmacyCart,
             fetchFoodCart,
 
-            // Lab Cart Operations (1-7)
+            // Lab Cart Operations
             addToLabCart,
             updateLabItemQuantity,
             removeLabCartItem,
             clearLabCart,
 
-            // Pharmacy Cart Operations (8-14)
+            // Pharmacy Cart Operations
             addToPharmacyCart,
             updatePharmacyItemQuantity,
             removePharmacyItem,
             clearPharmacyCart,
 
-            // Food Cart Operations (15-19)
+            // Food Cart Operations
             addToFoodCart,
             updateFoodItemQuantity,
             removeFoodCartItem,
