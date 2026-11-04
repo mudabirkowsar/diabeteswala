@@ -15,7 +15,7 @@ function page() {
             <LabTestShowcase />
             <LabPackageShowcase />
             <EcosystemPromo />
-            {/* <FindTestByOrgan /> */}
+            <FindTestByOrgan />
             <NearbyLabs />
             <LabScienceInsights />
         </>

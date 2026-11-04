@@ -254,7 +254,7 @@ export default function LabVendorPackagesPage() {
                   <th className="text-center px-6 py-4 w-32">Included Tests</th>
                   {/* <th className="text-left px-6 py-4 w-36">Specimen Types</th> */}
                   <th className="text-left px-6 py-4 w-44">Offer Price & MRP</th>
-                  <th className="text-center px-6 py-4 w-28">TAT</th>
+                  {/* <th className="text-center px-6 py-4 w-28">TAT</th> */}
                   <th className="text-center px-6 py-4 w-24">Status</th>
                   <th className="text-center px-6 py-4 w-28">Actions</th>
                 </tr>
@@ -337,17 +337,17 @@ export default function LabVendorPackagesPage() {
                       </td>
 
                       {/* Turnaround */}
-                      <td className="px-6 py-4 text-center">
+                      {/* <td className="px-6 py-4 text-center">
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">
                           <Clock size={11} className="text-slate-400" /> {pkg.reportTime || "12 Hours"}
                         </span>
-                      </td>
+                      </td> */}
 
                       {/* Status Badge */}
                       <td className="px-6 py-4 text-center">
                         <span className={`inline-flex items-center justify-center text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${pkg.isActive !== false
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                            : 'bg-red-50 text-red-700 border-red-100'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                          : 'bg-red-50 text-red-700 border-red-100'
                           }`}>
                           {pkg.isActive !== false ? "Active" : "Inactive"}
                         </span>

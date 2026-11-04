@@ -132,7 +132,7 @@ export default function LabTestDetailPage() {
   const currentCartLabId = typeof labCart?.labId === 'object' ? labCart?.labId?._id : labCart?.labId;
   const hasCartItems = (labCart?.items?.length || 0) > 0;
   const isSameLabInCart = currentCartLabId?.toString() === selectedLab?.labId?.toString();
-  
+
   // Detect if selected lab conflicts with the current active lab in cart
   const isDifferentLab = hasCartItems && currentCartLabId && !isSameLabInCart;
   const isConflictLab = isDifferentLab || conflictDetected;
@@ -331,8 +331,8 @@ export default function LabTestDetailPage() {
 
         {/* --- BREADCRUMB STRIP --- */}
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 mb-6 overflow-x-auto whitespace-nowrap pb-1 scrollbar-none">
-          <button 
-            onClick={() => router.back()} 
+          <button
+            onClick={() => router.back()}
             className="hover:text-slate-700 flex items-center gap-1.5 transition-colors py-1 px-2 -ml-2 rounded-lg hover:bg-slate-200/50"
           >
             <ArrowLeft size={13} /> Back
@@ -441,11 +441,10 @@ export default function LabTestDetailPage() {
                           setLocalQuantity(1);
                           setConflictDetected(false); // reset warning state on new selection
                         }}
-                        className={`w-full p-4 rounded-2xl transition-all duration-200 border cursor-pointer relative ${
-                          isSelected
+                        className={`w-full p-4 rounded-2xl transition-all duration-200 border cursor-pointer relative ${isSelected
                             ? 'border-[#3d3f96] bg-indigo-50/20 shadow-sm ring-1 ring-[#3d3f96]'
                             : 'border-slate-200/70 bg-white hover:border-slate-300'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-start justify-between gap-3">
                           {/* Lab Info */}
@@ -693,11 +692,10 @@ export default function LabTestDetailPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all ${
-                    activeTab === tab.id
+                  className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all ${activeTab === tab.id
                       ? 'bg-white text-[#3d3f96] shadow-sm border border-slate-200/60'
                       : 'text-slate-500 hover:text-slate-800'
-                  }`}
+                    }`}
                 >
                   <TabIcon size={14} className={activeTab === tab.id ? "text-[#3d3f96]" : "text-slate-400"} />
                   {tab.label}
@@ -752,8 +750,8 @@ export default function LabTestDetailPage() {
       {/* --- RADIOLOGY SCAN WARNING MODAL (`confirmRadiologyBypass`) --- */}
       {radiologyModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" 
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
             onClick={() => !actionLoading && setRadiologyModalOpen(false)}
           />
 

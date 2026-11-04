@@ -194,6 +194,24 @@ const UserAPI = {
         return response.data;
     },
 
+    // 1. Get standard health packages catalog (paginated with search & category filters)
+    // params: { page: 1, search: 'Diabetic', category: 'Full CBC' }
+    getStandardPackages: async (params = {}) => {
+        const response = await publicApi.get('/user/labs/standard-packages', {
+            params,
+        });
+        return response.data;
+    },
+
+    // 2. Get full package details (with nested tests) & nearby offering labs with pricing
+    // location: { lat: 30.739834, lng: 76.782702 } (Note: Pass 'lng', not 'long')
+    getMasterPackageDetails: async (id, location = {}) => {
+        const response = await publicApi.post(`/user/labs/standard-packages/details/${id}`, location);
+        return response.data;
+    },
+
+    
+
     //Science page
     getSciencePageHeroDetail: async () => {
         const response = await publicApi.get('/api/homepage/science')
