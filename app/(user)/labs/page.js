@@ -6,15 +6,21 @@ import NearbyLabs from './components/NearbyLabs'
 import LabScienceInsights from './components/LabScienceInsights'
 import FindTestByOrgan from './components/FindTestByOrgan'
 import LabPackageShowcase from '../homePageComponents/commonComponents/LabPackageShowcase'
+import TestsByCategory from './components/TestsByCategory'
+import DiabetesSpotlight from './components/DiabetesSpotlight'
+import KnowMoreBanners from './components/KnowMoreBanners'
 
 
 function page() {
     return (
         <>
             <Hero />
+            <KnowMoreBanners />
             <LabTestShowcase />
+            <TestsByCategory />
             <LabPackageShowcase />
-            <EcosystemPromo />
+            {/* <EcosystemPromo /> */}
+            <DiabetesSpotlight />
             <FindTestByOrgan />
             <NearbyLabs />
             <LabScienceInsights />

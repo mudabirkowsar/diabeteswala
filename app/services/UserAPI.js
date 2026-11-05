@@ -210,7 +210,20 @@ const UserAPI = {
         return response.data;
     },
 
-    
+    // 1. Get a clean, alphabetical list of all lab test categories
+    getAllTestCategories: async () => {
+        const response = await publicApi.get('/user/labs/categories/all');
+        return response.data;
+    },
+
+    // 2. Fetch all diagnostic tests filtered by test category
+    // params: { category: 'Clinical Pathology', page: 1, limit: 20, search: 'Microalbumin', labId: '...' }
+    getTestsByTestCategory: async (params = {}) => {
+        const response = await publicApi.get('/user/labs/category-tests', {
+            params,
+        });
+        return response.data;
+    },
 
     //Science page
     getSciencePageHeroDetail: async () => {
