@@ -225,6 +225,13 @@ const UserAPI = {
         return response.data;
     },
 
+    getTestByBodyPart: async (params = {}) => {
+        const response = await publicApi.get('user/labs/body-parts', {
+            params,
+        });
+        return response.data;
+    },
+
     //Science page
     getSciencePageHeroDetail: async () => {
         const response = await publicApi.get('/api/homepage/science')
