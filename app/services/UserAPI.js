@@ -232,6 +232,21 @@ const UserAPI = {
         return response.data;
     },
 
+    // 1. Get a dynamic, deduplicated list of all main category departments
+    getAllMainTestCategories: async () => {
+        const response = await publicApi.get('/user/labs/main-categories');
+        return response.data;
+    },
+
+    // 2. Fetch all diagnostic tests filtered by a selected main category
+    // params: { mainCategory: 'Clinical Pathology', page: 1, limit: 20, search: 'Microalbumin', labId: '...' }
+    getTestsByMainCategory: async (params) => {
+        const response = await publicApi.get('/user/labs/main-category-tests', {
+            params,
+        });
+        return response.data;
+    },
+
     //Science page
     getSciencePageHeroDetail: async () => {
         const response = await publicApi.get('/api/homepage/science')

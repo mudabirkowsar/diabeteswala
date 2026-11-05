@@ -9,6 +9,7 @@ import LabPackageShowcase from '../homePageComponents/commonComponents/LabPackag
 import TestsByCategory from './components/TestsByCategory'
 import DiabetesSpotlight from './components/DiabetesSpotlight'
 import KnowMoreBanners from './components/KnowMoreBanners'
+import MainCategory from './components/MainCategory'
 
 
 function page() {
@@ -16,6 +17,7 @@ function page() {
         <>
             <Hero />
             <KnowMoreBanners />
+            <MainCategory />
             <LabTestShowcase />
             <TestsByCategory />
             <LabPackageShowcase />

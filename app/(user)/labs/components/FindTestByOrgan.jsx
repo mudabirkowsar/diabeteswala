@@ -191,7 +191,7 @@ const FindTestByOrgan = () => {
     const fetchBodyParts = async () => {
       try {
         setLoading(true);
-        const res = await UserAPI.getTestsByTestCategory();
+        const res = await UserAPI.getTestByBodyPart();
 
         if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
           setRawBodyParts(res.data);
