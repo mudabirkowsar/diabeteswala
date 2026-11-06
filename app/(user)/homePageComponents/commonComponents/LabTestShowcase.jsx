@@ -68,9 +68,9 @@ const LabTestShowcase = () => {
   }, [showNotification]);
 
   return (
-    <section className="py-12 sm:py-16 bg-gradient-to-b from-white to-[#fdfeff]">
+    <section className="py-12 sm:py-4 bg-gradient-to-b from-white to-[#fdfeff]">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-16">
-        
+
         {/* --- HEADER BLOCK --- */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8 sm:mb-10">
           <div>
@@ -175,7 +175,7 @@ const LabTestShowcase = () => {
                         Code: {test.testCode}
                       </span>
                     )}
-                    <h3 
+                    <h3
                       className="text-base font-extrabold text-slate-900 group-hover:text-[#3d3f96] transition-colors leading-snug line-clamp-2 mt-0.5"
                       title={test.testName}
                     >
@@ -204,8 +204,8 @@ const LabTestShowcase = () => {
                         </p>
                         <div className="flex flex-wrap gap-1.5">
                           {test.parameters.slice(0, 3).map((param, idx) => (
-                            <span 
-                              key={idx} 
+                            <span
+                              key={idx}
                               className="text-[10px] font-bold bg-indigo-50/60 text-[#3d3f96] border border-indigo-100/50 px-2 py-0.5 rounded-md truncate max-w-[150px]"
                             >
                               {param}
