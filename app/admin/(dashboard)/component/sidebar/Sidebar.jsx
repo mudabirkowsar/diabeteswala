@@ -290,10 +290,19 @@ export default function Sidebar({ sidebarOpen }) {
 
                             </div>
                         )}
+                        
                         {openMenu === "managepackages" && isExpanded && (
                             <div className="flex flex-col gap-1 mt-1 mb-1 pl-4 border-l-2 border-gray-100 transition-all duration-200">
                                 <Link href="/admin/lab/managepackages" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/lab/managepackages") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/lab/managepackages") ? theme.primary : "#D1D5DB" }} /> Manage Lab Packages
+                                </Link>
+
+                            </div>
+                        )}
+                        {openMenu === "managepackages" && isExpanded && (
+                            <div className="flex flex-col gap-1 mt-1 mb-1 pl-4 border-l-2 border-gray-100 transition-all duration-200">
+                                <Link href="/admin/lab/createpackage" className={`p-2 px-3 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${isActive("/admin/lab/createpackage") ? "bg-[#3D3F96]/[0.06] text-[#3D3F96] font-semibold" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive("/admin/lab/createpackage") ? theme.primary : "#D1D5DB" }} /> Create Lab Package
                                 </Link>
 
                             </div>

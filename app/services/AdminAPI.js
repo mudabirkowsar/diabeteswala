@@ -372,6 +372,51 @@ const AdminAPI = {
         return response.data;
     },
 
+    // 1. Admin: Create a new platform master health package
+    // Accepts either the raw payload object or { type: "package", payload: { ... } }
+    adminCreateMasterPackage: async (packageData) => {
+        const body = packageData.type && packageData.payload 
+            ? packageData 
+            : { type: 'package', payload: packageData };
+        const response = await authApi.post('/admin/lab/tests/create', body);
+        return response.data;
+    },
+
+    // 2. Admin: Get all master packages list (paginated with vendor counts & min prices)
+    // params: { page: 1, limit: 20 }
+    adminGetMasterPackages: async (params = { page: 1, limit: 20 }) => {
+        const response = await authApi.get('/admin/lab/tests/master-packages', {
+            params,
+        });
+        return response.data;
+    },
+    // Fetch the public master diagnostic tests catalog (supports department filter & keyword search)
+    // params: { mainCategory: 'Infection', search: 'Procalcitonin' }
+    getMasterTestsCatalog: async (params = {}) => {
+        const response = await publicApi.get('/provider/labs/services/tests/master-tests', {
+            params,
+        });
+        return response.data;
+    },
+
+    // 3. Admin: Edit an existing master package by ID
+    adminEditMasterPackage: async (id, updateData) => {
+        const response = await authApi.put(`/admin/lab/tests/edit/package/${id}`, updateData);
+        return response.data;
+    },
+
+    // 4. Admin: Toggle activate / deactivate status of a master package
+    adminToggleMasterPackageStatus: async (id) => {
+        const response = await authApi.patch(`/admin/lab/tests/toggle/package/${id}`);
+        return response.data;
+    },
+
+    // 5. Admin: Permanently delete a master health package
+    adminDeleteMasterPackage: async (id) => {
+        const response = await authApi.delete(`/admin/lab/tests/delete/package/${id}`);
+        return response.data;
+    },
+
     // ==========================================
     // --- PHARMACY APPROVAL WORKFLOW APIS -----
     // ==========================================
