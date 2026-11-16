@@ -33,7 +33,7 @@ export default function ClinicSidebar({ sidebarOpen }) {
     const menuItems = [
         { name: "Dashboard", route: "/vendors/labvendor/dashboard", icon: FaTachometerAlt },
         // { name: "Revenue", route: "/vendors/clinic/dashboard/revenue", icon: FaRupeeSign },
-        // { name: "Manage Bank Details", route: "/vendors/clinic/dashboard/managebank", icon: FaUniversity },
+        { name: "Manage Orders", route: "/vendors/labvendor/dashboard/manageorders", icon: FaUniversity },
         // { name: "Clinic Doctors", route: "/vendors/clinic/dashboard/clinicdoctor", icon: FaUserMd },
         // { name: "Add New Doctor", route: "/vendors/clinic/dashboard/addDoctors", icon: FaUserMd },
         // { name: "Manage Packages", route: "/vendors/labvendor/dashboard/managepackages", icon: FaDatabase },

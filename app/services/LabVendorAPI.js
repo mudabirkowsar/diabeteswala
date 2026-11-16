@@ -388,6 +388,88 @@ const LabVendorAPI = {
     },
 
 
+    // ==========================================
+    // STAGE 1: DASHBOARD & ORDER INGESTION
+    // ==========================================
+
+    // 1. Get paginated order list (filtered by tab, status, express priority)
+    // params: { tab: 'Active', status: 'Confirmed', priority: 'Rapid', page: 1, limit: 20 }
+    getLabOrders: async (params = {}) => {
+        const response = await authApi.get('/provider/labs/orders', {
+            params,
+        });
+        return response.data;
+    },
+
+    // 2. Get full order details (patient profiles, test line items, financials, tracking OTP)
+    getLabOrderDetails: async (orderId) => {
+        const response = await authApi.get(`/provider/labs/order-details/${orderId}`);
+        return response.data;
+    },
+
+    // 3. Accept or reject an incoming lab booking inquiry
+    // payload: { action: 'Accepted' } or { action: 'Rejected', reason: 'Out of capacity' }
+    takeLabOrderAction: async (orderId, payload) => {
+        const response = await authApi.patch(`/provider/labs/order-action/${orderId}`, payload);
+        return response.data;
+    },
+
+    // Convenience helper: Accept an order
+    acceptLabOrder: async (orderId) => {
+        const response = await authApi.patch(`/provider/labs/order-action/${orderId}`, {
+            action: 'Accepted',
+            reason: '',
+        });
+        return response.data;
+    },
+
+    // Convenience helper: Reject an order with mandatory reason
+    rejectLabOrder: async (orderId, reason) => {
+        const response = await authApi.patch(`/provider/labs/order-action/${orderId}`, {
+            action: 'Rejected',
+            reason,
+        });
+        return response.data;
+    },
+
+
+    // ==========================================
+    // STAGE 2: PHLEBOTOMIST FLEET & ASSIGNMENT
+    // ==========================================
+
+    // 4. Get all registered phlebotomists who are currently online and eligible for dispatch
+    getAvailablePhlebotomists: async () => {
+        const response = await authApi.get('/provider/labs/available-phlebotomists');
+        return response.data;
+    },
+
+    // 5. Initial Dispatch: Assign a phlebotomist to a confirmed booking
+    // Accepts phlebotomistId string or object: { phlebotomistId: "..." }
+    assignPhlebotomist: async (orderId, phlebotomistIdOrPayload) => {
+        const payload = typeof phlebotomistIdOrPayload === 'string'
+            ? { phlebotomistId: phlebotomistIdOrPayload }
+            : phlebotomistIdOrPayload;
+        const response = await authApi.patch(`/provider/labs/assign-staff/${orderId}`, payload);
+        return response.data;
+    },
+
+    // 6. Reassign: Replace the currently assigned phlebotomist with a new driver
+    // Accepts newPhlebotomistId string or object: { newPhlebotomistId: "..." }
+    reassignPhlebotomist: async (orderId, newPhlebotomistIdOrPayload) => {
+        const payload = typeof newPhlebotomistIdOrPayload === 'string'
+            ? { newPhlebotomistId: newPhlebotomistIdOrPayload }
+            : newPhlebotomistIdOrPayload;
+        const response = await authApi.patch(`/provider/labs/reassign-staff/${orderId}`, payload);
+        return response.data;
+    },
+
+    // 7. Get phlebotomist profile, vehicle details, and active booking timeline
+    getPhlebotomistDetails: async (phlebotomistId) => {
+        const response = await authApi.get(`/provider/labs/phlebotomist-detail/${phlebotomistId}`);
+        return response.data;
+    },
+
+
 
 
 
