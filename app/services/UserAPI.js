@@ -1208,5 +1208,31 @@ const UserAPI = {
         return response.data;
     },
 
+    // 1. Get concise summary list of user's lab bookings (Active vs History)
+    // params: { tab: 'Active', page: 1, limit: 20 }
+    getUserLabBookings: async (params = { tab: 'Active', page: 1, limit: 20 }) => {
+        const response = await authApi.get('/user/labs/my-bookings', {
+            params,
+        });
+        return response.data;
+    },
+
+    // 2. Get full booking details, patient test reports, and real-time tracking timeline
+    // id: MongoDB _id or string bookingId (e.g., 'ORD-864850900')
+    getUserBookingTrackingDetails: async (id) => {
+        const response = await authApi.get(`/user/labs/details/${id}/track`);
+        return response.data;
+    },
+
+    // 3. Cancel lab booking (Guard: Allowed only before physical sample is drawn)
+    // Accepts string reason or object: { reason: 'Traveling out of station' }
+    cancelUserLabBooking: async (id, reasonOrPayload) => {
+        const payload = typeof reasonOrPayload === 'string'
+            ? { reason: reasonOrPayload }
+            : reasonOrPayload;
+        const response = await authApi.put(`/user/labs/cancel/${id}`, payload);
+        return response.data;
+    },
+
 }
 export default UserAPI;
