@@ -276,9 +276,84 @@ const LabVendorAPI = {
     },
 
 
-    // Step 2: Create a custom lab package by selecting tests
-    // Supports both JSON object and FormData (if uploading a banner/photo)
-    saveLabPackage: async (packageData) => {
+    // // Step 2: Create a custom lab package by selecting tests
+    // // Supports both JSON object and FormData (if uploading a banner/photo)
+    // saveLabPackage: async (packageData) => {
+    //     const isFormData = packageData instanceof FormData;
+    //     const response = await authApi.post('/provider/labs/services/packages/save', packageData, {
+    //         headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+    //     });
+    //     return response.data;
+    // },
+
+    // // Step 3: Fetch all packages created by and listed under the logged-in lab
+    // getMyLabPackages: async () => {
+    //     const response = await authApi.get('/provider/labs/services/packages/my-packages');
+    //     return response.data;
+    // },
+
+    // // Step 4: Update custom package details, tests list, pricing, or turnaround time
+    // updateLabPackage: async (updateData) => {
+    //     const response = await authApi.put('/provider/labs/services/update-package', updateData);
+    //     return response.data;
+    // },
+
+    // // Step 5: Permanently delete a custom package from the lab's catalog
+    // deleteLabPackage: async (id) => {
+    //     const response = await authApi.delete(`/provider/labs/services/delete/package/${id}`);
+    //     return response.data;
+    // },
+
+
+    // // 1. Lab Vendor: Link an Admin Master Package to inventory with custom MRP & discount
+    // // packageData: { masterPackageId, mrp, discountPercent, reportTime }
+    // addMasterPackageToLabInventory: async (packageData) => {
+    //     const response = await authApi.post('/provider/labs/services/packages/save', packageData);
+    //     return response.data;
+    // },
+
+    // // 2. Lab Vendor: Update custom pricing, discount %, or turnaround time for a listed package
+    // // updateData: { id, mrp, discountPercent, reportTime }
+    // updateLabPackagePrice: async (updateData) => {
+    //     const response = await authApi.put('/provider/labs/services/update-package', updateData);
+    //     return response.data;
+    // },
+
+    // // 3. Lab Vendor: View all active packages listed in lab's personal inventory
+    // getMyLabInventoryPackages: async () => {
+    //     const response = await authApi.get('/provider/labs/services/packages/my-packages');
+    //     return response.data;
+    // },
+
+    // // 1. Browse master packages catalog (filter by Admin vs Vendor suggestions, search & category)
+    // // params: { isAdminCreated: true, search: 'full body', category: 'Full Body' }
+    // getMasterPackagesCatalog: async (params = {}) => {
+    //     const response = await authApi.get('/provider/labs/services/packages/master-packages', {
+    //         params,
+    //     });
+    //     return response.data;
+    // },
+
+    // 1. Fetch individual master tests to populate multi-select checkbox / dropdown for custom packages
+    getMasterTestsForPackage: async (params = {}) => {
+        const response = await authApi.get('/provider/labs/services/tests/master-tests', {
+            params,
+        });
+        return response.data;
+    },
+
+    // 2. Browse master packages catalog (filter by Admin packages vs Vendor suggestions, search & category)
+    // params: { isAdminCreated: true, search: 'full body', category: 'Full Body' }
+    getMasterPackagesCatalog: async (params = {}) => {
+        const response = await authApi.get('/provider/labs/services/packages/master-packages', {
+            params,
+        });
+        return response.data;
+    },
+
+    // 3. Create a self-created custom package from selected test IDs
+    // Supports JSON object or FormData (if uploading a banner/photo under key 'photos')
+    createCustomLabPackage: async (packageData) => {
         const isFormData = packageData instanceof FormData;
         const response = await authApi.post('/provider/labs/services/packages/save', packageData, {
             headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
@@ -286,23 +361,36 @@ const LabVendorAPI = {
         return response.data;
     },
 
-    // Step 3: Fetch all packages created by and listed under the logged-in lab
+    // 4. Add an existing Admin Master Package to lab's inventory with custom price & discount
+    // packageData: { masterPackageId, mrp, discountPercent, reportTime }
+    addMasterPackageToLab: async (packageData) => {
+        const response = await authApi.post('/provider/labs/services/packages/save', packageData);
+        return response.data;
+    },
+
+    // 5. Fetch all active packages listed under the logged-in lab (both custom & linked master packages)
     getMyLabPackages: async () => {
         const response = await authApi.get('/provider/labs/services/packages/my-packages');
         return response.data;
     },
 
-    // Step 4: Update custom package details, tests list, pricing, or turnaround time
+    // 6. Update package details, custom pricing, discount %, turnaround time, or included tests
+    // updateData: { id, mrp, discountPercent, reportTime, tests, packageName, ... }
     updateLabPackage: async (updateData) => {
         const response = await authApi.put('/provider/labs/services/update-package', updateData);
         return response.data;
     },
 
-    // Step 5: Permanently delete a custom package from the lab's catalog
+    // 7. Delete / Remove a package from the lab's personal inventory
     deleteLabPackage: async (id) => {
         const response = await authApi.delete(`/provider/labs/services/delete/package/${id}`);
         return response.data;
     },
+
+
+
+
+
 
 }
 

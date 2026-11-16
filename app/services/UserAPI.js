@@ -1151,5 +1151,62 @@ const UserAPI = {
         return response.data;
     },
 
+
+
+    //lab checkout apis
+    
+    // 1. Evaluate Bill & Checkout Summary (multi-patient multiplier, distance, coupons & subscription)
+    // payload: { labId, collectionType, isRapid, couponCode, userLat, userLng, selectedPatients, address }
+    checkoutLabSummary: async (payload) => {
+        const response = await authApi.post('/user/labs/checkout', payload);
+        return response.data;
+    },
+
+    // 2. Place Lab Order / Booking (Supports COD and Online Payment)
+    // payload: { collectionType, paymentMethod, isRapid, couponCode, appointmentDate, appointmentTime, selectedPatients, address }
+    bookLabOrder: async (payload) => {
+        const response = await authApi.post('/user/labs/book', payload);
+        return response.data;
+    },
+
+    // 3. Verify Razorpay Online Payment Signature & Confirm Booking
+    // payload: { bookingId, razorpay_order_id, razorpay_payment_id, razorpay_signature }
+    verifyLabPayment: async (payload) => {
+        const response = await authApi.post('/user/labs/verify-payment', payload);
+        return response.data;
+    },
+
+    // 4. Retry Failed / Cancelled Razorpay Payment (Regenerates order without duplicate bookings)
+    // Accepts bookingId string ("ORD-543210876") or object { bookingId: "ORD-543210876" }
+    retryLabPayment: async (bookingIdOrPayload) => {
+        const payload = typeof bookingIdOrPayload === 'string' 
+            ? { bookingId: bookingIdOrPayload } 
+            : bookingIdOrPayload;
+        const response = await authApi.post('/user/labs/retry-payment', payload);
+        return response.data;
+    },
+
+    // 5. Get real-time available time slots for a specific lab and date
+    // params: { labId: '65f1234567890abcdef12345', date: 'YYYY-MM-DD' }
+    getLabTimeSlots: async (params) => {
+        const response = await authApi.get('/user/labs/slots', {
+            params,
+        });
+        return response.data;
+    },
+
+    // 6. Get platform global & lab-specific applicable coupons for the user's cart
+    getLabApplicableCoupons: async () => {
+        const response = await authApi.get('/user/labs/coupons');
+        return response.data;
+    },
+
+    // 7. Manually validate a coupon code
+    // payload: { couponName: 'HEALTH20', labId: '...', totalAmount: 800 }
+    validateLabCoupon: async (payload) => {
+        const response = await authApi.post('/user/labs/validate-coupon', payload);
+        return response.data;
+    },
+
 }
 export default UserAPI;
