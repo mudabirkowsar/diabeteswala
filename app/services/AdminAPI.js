@@ -417,6 +417,31 @@ const AdminAPI = {
         return response.data;
     },
 
+    // 1. Admin: Get diagnostic lab vendors ranked by highest total orders
+    // params: { page: 1, limit: 20, search: 'Lal', city: 'Mohali', profileStatus: 'Approved', isActive: true }
+    adminGetLabVendorsByOrders: async (params = {}) => {
+        const response = await authApi.get('/admin/lab/vendors-by-orders', {
+            params,
+        });
+        return response.data;
+    },
+
+    // 2. Admin: Get bookings list for a selected vendor
+    // params: { labId: '6a7ebef60687d3775aae0fde', status: 'Confirmed', collectionType: 'Home Collection', search: 'ORD-369', page: 1, limit: 20 }
+    adminGetVendorBookings: async (params = {}) => {
+        const response = await authApi.get('/admin/lab/bookings', {
+            params,
+        });
+        return response.data;
+    },
+
+    // 3. Admin: Get complete information and tracking details for a single booking
+    // orderId: MongoDB _id or string bookingId (e.g., 'ORD-369539524')
+    adminGetBookingDetails: async (orderId) => {
+        const response = await authApi.get(`/admin/lab/bookings/details/${orderId}`);
+        return response.data;
+    },
+
     // ==========================================
     // --- PHARMACY APPROVAL WORKFLOW APIS -----
     // ==========================================
