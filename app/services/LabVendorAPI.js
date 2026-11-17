@@ -48,6 +48,12 @@ const LabVendorAPI = {
         return response.data;
     }, 
 
+    // Check whether the logged-in lab is a Standalone-Lab or Clinic-Lab (to configure dashboard tabs)
+    getLabAccountType: async () => {
+        const response = await authApi.get('/provider/labs/profile/account-type');
+        return response.data;
+    },
+
     getLabProfile: async () => {
         const response = await authApi.get('/api/auth/provider/profile');
         return response.data;
