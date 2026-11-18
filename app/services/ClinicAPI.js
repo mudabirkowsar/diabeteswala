@@ -508,6 +508,31 @@ const ClinicAPI = {
 
 
 
+    // 1. Get available (free & approved) clinic doctors (prioritizes pre-selected doctor at index 0)
+    // params: { appointmentId: '...', selectedDoctorId: '...', speciality: 'Cardiologist', search: 'Mudabir' }
+    getAvailableClinicDoctors: async (params = {}) => {
+        const response = await authApi.get('/api/clinic/doctors/available', {
+            params,
+        });
+        return response.data;
+    },
+
+    // 2. Assign a clinic appointment to a free clinic doctor (or confirm pre-selected doctor)
+    // payload: { appointmentId, doctorId, appointmentDate?: 'YYYY-MM-DD', appointmentTime?: '11:00 AM', notes?: '...' }
+    assignAppointmentToDoctor: async (payload) => {
+        const response = await authApi.put('/api/clinic/doctors/assign-appointment', payload);
+        return response.data;
+    },
+
+    // 3. Reassign an existing appointment to a different free clinic doctor
+    // payload: { appointmentId, newDoctorId, reason?: '...', appointmentDate?: '...', appointmentTime?: '...' }
+    reassignAppointmentToDoctor: async (payload) => {
+        const response = await authApi.put('/api/clinic/doctors/reassign-appointment', payload);
+        return response.data;
+    },
+
+
+
 }
 
 export default ClinicAPI;

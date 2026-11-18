@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Building2,
   Stethoscope,
@@ -18,18 +19,13 @@ import {
   Loader2,
   Activity,
   Filter,
-  CheckCircle2,
-  AlertCircle,
   X,
-  CreditCard,
-  Phone,
   RefreshCw,
   Layers,
   Sparkles
 } from 'lucide-react';
 
 import ClinicAPI from '../../../../services/ClinicAPI'; // Adjust relative path as needed
-import AppointmentDetail from './components/AppointmentDetail';
 
 // --- BASE MEDIA HELPER ---
 const BASE_SERVER_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.3:5002";
@@ -65,7 +61,6 @@ const isToday = (dateVal) => {
         d.getFullYear() === today.getFullYear()
       );
     }
-    // String matching fallback (YYYY-MM-DD or DD/MM/YYYY)
     const todayYMD = getTodayYMD();
     const dd = String(today.getDate()).padStart(2, '0');
     const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -82,6 +77,8 @@ const isToday = (dateVal) => {
 };
 
 export default function ClinicBookingsDashboard() {
+  const router = useRouter();
+
   // --- Data & Loading States ---
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -95,24 +92,18 @@ export default function ClinicBookingsDashboard() {
   // --- Filtering & Search States ---
   const [activeTypeTab, setActiveTypeTab] = useState('ALL'); // 'ALL' | 'OPD' | 'IPD' | 'Emergency'
   const [selectedStatus, setSelectedStatus] = useState('ALL'); // 'ALL' | 'Confirmed' | 'Pending' | 'Completed' | 'Cancelled'
-  const [selectedDoctorId, setSelectedDoctorId] = useState('ALL'); // 'ALL' | doctor _id or name
+  const [selectedDoctorId, setSelectedDoctorId] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
   // --- DATE FILTER STATE ('today' | 'all' | 'YYYY-MM-DD') ---
-  // Defaults to 'today' as requested
   const [dateFilter, setDateFilter] = useState('today');
 
-  // Helpers to identify active date filter
   const isTodaySelected = dateFilter === 'today' || dateFilter === getTodayYMD();
   const isAllDatesSelected = dateFilter === 'all';
   const isCustomDate = !isTodaySelected && !isAllDatesSelected;
 
   // --- Dynamic Doctor List Registry ---
   const [availableDoctors, setAvailableDoctors] = useState([]);
-
-  // --- Single Booking Dossier Modal State ---
-  const [selectedBookingId, setSelectedBookingId] = useState(null);
-  const [isDossierOpen, setIsDossierOpen] = useState(false);
 
   // --- Fetch Bookings List via API ---
   const fetchBookings = useCallback(async (pageNumber = 1) => {
@@ -123,7 +114,6 @@ export default function ClinicBookingsDashboard() {
         limit: 10
       };
 
-      // API Date Specification (?date=all or ?date=YYYY-MM-DD)
       if (dateFilter === 'all') {
         params.date = 'all';
       } else if (dateFilter === 'today') {
@@ -132,7 +122,6 @@ export default function ClinicBookingsDashboard() {
         params.date = dateFilter;
       }
 
-      // API Category Specification (OPD, IPD, EMERGENCY)
       if (activeTypeTab !== 'ALL') {
         const typeVal = activeTypeTab === 'Emergency' ? 'EMERGENCY' : activeTypeTab;
         params.bookingType = typeVal;
@@ -163,7 +152,7 @@ export default function ClinicBookingsDashboard() {
           limit: response.limit || 10
         });
 
-        // Harvest unique doctors for the dropdown
+        // Harvest unique doctors for dropdown
         setAvailableDoctors((prev) => {
           const map = new Map(prev.map((d) => [d.id, d]));
           fetchedList.forEach((b) => {
@@ -227,10 +216,9 @@ export default function ClinicBookingsDashboard() {
     return list;
   }, [bookings, selectedDoctorId]);
 
-  // Handle open dossier modal
-  const handleOpenDossier = (id) => {
-    setSelectedBookingId(id);
-    setIsDossierOpen(true);
+  // Navigation to Dedicated Detail Dossier Page
+  const handleNavigateToDossier = (bookingId) => {
+    router.push(`/vendors/clinic/dashboard/appointments/appointmentdetail/${bookingId}`);
   };
 
   // Helper: Status Badges
@@ -242,20 +230,22 @@ export default function ClinicBookingsDashboard() {
 
     return (
       <span
-        className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border ${isConfirmed || isCompleted
+        className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border ${
+          isConfirmed || isCompleted
             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
             : isCancelled
-              ? 'bg-rose-50 text-rose-600 border-rose-200'
-              : 'bg-amber-50 text-amber-700 border-amber-200'
-          }`}
+            ? 'bg-rose-50 text-rose-600 border-rose-200'
+            : 'bg-amber-50 text-amber-700 border-amber-200'
+        }`}
       >
         <span
-          className={`w-1.5 h-1.5 rounded-full ${isConfirmed || isCompleted
+          className={`w-1.5 h-1.5 rounded-full ${
+            isConfirmed || isCompleted
               ? 'bg-emerald-500'
               : isCancelled
-                ? 'bg-rose-500'
-                : 'bg-amber-500'
-            }`}
+              ? 'bg-rose-500'
+              : 'bg-amber-500'
+          }`}
         />
         {status || 'Pending'}
       </span>
@@ -270,12 +260,13 @@ export default function ClinicBookingsDashboard() {
 
     return (
       <span
-        className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border ${isEmergency
+        className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border ${
+          isEmergency
             ? 'bg-red-50 text-red-600 border-red-200/80 shadow-2xs'
             : isIPD
-              ? 'bg-emerald-50 text-emerald-800 border-emerald-200 shadow-2xs'
-              : 'bg-indigo-50 text-[#3d3f96] border-indigo-100'
-          }`}
+            ? 'bg-emerald-50 text-emerald-800 border-emerald-200 shadow-2xs'
+            : 'bg-indigo-50 text-[#3d3f96] border-indigo-100'
+        }`}
       >
         {isEmergency ? 'Emergency' : isIPD ? 'IPD Admission' : 'OPD Consult'}
       </span>
@@ -303,7 +294,6 @@ export default function ClinicBookingsDashboard() {
 
   return (
     <div className="min-h-screen text-slate-800 max-w-[1600px] mx-auto space-y-6 antialiased select-none text-left">
-
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
         <div className="flex items-center gap-3.5">
@@ -322,14 +312,14 @@ export default function ClinicBookingsDashboard() {
 
         {/* Right Section: Today's Appointments Counter + Refresh Action */}
         <div className="flex flex-wrap items-center gap-3 self-start lg:self-auto">
-          {/* Today's Appointments Stat Button / Quick Toggle */}
           <button
             type="button"
             onClick={() => setDateFilter((prev) => (prev === 'today' ? 'all' : 'today'))}
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl border transition-all cursor-pointer shadow-xs ${isTodaySelected
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl border transition-all cursor-pointer shadow-xs ${
+              isTodaySelected
                 ? 'bg-[#3d3f96] text-white border-[#3d3f96] shadow-md shadow-indigo-950/20 ring-2 ring-indigo-200'
                 : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200'
-              }`}
+            }`}
             title="Click to toggle Today's appointments"
           >
             <div className={`p-2 rounded-xl ${isTodaySelected ? 'bg-white/20 text-white' : 'bg-indigo-50 text-[#3d3f96]'}`}>
@@ -355,7 +345,6 @@ export default function ClinicBookingsDashboard() {
             </div>
           </button>
 
-          {/* Refresh List Button */}
           <button
             type="button"
             onClick={() => fetchBookings(pagination.currentPage)}
@@ -367,13 +356,10 @@ export default function ClinicBookingsDashboard() {
         </div>
       </div>
 
-      {/* --- REDESIGNED FILTER & SEARCH CONTROLS CARD --- */}
+      {/* Filter & Search Controls */}
       <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-4">
-
-        {/* ROW 1: Category Navigation Tabs (Left) & Unified Date Selector (Right) */}
+        {/* ROW 1: Tabs + Date Picker */}
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-
-          {/* Category Tabs */}
           <div className="inline-flex p-1 bg-slate-100/90 rounded-2xl border border-slate-200/70 gap-1 overflow-x-auto max-w-full">
             {[
               { key: 'ALL', label: 'All Bookings', icon: <Layers size={14} /> },
@@ -387,12 +373,13 @@ export default function ClinicBookingsDashboard() {
                   key={tab.key}
                   type="button"
                   onClick={() => setActiveTypeTab(tab.key)}
-                  className={`flex items-center gap-2 px-3.5 py-2 text-xs font-black rounded-xl transition-all cursor-pointer whitespace-nowrap ${isSelected
+                  className={`flex items-center gap-2 px-3.5 py-2 text-xs font-black rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                    isSelected
                       ? tab.key === 'Emergency'
                         ? 'bg-red-500 text-white shadow-xs'
                         : 'bg-[#3d3f96] text-white shadow-md shadow-indigo-950/20'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                    }`}
+                  }`}
                 >
                   {tab.icon}
                   <span>{tab.label}</span>
@@ -401,40 +388,39 @@ export default function ClinicBookingsDashboard() {
             })}
           </div>
 
-          {/* Date Segmented Control: Today | All Dates | Calendar Date Picker */}
           <div className="inline-flex items-center p-1 bg-slate-100/90 rounded-2xl border border-slate-200/70 gap-1 self-start xl:self-auto flex-wrap sm:flex-nowrap">
-            {/* Today Button */}
             <button
               type="button"
               onClick={() => setDateFilter('today')}
-              className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-black rounded-xl transition-all cursor-pointer whitespace-nowrap ${isTodaySelected
+              className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-black rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                isTodaySelected
                   ? 'bg-[#3d3f96] text-white shadow-md shadow-indigo-950/20'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                }`}
+              }`}
             >
               <Sparkles size={13} />
               <span>Today</span>
             </button>
 
-            {/* All Appointments Button */}
             <button
               type="button"
               onClick={() => setDateFilter('all')}
-              className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-black rounded-xl transition-all cursor-pointer whitespace-nowrap ${isAllDatesSelected
+              className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-black rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                isAllDatesSelected
                   ? 'bg-[#3d3f96] text-white shadow-md shadow-indigo-950/20'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                }`}
+              }`}
             >
               <Layers size={13} />
               <span>All Dates</span>
             </button>
 
-            {/* Calendar Input Container */}
             <div
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all ${isCustomDate
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all ${
+                isCustomDate
                   ? 'bg-white border-[#3d3f96] ring-2 ring-indigo-100 text-[#3d3f96] shadow-xs'
                   : 'bg-white/80 border-slate-200/90 hover:bg-white text-slate-700'
-                }`}
+              }`}
             >
               <Calendar size={13} className={isCustomDate ? "text-[#3d3f96]" : "text-slate-400"} />
               <input
@@ -460,13 +446,10 @@ export default function ClinicBookingsDashboard() {
               )}
             </div>
           </div>
-
         </div>
 
-        {/* ROW 2: Live Search Bar (Flex-1) + Doctor Dropdown + Status Dropdown */}
+        {/* ROW 2: Search + Selects */}
         <div className="flex flex-col sm:flex-row items-center gap-3 pt-0.5">
-
-          {/* Search Input Bar */}
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input
@@ -487,7 +470,6 @@ export default function ClinicBookingsDashboard() {
             )}
           </div>
 
-          {/* Doctor Filter Pill */}
           <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 rounded-2xl px-3 py-2 w-full sm:w-auto shrink-0">
             <Stethoscope size={14} className="text-[#3d3f96]" />
             <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Doctor:</span>
@@ -505,7 +487,6 @@ export default function ClinicBookingsDashboard() {
             </select>
           </div>
 
-          {/* Status Filter Pill */}
           <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 rounded-2xl px-3 py-2 w-full sm:w-auto shrink-0">
             <Filter size={14} className="text-slate-400" />
             <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Status:</span>
@@ -522,12 +503,10 @@ export default function ClinicBookingsDashboard() {
               <option value="Cancelled">Cancelled</option>
             </select>
           </div>
-
         </div>
-
       </div>
 
-      {/* --- BOOKINGS CONTENT GRID / LIST VIEW --- */}
+      {/* Bookings List */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-28 bg-white rounded-3xl border border-slate-100 shadow-sm">
           <Loader2 className="animate-spin text-[#3d3f96] mb-3" size={38} />
@@ -544,19 +523,19 @@ export default function ClinicBookingsDashboard() {
             {selectedDoctorId !== 'ALL'
               ? "No Appointments Found For Selected Doctor"
               : isTodaySelected
-                ? "No Appointments Found For Today"
-                : isCustomDate
-                  ? `No Appointments Found For ${dateFilter}`
-                  : "No Clinic Records Found"}
+              ? "No Appointments Found For Today"
+              : isCustomDate
+              ? `No Appointments Found For ${dateFilter}`
+              : "No Clinic Records Found"}
           </h3>
           <p className="text-xs text-slate-400 mt-1 max-w-sm font-medium">
             {selectedDoctorId !== 'ALL'
               ? "This doctor does not have any appointments matching the current date, type, or status filters."
               : isTodaySelected
-                ? "There are no appointments registered for today's date under the current filters."
-                : isCustomDate
-                  ? `There are no appointments registered for date ${dateFilter} under the current filters.`
-                  : "No bookings match your current search criteria, category selection, or status filters."}
+              ? "There are no appointments registered for today's date under the current filters."
+              : isCustomDate
+              ? `There are no appointments registered for date ${dateFilter} under the current filters.`
+              : "No bookings match your current search criteria, category selection, or status filters."}
           </p>
 
           <div className="flex items-center gap-2 mt-4 flex-wrap justify-center">
@@ -595,15 +574,17 @@ export default function ClinicBookingsDashboard() {
             const doctor = item.doctor || {};
             const doctorPhoto = getMediaUrl(doctor.profileImage) || DOC_PLACEHOLDER;
             const appointmentIsToday = isToday(item.appointmentDate);
+            const targetId = item._id || item.bookingId;
 
             return (
               <div
                 key={item._id}
-                onClick={() => handleOpenDossier(item._id)}
-                className={`bg-white rounded-3xl border shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 overflow-hidden cursor-pointer group p-5 sm:p-6 flex flex-col justify-between gap-5 ${appointmentIsToday ? 'border-indigo-200/90 ring-1 ring-indigo-100' : 'border-slate-100'
-                  }`}
+                onClick={() => handleNavigateToDossier(targetId)}
+                className={`bg-white rounded-3xl border shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 overflow-hidden cursor-pointer group p-5 sm:p-6 flex flex-col justify-between gap-5 ${
+                  appointmentIsToday ? 'border-indigo-200/90 ring-1 ring-indigo-100' : 'border-slate-100'
+                }`}
               >
-                {/* 1. Header Bar: Booking ID, Category Pill, Consultation Type, & Status */}
+                {/* 1. Header Bar */}
                 <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
                   <div className="flex items-center gap-2.5 flex-wrap">
                     <span className="font-mono font-black text-xs text-slate-900 bg-slate-100 border border-slate-200/80 px-3 py-1 rounded-xl tracking-wider">
@@ -612,7 +593,6 @@ export default function ClinicBookingsDashboard() {
                     {renderCategoryBadge(item.categoryTag, item.bookingType)}
                     {renderConsultationMode(item.consultationType)}
 
-                    {/* Today Pill */}
                     {appointmentIsToday && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-indigo-600 text-white px-2.5 py-0.5 rounded-lg shadow-xs">
                         <Sparkles size={10} />
@@ -626,10 +606,8 @@ export default function ClinicBookingsDashboard() {
                   </div>
                 </div>
 
-                {/* 2. Middle Row: Patient Info, Doctor Assignment & Schedule */}
+                {/* 2. Middle Row */}
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-
-                  {/* Patient Info (4/12) */}
                   <div className="md:col-span-4 flex items-center gap-3.5">
                     <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center text-[#3d3f96] shrink-0 font-black">
                       <User size={22} />
@@ -647,7 +625,6 @@ export default function ClinicBookingsDashboard() {
                     </div>
                   </div>
 
-                  {/* Doctor Info (4/12) */}
                   <div className="md:col-span-4 flex items-center gap-3 border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-5">
                     <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden shrink-0">
                       <img
@@ -670,9 +647,9 @@ export default function ClinicBookingsDashboard() {
                     </div>
                   </div>
 
-                  {/* Schedule & Ward Info (4/12) */}
-                  <div className={`md:col-span-4 space-y-1.5 p-3 rounded-2xl border ${appointmentIsToday ? 'bg-indigo-50/50 border-indigo-100' : 'bg-slate-50/80 border-slate-100'
-                    }`}>
+                  <div className={`md:col-span-4 space-y-1.5 p-3 rounded-2xl border ${
+                    appointmentIsToday ? 'bg-indigo-50/50 border-indigo-100' : 'bg-slate-50/80 border-slate-100'
+                  }`}>
                     <div className="flex items-center justify-between text-xs font-bold text-slate-800 font-mono">
                       <span className="flex items-center gap-1.5">
                         <Calendar size={13} className={appointmentIsToday ? "text-indigo-600 shrink-0" : "text-[#3d3f96] shrink-0"} />
@@ -691,10 +668,9 @@ export default function ClinicBookingsDashboard() {
                       </div>
                     )}
                   </div>
-
                 </div>
 
-                {/* 3. Bottom Row: Total Amount & Dossier Trigger */}
+                {/* 3. Bottom Row */}
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-3.5 border-t border-slate-100">
                   <div className="flex items-center gap-3">
                     <div className="flex items-baseline gap-1.5">
@@ -714,14 +690,13 @@ export default function ClinicBookingsDashboard() {
                     <ChevronRight size={15} />
                   </div>
                 </div>
-
               </div>
             );
           })}
         </div>
       )}
 
-      {/* --- PAGINATION BAR --- */}
+      {/* Pagination Bar */}
       {pagination.totalPages > 1 && (
         <div className="flex items-center justify-between bg-white px-6 py-4 rounded-2xl border border-slate-100 shadow-xs">
           <span className="text-xs font-bold text-slate-500">
@@ -749,17 +724,6 @@ export default function ClinicBookingsDashboard() {
           </div>
         </div>
       )}
-
-      {/* --- 360° CLINICAL DOSSIER SLIDE-OVER MODAL --- */}
-      <AppointmentDetail
-        isOpen={isDossierOpen}
-        onClose={() => {
-          setIsDossierOpen(false);
-          setSelectedBookingId(null);
-        }}
-        bookingId={selectedBookingId}
-      />
-
     </div>
   );
 }
