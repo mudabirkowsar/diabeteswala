@@ -41,6 +41,26 @@ const ClinicDoctorAPI = {
         return response.data;
     },
 
+    // 1. Get paginated appointments list for the logged-in clinic doctor (OPD, IPD, Emergency, Handovers, Bedside)
+    // params: { tab: 'all' | 'opd' | 'ipd' | 'emergency' | 'handover' | 'bedside', status: 'active' | 'history', date: 'YYYY-MM-DD' | 'today' | 'all', search: '...', page: 1, limit: 20 }
+    getClinicDoctorAppointments: async (params = {}) => {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('clinicDoctorToken') : null;
+        const response = await authApi.get('/api/clinic/doctor-panel/appointments', {
+            params,
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        return response.data;
+    },
+
+    // 2. Get full 360° appointment details by ID (Supports MongoDB _id or custom bookingId like 'DI-ORD-742794')
+    getClinicDoctorAppointmentDetails: async (id) => {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('clinicDoctorToken') : null;
+        const response = await authApi.get(`/api/clinic/doctor-panel/appointments/${id}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        return response.data;
+    },
+
     // 2. Clinic Doctor Logout (Clears 'clinicDoctorToken' from localStorage)
     clinicDoctorLogout: () => {
         if (typeof window !== 'undefined') {

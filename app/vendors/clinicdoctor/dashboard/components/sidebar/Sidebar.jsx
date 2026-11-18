@@ -30,16 +30,16 @@ export default function ClinicSidebar({ sidebarOpen }) {
 
     // Menu list exactly as shown in your screen layout
     const menuItems = [
-        { name: "Dashboard", route: "/vendors/independentdoctor/dashboard", icon: FaTachometerAlt },
-        { name: "Revenue", route: "/vendors/independentdoctor/dashboard/revenue", icon: FaRupeeSign },
-        { name: "Appointments", route: "/vendors/independentdoctor/dashboard/appointments", icon: FaCalendarCheck },
-        { name: "Manage Bank Details", route: "/vendors/independentdoctor/dashboard/managebank", icon: FaUniversity },
-        { name: "Manage Profile", route: "/vendors/independentdoctor/dashboard/profile", icon: FaUniversity },
-        { name: "Manage Slots", route: "/vendors/independentdoctor/dashboard/manageslots", icon: FaClock },
-        { name: "Manage Coupons", route: "/vendors/independentdoctor/dashboard/managecoupon", icon: FaClock },
-        // { name: "Achievements", route: "/vendors/independentdoctor/dashboard/achievements", icon: FaTrophy },
-        // { name: "Services", route: "/vendors/independentdoctor/dashboard/services", icon: FaHandHoldingMedical },
-        { name: "Documents", route: "/vendors/independentdoctor/dashboard/documents", icon: FaFileMedical },
+        { name: "Dashboard", route: "/vendors/clinicdoctor/dashboard", icon: FaTachometerAlt },
+        // { name: "Revenue", route: "/vendors/clinicdoctor/dashboard/revenue", icon: FaRupeeSign },
+        { name: "Appointments", route: "/vendors/clinicdoctor/dashboard/appointments", icon: FaCalendarCheck },
+        // { name: "Manage Bank Details", route: "/vendors/clinicdoctor/dashboard/managebank", icon: FaUniversity },
+        // { name: "Manage Profile", route: "/vendors/clinicdoctor/dashboard/profile", icon: FaUniversity },
+        // { name: "Manage Slots", route: "/vendors/clinicdoctor/dashboard/manageslots", icon: FaClock },
+        // { name: "Manage Coupons", route: "/vendors/clinicdoctor/dashboard/managecoupon", icon: FaClock },
+        // { name: "Achievements", route: "/vendors/clinicdoctor/dashboard/achievements", icon: FaTrophy },
+        // { name: "Services", route: "/vendors/clinicdoctor/dashboard/services", icon: FaHandHoldingMedical },
+        // { name: "Documents", route: "/vendors/clinicdoctor/dashboard/documents", icon: FaFileMedical },
     ];
 
     const isActive = (route) => pathname === route;
