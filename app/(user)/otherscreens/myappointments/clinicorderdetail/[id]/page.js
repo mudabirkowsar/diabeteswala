@@ -2,7 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Building2, Stethoscope, User, Calendar, Clock, MapPin, Video, Home, Bed, AlertCircle, CheckCircle2, Receipt, Phone, Loader2, Percent, FileText, Ambulance, ExternalLink, Printer } from 'lucide-react';
+import { 
+    ArrowLeft, Building2, Stethoscope, User, Calendar, Clock, MapPin, 
+    Video, Home, Bed, AlertCircle, CheckCircle2, Receipt, Phone, 
+    Loader2, Percent, FileText, Ambulance, ExternalLink, Printer,
+    Ticket, Activity
+} from 'lucide-react';
 
 import UserAPI from '../../../../../services/UserAPI';
 import { useNotification } from '../../../../../context/NotificationContext';
@@ -40,7 +45,12 @@ export default function ClinicalOrderDetailPage() {
             try {
                 const response = await UserAPI.getSingleClinicalBookingDetails(bookingId);
                 if (response && response.success) {
-                    setBooking(response.data);
+                    const bookingData = response.data || {};
+                    // Merge top-level tokenQueueStatus if returned at response root
+                    if (response.tokenQueueStatus && !bookingData.tokenQueueStatus) {
+                        bookingData.tokenQueueStatus = response.tokenQueueStatus;
+                    }
+                    setBooking(bookingData);
                 } else {
                     setBooking(null);
                     if (showNotification) {
@@ -122,8 +132,19 @@ export default function ClinicalOrderDetailPage() {
         bedNumber,
         startDate,
         endDate,
-        createdAt
+        createdAt,
+        tokenNumber,
+        formattedToken,
+        opdRoomNumber,
+        tokenIntervalMinutes,
+        tokenQueueStatus: directTokenQueueStatus
     } = booking;
+
+    // Token & Live Queue Extraction
+    const tokenQueueStatus = directTokenQueueStatus || booking.tokenQueueStatus || null;
+    const activeFormattedToken = formattedToken || tokenQueueStatus?.formattedToken || (tokenNumber ? String(tokenNumber).padStart(3, '0') : null);
+    const activeRoomNumber = opdRoomNumber || tokenQueueStatus?.opdRoomNumber;
+    const hasToken = Boolean(activeFormattedToken || tokenQueueStatus?.hasToken || tokenNumber);
 
     const clinicImage = getMediaUrl(clinic.image) || CLINIC_PLACEHOLDER;
     const doctorImage = getMediaUrl(doctor.profileImage) || DOC_PLACEHOLDER;
@@ -299,6 +320,85 @@ export default function ClinicalOrderDetailPage() {
                                         <span>{appointmentTime || 'Morning Slot'}</span>
                                     </div>
                                 </div>
+                            </div>
+                        )}
+
+                        {/* LIVE OPD TOKEN & QUEUE STATUS CARD */}
+                        {hasToken && (
+                            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
+                                <div className="flex items-center justify-between border-b border-slate-50 pb-3">
+                                    <div className="flex items-center gap-2 text-[#3d3f96]">
+                                        <Ticket size={16} />
+                                        <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">
+                                            OPD Token &amp; Live Queue Status
+                                        </h3>
+                                    </div>
+                                    {activeRoomNumber && (
+                                        <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-md bg-indigo-50 text-[#3d3f96] border border-indigo-100 font-mono">
+                                            {activeRoomNumber}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    {/* Your Token Card */}
+                                    <div className="p-4 bg-gradient-to-br from-[#3d3f96] to-[#2d2f75] rounded-2xl text-white shadow-xs">
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-indigo-200 block">
+                                            Your Token
+                                        </span>
+                                        <div className="text-3xl font-black font-mono tracking-tight mt-1">
+                                            #{activeFormattedToken || tokenNumber}
+                                        </div>
+                                        {tokenIntervalMinutes && (
+                                            <span className="text-[9px] text-indigo-200 font-medium block mt-1">
+                                                ~{tokenIntervalMinutes} mins / patient
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Current Serving */}
+                                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col justify-center">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                                            Current Serving
+                                        </span>
+                                        <div className="text-2xl font-black font-mono text-emerald-600 mt-1">
+                                            {tokenQueueStatus?.currentServingToken ? `#${tokenQueueStatus.currentServingToken}` : 'Doctor Ready'}
+                                        </div>
+                                        <span className="text-[10px] font-medium text-slate-500 mt-1">
+                                            {tokenQueueStatus?.completedTokensCount !== undefined ? `${tokenQueueStatus.completedTokensCount} completed` : 'In Consultation'}
+                                        </span>
+                                    </div>
+
+                                    {/* Patients Ahead */}
+                                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col justify-center">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                                            Patients Ahead
+                                        </span>
+                                        <div className="text-2xl font-black font-mono text-amber-600 mt-1">
+                                            {tokenQueueStatus?.patientsAhead !== undefined ? tokenQueueStatus.patientsAhead : 0}
+                                        </div>
+                                        <span className="text-[10px] font-medium text-slate-500 mt-1">
+                                            Wait: {tokenQueueStatus?.estimatedWaitText || (tokenQueueStatus?.estimatedWaitMinutes ? `${tokenQueueStatus.estimatedWaitMinutes} mins` : 'Immediate')}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Queue Message and Call Time Notification */}
+                                {(tokenQueueStatus?.queueMessage || tokenQueueStatus?.expectedCallTime) && (
+                                    <div className="p-3.5 bg-indigo-50/70 rounded-2xl border border-indigo-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+                                        <div className="flex items-center gap-2 text-slate-700 font-medium">
+                                            <Activity size={15} className="text-[#3d3f96] shrink-0 animate-pulse" />
+                                            <span>
+                                                {tokenQueueStatus?.queueMessage || `${tokenQueueStatus?.patientsAhead || 0} patient(s) ahead in line.`}
+                                            </span>
+                                        </div>
+                                        {tokenQueueStatus?.expectedCallTime && (
+                                            <span className="text-[11px] font-bold font-mono text-[#3d3f96] bg-white px-2.5 py-1 rounded-xl border border-indigo-100 shrink-0">
+                                                Expected: {tokenQueueStatus.expectedCallTime}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         )}
 
