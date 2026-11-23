@@ -39,7 +39,7 @@ export default function ClinicSidebar({ sidebarOpen }) {
         // { name: "OPD Availability", route: "/vendors/clinicdoctor/dashboard/opdavailability", icon: FaUniversity },
         { name: "Manage Leave", route: "/vendors/clinicdoctor/dashboard/manageleave", icon: FaTrophy },
         // { name: "Services", route: "/vendors/clinicdoctor/dashboard/services", icon: FaHandHoldingMedical },
-        // { name: "Documents", route: "/vendors/clinicdoctor/dashboard/documents", icon: FaFileMedical },
+        { name: "View Slots", route: "/vendors/clinicdoctor/dashboard/viewslots", icon: FaFileMedical },
     ];
 
     const isActive = (route) => pathname === route;

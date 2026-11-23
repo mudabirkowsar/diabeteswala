@@ -60,6 +60,15 @@ const ClinicDoctorAPI = {
         return response.data;
     },
 
+    // Get logged-in clinic doctor's OPD fees, cabin, shift schedule, weekly roster & live slot grid
+    // date: Optional 'YYYY-MM-DD' string (defaults to today on the backend)
+    getMyOpdScheduleAndSlots: async (date) => {
+        const response = await authApi.get('/api/clinic/doctor-panel/opd-settings', {
+            params: date ? { date } : undefined,
+        });
+        return response.data;
+    },
+    
     // 3. Get paginated appointments list
     // params: { tab: 'all'|'opd'|'ipd'|'emergency'|'handover'|'bedside', status: 'active'|'history', date: 'YYYY-MM-DD'|'today'|'all', search: '...', page: 1, limit: 20 }
     getClinicDoctorAppointments: async (params = {}) => {
