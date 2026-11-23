@@ -5,10 +5,6 @@ import {
   FaUserMd,
   FaPlusCircle,
   FaTrashAlt,
-  FaPhone,
-  FaEnvelope,
-  FaAward,
-  FaCertificate,
   FaSearch,
   FaSpinner,
   FaExclamationCircle,
@@ -16,14 +12,13 @@ import {
   FaChevronRight,
   FaCheckCircle,
   FaEye,
-  FaClinicMedical,
-  FaVideo,
-  FaHome
+  FaClock,
 } from 'react-icons/fa';
 
 import ClinicAPI from '../../../../services/ClinicAPI';
 import AddDoctor from './components/AddDoctor';
 import ViewDoctor from './components/ViewDoctor';
+import ManageTiming from './components/ManageTiming';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://192.168.1.7:5002';
 
@@ -46,6 +41,11 @@ export default function ClinicDoctors() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+
+  // Manage Timing Modal States
+  const [showTimingModal, setShowTimingModal] = useState(false);
+  const [timingDoctor, setTimingDoctor] = useState(null);
+
   const [toastMessage, setToastMessage] = useState(null);
 
   // Pagination states
@@ -130,6 +130,12 @@ export default function ClinicDoctors() {
     setShowViewModal(true);
   };
 
+  const handleOpenTimingModal = (e, doctor) => {
+    e.stopPropagation();
+    setTimingDoctor(doctor);
+    setShowTimingModal(true);
+  };
+
   // Search filtering
   const filteredDoctors = doctors.filter(doc => {
     const q = searchTerm.toLowerCase();
@@ -159,7 +165,7 @@ export default function ClinicDoctors() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-6">
         <div>
           <h2 className="text-2xl font-black text-gray-800">Clinic Doctors</h2>
-          <p className="text-xs text-gray-400 mt-1">Manage verified practitioner directory, 3-way consultation fees, and duty availability.</p>
+          <p className="text-xs text-gray-400 mt-1">Manage verified practitioner directory, 3-way consultation fees, OPD slots, and duty availability.</p>
         </div>
 
         <button
@@ -215,7 +221,7 @@ export default function ClinicDoctors() {
                 <th className="p-4">Specialization</th>
                 <th className="p-4 text-center">Experience</th>
                 <th className="p-4">Duty Status</th>
-                <th className="p-4 text-center w-28">Actions</th>
+                <th className="p-4 text-center w-36">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 text-sm">
@@ -264,11 +270,12 @@ export default function ClinicDoctors() {
                       <select
                         value={doc.dutyStatus || "On Duty"}
                         onChange={(e) => handleDutyStatusChange(e, doc._id)}
-                        className={`text-xs font-bold px-2.5 py-1 rounded-lg border outline-none cursor-pointer ${doc.dutyStatus === 'Off Duty' ? 'bg-slate-100 text-slate-600 border-slate-200' :
+                        className={`text-xs font-bold px-2.5 py-1 rounded-lg border outline-none cursor-pointer ${
+                          doc.dutyStatus === 'Off Duty' ? 'bg-slate-100 text-slate-600 border-slate-200' :
                           doc.dutyStatus === 'On Leave' ? 'bg-amber-50 text-amber-600 border-amber-200' :
-                            doc.dutyStatus === 'Busy' ? 'bg-rose-50 text-rose-600 border-rose-200' :
-                              'bg-emerald-50 text-emerald-600 border-emerald-200'
-                          }`}
+                          doc.dutyStatus === 'Busy' ? 'bg-rose-50 text-rose-600 border-rose-200' :
+                          'bg-emerald-50 text-emerald-600 border-emerald-200'
+                        }`}
                       >
                         <option value="On Duty">On Duty</option>
                         <option value="Off Duty">Off Duty</option>
@@ -278,17 +285,27 @@ export default function ClinicDoctors() {
                     </td>
 
                     <td className="p-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-center justify-center gap-1.5">
+                        {/* Manage Timing / OPD Slots Button */}
+                        <button
+                          onClick={(e) => handleOpenTimingModal(e, doc)}
+                          className="p-2 rounded-xl border border-gray-100 bg-white hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-all shadow-sm"
+                          title="Manage OPD Timings & Slots"
+                        >
+                          <FaClock size={12} />
+                        </button>
+
                         <button
                           onClick={(e) => { e.stopPropagation(); handleRowClick(doc); }}
-                          className="p-2 rounded-xl border border-gray-100 bg-white hover:bg-indigo-50 text-gray-400 hover:text-[#3D3F96] transition-all"
+                          className="p-2 rounded-xl border border-gray-100 bg-white hover:bg-indigo-50 text-gray-400 hover:text-[#3D3F96] transition-all shadow-sm"
                           title="View / Edit Doctor Details"
                         >
                           <FaEye size={12} />
                         </button>
+
                         <button
                           onClick={(e) => handleDelete(e, doc)}
-                          className="p-2 rounded-xl border border-gray-100 bg-white hover:bg-rose-50 text-gray-400 hover:text-rose-500 transition-all"
+                          className="p-2 rounded-xl border border-gray-100 bg-white hover:bg-rose-50 text-gray-400 hover:text-rose-500 transition-all shadow-sm"
                           title="Remove Doctor"
                         >
                           <FaTrashAlt size={12} />
@@ -329,8 +346,9 @@ export default function ClinicDoctors() {
                 <button
                   key={i}
                   onClick={() => setCurrentPage(i + 1)}
-                  className={`px-3 py-1 rounded-xl text-xs font-bold ${currentPage === i + 1 ? 'bg-[#3D3F96] text-white' : 'bg-white border border-gray-100 text-gray-600'
-                    }`}
+                  className={`px-3 py-1 rounded-xl text-xs font-bold ${
+                    currentPage === i + 1 ? 'bg-[#3D3F96] text-white' : 'bg-white border border-gray-100 text-gray-600'
+                  }`}
                 >
                   {i + 1}
                 </button>
@@ -362,6 +380,17 @@ export default function ClinicDoctors() {
           doctor={selectedDoctor}
           onClose={() => { setShowViewModal(false); setSelectedDoctor(null); }}
           onDoctorUpdated={handleDoctorUpdated}
+        />
+      )}
+
+      {/* --- MANAGE TIMING & OPD SLOTS MODAL --- */}
+      {showTimingModal && timingDoctor && (
+        <ManageTiming
+          doctor={timingDoctor}
+          onClose={() => { setShowTimingModal(false); setTimingDoctor(null); }}
+          onUpdated={(updatedDoc) => {
+            setDoctors(prev => prev.map(d => d._id === updatedDoc._id ? { ...d, ...updatedDoc } : d));
+          }}
         />
       )}
 

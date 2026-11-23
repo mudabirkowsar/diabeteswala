@@ -55,7 +55,7 @@ const ClinicAPI = {
         const response = await authApi.get('/api/auth/clinic/profile');
         return response.data;
     },
-    
+
     getClinicTopbarDetail: async () => {
         const response = await authApi.get('/api/auth/clinic/less-info');
         return response.data;
@@ -336,7 +336,7 @@ const ClinicAPI = {
         const response = await authApi.delete(`/api/clinic/wards/delete/${wardId}`);
         return response.data;
     },
-    
+
 
     // ===================================================
     // --- CLINIC PORTAL - BOOKINGS & ADMISSIONS APIS ----
@@ -528,6 +528,94 @@ const ClinicAPI = {
     // payload: { appointmentId, newDoctorId, reason?: '...', appointmentDate?: '...', appointmentTime?: '...' }
     reassignAppointmentToDoctor: async (payload) => {
         const response = await authApi.put('/api/clinic/doctors/reassign-appointment', payload);
+        return response.data;
+    },
+
+
+
+    // 1. Clinic: Get doctor's OPD configuration, cabin number, weekly roster & live time slots
+    // date: Optional 'YYYY-MM-DD' string (defaults to today on the backend)
+    getClinicDoctorOpdSettings: async (doctorId, date) => {
+        const response = await authApi.get(`/api/clinic/doctors/opd-settings/${doctorId}`, {
+            params: date ? { date } : undefined,
+        });
+        return response.data;
+    },
+
+    // 2. Clinic: Configure & sync doctor's OPD status, cabin room, consultation fees, slot duration & weekly shifts
+    // opdData: { isOpdEnabled, cabinNumber, opdFee, slotDuration, startTime, endTime, availableDays, offDays, premiumSlots, unavailableSlots }
+    configureClinicDoctorOpdSettings: async (doctorId, opdData) => {
+        const response = await authApi.put(`/api/clinic/doctors/configure-opd/${doctorId}`, opdData);
+        return response.data;
+    },
+
+    // 3. Clinic: General toggle to block or unblock a doctor's time slot (date-specific or recurring daily)
+    // payload: { timeSlot: '11:30 AM', action: 'block' | 'unblock', date?: 'YYYY-MM-DD', reason?: 'Doctor in Ward Round' }
+    toggleClinicDoctorOpdSlot: async (doctorId, payload) => {
+        const response = await authApi.post(`/api/clinic/doctors/opd-slots/toggle-block/${doctorId}`, payload);
+        return response.data;
+    },
+
+    // 4. Clinic: Convenience helper to block a slot (omit date for recurring daily block)
+    blockClinicDoctorOpdSlot: async (doctorId, { timeSlot, date, reason }) => {
+        const response = await authApi.post(`/api/clinic/doctors/opd-slots/toggle-block/${doctorId}`, {
+            timeSlot,
+            action: 'block',
+            date,
+            reason,
+        });
+        return response.data;
+    },
+
+    // 5. Clinic: Convenience helper to unblock a slot (omit date for recurring daily unblock)
+    unblockClinicDoctorOpdSlot: async (doctorId, { timeSlot, date }) => {
+        const response = await authApi.post(`/api/clinic/doctors/opd-slots/toggle-block/${doctorId}`, {
+            timeSlot,
+            action: 'unblock',
+            date,
+        });
+        return response.data;
+    },
+
+    // 1. Clinic: Get doctor leave requests (all clinic doctors or a specific doctor)
+    // params: { doctorId?: '...', status?: 'Pending' | 'Approved' | 'Rejected' }
+    getClinicDoctorLeaveRequests: async (params = {}) => {
+        const { doctorId, status } = params;
+        const url = doctorId
+            ? `/api/clinic/doctors/leaves/${doctorId}`
+            : '/api/clinic/doctors/leaves';
+
+        const response = await authApi.get(url, {
+            params: status ? { status } : undefined,
+        });
+        return response.data;
+    },
+
+    // 2. Clinic: General responder to Approve or Reject a doctor's leave request
+    // payload: { doctorId, leaveId, action: 'Approve' | 'Reject', rejectionReason?: '...' }
+    respondToClinicDoctorLeave: async (payload) => {
+        const response = await authApi.patch('/api/clinic/doctors/leaves/respond', payload);
+        return response.data;
+    },
+
+    // 3. Clinic: Convenience helper to Approve a doctor's leave (auto-blocks booking dates)
+    approveClinicDoctorLeave: async (doctorId, leaveId) => {
+        const response = await authApi.patch('/api/clinic/doctors/leaves/respond', {
+            doctorId,
+            leaveId,
+            action: 'Approve',
+        });
+        return response.data;
+    },
+
+    // 4. Clinic: Convenience helper to Reject a doctor's leave (rejectionReason is mandatory)
+    rejectClinicDoctorLeave: async (doctorId, leaveId, rejectionReason) => {
+        const response = await authApi.patch('/api/clinic/doctors/leaves/respond', {
+            doctorId,
+            leaveId,
+            action: 'Reject',
+            rejectionReason,
+        });
         return response.data;
     },
 

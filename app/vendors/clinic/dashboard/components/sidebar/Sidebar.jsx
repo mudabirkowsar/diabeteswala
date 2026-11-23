@@ -47,7 +47,7 @@ export default function ClinicSidebar({ sidebarOpen }) {
         { name: "Manage Lab", route: "/vendors/clinic/dashboard/managelabs", icon: FaHospital },
         { name: "Manage Wards", route: "/vendors/clinic/dashboard/managewards", icon: FaBox },
         { name: "Manage Coupons", route: "/vendors/clinic/dashboard/managecoupons", icon: FaTicketAlt },
-        // { name: "Achievements", route: "/vendors/clinic/dashboard/achievements", icon: FaTrophy },
+        { name: "Manage Leave", route: "/vendors/clinic/dashboard/manageleave", icon: FaTrophy },
         // { name: "Services", route: "/vendors/clinic/dashboard/services", icon: FaHandHoldingMedical },
         { name: "Clinic Timings", route: "/vendors/clinic/dashboard/clinictiming", icon: FaClock },
         // { name: "Documents", route: "/vendors/clinic/dashboard/documents", icon: FaFileMedical },

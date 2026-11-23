@@ -32,12 +32,12 @@ export default function ClinicSidebar({ sidebarOpen }) {
     const menuItems = [
         { name: "Dashboard", route: "/vendors/clinicdoctor/dashboard", icon: FaTachometerAlt },
         // { name: "Revenue", route: "/vendors/clinicdoctor/dashboard/revenue", icon: FaRupeeSign },
-        { name: "Appointments", route: "/vendors/clinicdoctor/dashboard/appointments", icon: FaCalendarCheck },
-        // { name: "Manage Bank Details", route: "/vendors/clinicdoctor/dashboard/managebank", icon: FaUniversity },
-        // { name: "Manage Profile", route: "/vendors/clinicdoctor/dashboard/profile", icon: FaUniversity },
-        // { name: "Manage Slots", route: "/vendors/clinicdoctor/dashboard/manageslots", icon: FaClock },
-        // { name: "Manage Coupons", route: "/vendors/clinicdoctor/dashboard/managecoupon", icon: FaClock },
-        // { name: "Achievements", route: "/vendors/clinicdoctor/dashboard/achievements", icon: FaTrophy },
+        // { name: "Appointments", route: "/vendors/clinicdoctor/dashboard/appointments", icon: FaCalendarCheck },
+        { name: "Emergency Appointments", route: "/vendors/clinicdoctor/dashboard/emergencyappointments", icon: FaAmbulance },
+        { name: "OPD Appointments", route: "/vendors/clinicdoctor/dashboard/OPDAppoitments", icon: FaUniversity },
+        { name: "IPD Appointments", route: "/vendors/clinicdoctor/dashboard/IPDAppointments", icon: FaClock },
+        // { name: "OPD Availability", route: "/vendors/clinicdoctor/dashboard/opdavailability", icon: FaUniversity },
+        { name: "Manage Leave", route: "/vendors/clinicdoctor/dashboard/manageleave", icon: FaTrophy },
         // { name: "Services", route: "/vendors/clinicdoctor/dashboard/services", icon: FaHandHoldingMedical },
         // { name: "Documents", route: "/vendors/clinicdoctor/dashboard/documents", icon: FaFileMedical },
     ];
