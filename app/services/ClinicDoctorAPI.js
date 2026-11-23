@@ -68,7 +68,81 @@ const ClinicDoctorAPI = {
         });
         return response.data;
     },
-    
+
+    // 1. Get lightweight OPD appointments list for the logged-in doctor (supports status shortcuts, date & search)
+    // params: { status: 'active' | 'history', date: 'YYYY-MM-DD' | 'today' | 'all', search: '...', page: 1, limit: 20 }
+    getClinicDoctorOpdAppointments: async (params = {}) => {
+        const response = await authApi.get('/api/clinic/doctor-panel/opd/appointments', {
+            params,
+        });
+        return response.data;
+    },
+
+    // 2. Get complete 360° clinical, prescription, referral & vitals details of a single OPD visit
+    // id: MongoDB _id or custom bookingId (e.g., 'DI-ORD-742794')
+    getClinicDoctorOpdAppointmentDetails: async (id) => {
+        const response = await authApi.get(`/api/clinic/doctor-panel/opd/appointments/${id}`);
+        return response.data;
+    },
+
+
+
+
+
+
+    // 1. Get lightweight Emergency appointments list for the logged-in doctor (triage level, bed/ward, ambulance status)
+    // params: { status: 'active' | 'history', date: 'YYYY-MM-DD' | 'today' | 'all', search: '...', page: 1, limit: 20 }
+    getClinicDoctorEmergencyAppointments: async (params = {}) => {
+        const response = await authApi.get('/api/clinic/doctor-panel/emergency/appointments', {
+            params,
+        });
+        return response.data;
+    },
+
+    // 2. Get full 360° details of a single Emergency case (ambulance, observation bed, vitals, triage notes, prescriptions)
+    // id: MongoDB _id or custom bookingId (e.g., 'CLN-EMG-901234')
+    getClinicDoctorEmergencyAppointmentDetails: async (id) => {
+        const response = await authApi.get(`/api/clinic/doctor-panel/emergency/appointments/${id}`);
+        return response.data;
+    },
+
+
+
+
+
+    // 1. Get lightweight IPD (Admission) cases list for the logged-in doctor (ward, bed number, stay dates)
+    // params: { status: 'active' | 'history', date: 'YYYY-MM-DD' | 'today' | 'all', search: '...', page: 1, limit: 20 }
+    getClinicDoctorIpdAppointments: async (params = {}) => {
+        const response = await authApi.get('/api/clinic/doctor-panel/ipd/appointments', {
+            params,
+        });
+        return response.data;
+    },
+
+    // 2. Get full 360° details of a single IPD Admission case (ward/bed details, stay metrics, vitals, shift logs, billing)
+    // id: MongoDB _id or custom bookingId (e.g., 'CLN-ADM-398989')
+    getClinicDoctorIpdAppointmentDetails: async (id) => {
+        const response = await authApi.get(`/api/clinic/doctor-panel/ipd/appointments/${id}`);
+        return response.data;
+    },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // 3. Get paginated appointments list
     // params: { tab: 'all'|'opd'|'ipd'|'emergency'|'handover'|'bedside', status: 'active'|'history', date: 'YYYY-MM-DD'|'today'|'all', search: '...', page: 1, limit: 20 }
     getClinicDoctorAppointments: async (params = {}) => {

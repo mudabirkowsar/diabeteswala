@@ -34,7 +34,7 @@ export default function ClinicSidebar({ sidebarOpen }) {
         // { name: "Revenue", route: "/vendors/clinicdoctor/dashboard/revenue", icon: FaRupeeSign },
         // { name: "Appointments", route: "/vendors/clinicdoctor/dashboard/appointments", icon: FaCalendarCheck },
         { name: "Emergency Appointments", route: "/vendors/clinicdoctor/dashboard/emergencyappointments", icon: FaAmbulance },
-        { name: "OPD Appointments", route: "/vendors/clinicdoctor/dashboard/OPDAppoitments", icon: FaUniversity },
+        { name: "OPD Appointments", route: "/vendors/clinicdoctor/dashboard/OPDAppointments", icon: FaUniversity },
         { name: "IPD Appointments", route: "/vendors/clinicdoctor/dashboard/IPDAppointments", icon: FaClock },
         // { name: "OPD Availability", route: "/vendors/clinicdoctor/dashboard/opdavailability", icon: FaUniversity },
         { name: "Manage Leave", route: "/vendors/clinicdoctor/dashboard/manageleave", icon: FaTrophy },
