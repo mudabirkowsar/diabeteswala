@@ -126,80 +126,45 @@ const ClinicDoctorAPI = {
         return response.data;
     },
 
+    
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // 3. Get paginated appointments list
-    // params: { tab: 'all'|'opd'|'ipd'|'emergency'|'handover'|'bedside', status: 'active'|'history', date: 'YYYY-MM-DD'|'today'|'all', search: '...', page: 1, limit: 20 }
-    getClinicDoctorAppointments: async (params = {}) => {
-        const response = await authApi.get('/api/clinic/doctor-panel/appointments', { params });
-        return response.data;
-    },
-
-    // 4. Get full 360° appointment details by ID or bookingId
-    getClinicDoctorAppointmentDetails: async (id) => {
-        const response = await authApi.get(`/api/clinic/doctor-panel/appointments/${id}`);
-        return response.data;
-    },
-
-    // 5. Accept an assigned appointment
-    acceptClinicDoctorAppointment: async (id, notes = '') => {
-        const response = await authApi.patch(`/api/clinic/doctor-panel/appointments/${id}/respond`, {
-            action: 'Accept',
-            notes,
-        });
-        return response.data;
-    },
-
-    // 6. Reject an assigned appointment (reason is mandatory)
-    rejectClinicDoctorAppointment: async (id, reason) => {
-        const response = await authApi.patch(`/api/clinic/doctor-panel/appointments/${id}/respond`, {
-            action: 'Reject',
-            reason,
-        });
-        return response.data;
-    },
-
-
-    // 1. Start Consultation (moves status to 'In-Progress' when patient arrives)
-    startOPDConsultation: async (appointmentId) => {
+    // Step 1: Start OPD Consultation (Marks In-Progress & alerts next waiting token)
+    startOpdConsultation: async (appointmentId) => {
         const response = await authApi.patch(`/api/clinic/doctor-panel/appointments/${appointmentId}/start-consultation`);
         return response.data;
     },
 
-    // 2. Add / Record Patient Vitals
+    // Step 2: Add or update patient vitals during OPD consultation
     // vitalsData: { bp: '120/80', pulse: '76', temp: '98.6 F', spo2: '99%', notes: '...' }
-    recordPatientVitals: async (appointmentId, vitalsData) => {
+    updateOpdPatientVitals: async (appointmentId, vitalsData) => {
         const response = await authApi.patch(`/api/clinic/doctor-panel/appointments/${appointmentId}/vitals`, vitalsData);
         return response.data;
     },
 
-    // 3A. Search medicines from Clinic Pharmacy inventory & Master Medicines catalog
-    // params: { search: 'metformin', clinicOnly: 'false', page: 1, limit: 25 }
-    getOPDMedicines: async (params = {}) => {
+    // Step 3: Browse/Search medicines from full database catalog (flags inClinicPharmacy: true)
+    // params: { search: 'metformin', page: 1, limit: 50, all: 'false' }
+    getOpdMedicinesCatalog: async (params = {}) => {
         const response = await authApi.get('/api/clinic/doctor-panel/appointments/medicines', {
             params,
         });
         return response.data;
     },
 
-    // 3B. Save Prescription for patient (Supports JSON or FormData for PDF attachments)
-    // prescriptionData: { chiefComplaints, diagnosis, medicines, advisedInvestigations, adviceGiven, specialInstructions, nextAppointment, markCompleted }
-    prescribePatient: async (appointmentId, prescriptionData) => {
+    // Step 4: Browse/Search all lab tests and packages from full master catalog & clinic lab
+    // params: { search: 'hba1c', category: 'Pathology' }
+    getOpdLabTestsCatalog: async (params = {}) => {
+        const response = await authApi.get('/api/clinic/doctor-panel/appointments/lab-tests', {
+            params,
+        });
+        return response.data;
+    },
+
+    // Step 5: Save structured OPD prescription (medicines, timing schedule, doctorSuggestions)
+    // Supports JSON payload or FormData (if uploading prescriptionPdf)
+    saveOpdPrescription: async (appointmentId, prescriptionData) => {
         const isFormData = prescriptionData instanceof FormData;
         const response = await authApi.post(
             `/api/clinic/doctor-panel/appointments/${appointmentId}/prescribe`,
@@ -211,41 +176,19 @@ const ClinicDoctorAPI = {
         return response.data;
     },
 
-    // 3C. Send prescribed medicines to the attached Clinic Pharmacy
-    // payload: { prescriptionId, notes: '...', medicines: [{ medicineId, name, dose, frequency, duration, quantity, instructions }] }
-    sendPrescriptionToPharmacy: async (appointmentId, payload) => {
-        const response = await authApi.post(`/api/clinic/doctor-panel/appointments/${appointmentId}/send-to-pharmacy`, payload);
+    // Step 6: Send prescribed medicines directly to the attached Clinic Pharmacy
+    // payload: { prescriptionId, notes: '...', medicines: [...] }
+    sendOpdPrescriptionToPharmacy: async (appointmentId, payload) => {
+        const response = await authApi.post(
+            `/api/clinic/doctor-panel/appointments/${appointmentId}/send-to-pharmacy`,
+            payload
+        );
         return response.data;
     },
 
-    // 4A. Get available, free (On Duty) clinic doctors for consultation/second opinion
-    // params: { appointmentId: '...', speciality: 'Endocrinology', search: 'Bajirao' }
-    getAvailableSecondaryDoctors: async (params = {}) => {
-        const response = await authApi.get('/api/clinic/doctor-panel/appointments/available-doctors', {
-            params,
-        });
-        return response.data;
-    },
-
-    // 4B. Add Secondary Doctor or request Second Opinion
-    // payload: { secondaryDoctorId, roleType: 'Secondary-Doctor' | 'Second-Opinion', requestReason, patientCondition, priority: 'Routine' | 'Urgent' | 'Most Urgent' }
-    addSecondaryDoctor: async (appointmentId, payload) => {
-        const response = await authApi.post(`/api/clinic/doctor-panel/appointments/${appointmentId}/add-secondary-doctor`, payload);
-        return response.data;
-    },
-
-    // 1. Get all active lab tests & packages (from Clinic Lab & Master Database)
-    // params: { search: 'hba1c', category: 'Pathology' }
-    getDoctorPanelLabTests: async (params = {}) => {
-        const response = await authApi.get('/api/clinic/doctor-panel/appointments/lab-tests', {
-            params,
-        });
-        return response.data;
-    },
-
-    // 2. Suggest & send selected lab tests/packages to the Clinic Lab
-    // payload: { priority: 'Routine' | 'Urgent' | 'Emergency', notes: '...', tests: [{ testId, packageId, name, price, instructions }] }
-    sendLabReferralToClinicLab: async (appointmentId, payload) => {
+    // Step 7: Send advised lab tests/packages directly to the attached Clinic Lab
+    // payload: { priority: 'Routine' | 'Urgent', notes: '...', tests: [{ testId, packageId, name, price, instructions }] }
+    sendOpdReferralToLab: async (appointmentId, payload) => {
         const response = await authApi.post(
             `/api/clinic/doctor-panel/appointments/${appointmentId}/send-to-lab`,
             payload
@@ -253,19 +196,156 @@ const ClinicDoctorAPI = {
         return response.data;
     },
 
-    // 3. Save Prescription for patient (Supports JSON or FormData if uploading prescriptionPdf)
-    // prescriptionData: { chiefComplaints, diagnosis, medicines, adviceGiven, specialInstructions, nextAppointment, markCompleted }
-    prescribePatient: async (appointmentId, prescriptionData) => {
-        const isFormData = prescriptionData instanceof FormData;
-        const response = await authApi.post(
-            `/api/clinic/doctor-panel/appointments/${appointmentId}/prescribe`,
-            prescriptionData,
-            {
-                headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
-            }
+    // Step 9: Complete OPD Consultation (Closes shift duration & summons next token)
+    // payload: { consultationNotes?: '...', advice?: '...' }
+    completeOpdConsultation: async (appointmentId, payload = {}) => {
+        const response = await authApi.patch(
+            `/api/clinic/doctor-panel/appointments/${appointmentId}/complete-consultation`,
+            payload
         );
         return response.data;
     },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // // 3. Get paginated appointments list
+    // // params: { tab: 'all'|'opd'|'ipd'|'emergency'|'handover'|'bedside', status: 'active'|'history', date: 'YYYY-MM-DD'|'today'|'all', search: '...', page: 1, limit: 20 }
+    // getClinicDoctorAppointments: async (params = {}) => {
+    //     const response = await authApi.get('/api/clinic/doctor-panel/appointments', { params });
+    //     return response.data;
+    // },
+
+    // // 4. Get full 360° appointment details by ID or bookingId
+    // getClinicDoctorAppointmentDetails: async (id) => {
+    //     const response = await authApi.get(`/api/clinic/doctor-panel/appointments/${id}`);
+    //     return response.data;
+    // },
+
+    // // 5. Accept an assigned appointment
+    // acceptClinicDoctorAppointment: async (id, notes = '') => {
+    //     const response = await authApi.patch(`/api/clinic/doctor-panel/appointments/${id}/respond`, {
+    //         action: 'Accept',
+    //         notes,
+    //     });
+    //     return response.data;
+    // },
+
+    // // 6. Reject an assigned appointment (reason is mandatory)
+    // rejectClinicDoctorAppointment: async (id, reason) => {
+    //     const response = await authApi.patch(`/api/clinic/doctor-panel/appointments/${id}/respond`, {
+    //         action: 'Reject',
+    //         reason,
+    //     });
+    //     return response.data;
+    // },
+
+
+    // // 1. Start Consultation (moves status to 'In-Progress' when patient arrives)
+    // startOPDConsultation: async (appointmentId) => {
+    //     const response = await authApi.patch(`/api/clinic/doctor-panel/appointments/${appointmentId}/start-consultation`);
+    //     return response.data;
+    // },
+
+    // // 2. Add / Record Patient Vitals
+    // // vitalsData: { bp: '120/80', pulse: '76', temp: '98.6 F', spo2: '99%', notes: '...' }
+    // recordPatientVitals: async (appointmentId, vitalsData) => {
+    //     const response = await authApi.patch(`/api/clinic/doctor-panel/appointments/${appointmentId}/vitals`, vitalsData);
+    //     return response.data;
+    // },
+
+    // // 3A. Search medicines from Clinic Pharmacy inventory & Master Medicines catalog
+    // // params: { search: 'metformin', clinicOnly: 'false', page: 1, limit: 25 }
+    // getOPDMedicines: async (params = {}) => {
+    //     const response = await authApi.get('/api/clinic/doctor-panel/appointments/medicines', {
+    //         params,
+    //     });
+    //     return response.data;
+    // },
+
+    // // 3B. Save Prescription for patient (Supports JSON or FormData for PDF attachments)
+    // // prescriptionData: { chiefComplaints, diagnosis, medicines, advisedInvestigations, adviceGiven, specialInstructions, nextAppointment, markCompleted }
+    // prescribePatient: async (appointmentId, prescriptionData) => {
+    //     const isFormData = prescriptionData instanceof FormData;
+    //     const response = await authApi.post(
+    //         `/api/clinic/doctor-panel/appointments/${appointmentId}/prescribe`,
+    //         prescriptionData,
+    //         {
+    //             headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+    //         }
+    //     );
+    //     return response.data;
+    // },
+
+    // // 3C. Send prescribed medicines to the attached Clinic Pharmacy
+    // // payload: { prescriptionId, notes: '...', medicines: [{ medicineId, name, dose, frequency, duration, quantity, instructions }] }
+    // sendPrescriptionToPharmacy: async (appointmentId, payload) => {
+    //     const response = await authApi.post(`/api/clinic/doctor-panel/appointments/${appointmentId}/send-to-pharmacy`, payload);
+    //     return response.data;
+    // },
+
+    // // 4A. Get available, free (On Duty) clinic doctors for consultation/second opinion
+    // // params: { appointmentId: '...', speciality: 'Endocrinology', search: 'Bajirao' }
+    // getAvailableSecondaryDoctors: async (params = {}) => {
+    //     const response = await authApi.get('/api/clinic/doctor-panel/appointments/available-doctors', {
+    //         params,
+    //     });
+    //     return response.data;
+    // },
+
+    // // 4B. Add Secondary Doctor or request Second Opinion
+    // // payload: { secondaryDoctorId, roleType: 'Secondary-Doctor' | 'Second-Opinion', requestReason, patientCondition, priority: 'Routine' | 'Urgent' | 'Most Urgent' }
+    // addSecondaryDoctor: async (appointmentId, payload) => {
+    //     const response = await authApi.post(`/api/clinic/doctor-panel/appointments/${appointmentId}/add-secondary-doctor`, payload);
+    //     return response.data;
+    // },
+
+    // // 1. Get all active lab tests & packages (from Clinic Lab & Master Database)
+    // // params: { search: 'hba1c', category: 'Pathology' }
+    // getDoctorPanelLabTests: async (params = {}) => {
+    //     const response = await authApi.get('/api/clinic/doctor-panel/appointments/lab-tests', {
+    //         params,
+    //     });
+    //     return response.data;
+    // },
+
+    // // 2. Suggest & send selected lab tests/packages to the Clinic Lab
+    // // payload: { priority: 'Routine' | 'Urgent' | 'Emergency', notes: '...', tests: [{ testId, packageId, name, price, instructions }] }
+    // sendLabReferralToClinicLab: async (appointmentId, payload) => {
+    //     const response = await authApi.post(
+    //         `/api/clinic/doctor-panel/appointments/${appointmentId}/send-to-lab`,
+    //         payload
+    //     );
+    //     return response.data;
+    // },
+
+    // // 3. Save Prescription for patient (Supports JSON or FormData if uploading prescriptionPdf)
+    // // prescriptionData: { chiefComplaints, diagnosis, medicines, adviceGiven, specialInstructions, nextAppointment, markCompleted }
+    // prescribePatient: async (appointmentId, prescriptionData) => {
+    //     const isFormData = prescriptionData instanceof FormData;
+    //     const response = await authApi.post(
+    //         `/api/clinic/doctor-panel/appointments/${appointmentId}/prescribe`,
+    //         prescriptionData,
+    //         {
+    //             headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+    //         }
+    //     );
+    //     return response.data;
+    // },
 };
 
 export default ClinicDoctorAPI;

@@ -13,7 +13,6 @@ import {
     Clock3,
     XCircle,
     Activity,
-    FileText,
     Pill,
     FlaskConical,
     BedDouble,
@@ -22,17 +21,19 @@ import {
     HeartPulse,
     ShieldAlert,
     Thermometer,
-    Droplet,
     Printer,
     Download,
     Phone,
-    Mail,
-    ChevronRight,
+    Play,
     Sparkles,
+    FileCheck,
     Stethoscope
 } from 'lucide-react';
 
 import ClinicDoctorAPI from '../../../../../../services/ClinicDoctorAPI';
+import AddVitals from '../components/AddVitals';
+import AddMedicines from '../components/AddMedicines';
+import AddTests from '../components/AddTests';
 
 export default function ClinicDoctorOpdCaseDetailPage() {
     const params = useParams();
@@ -41,6 +42,12 @@ export default function ClinicDoctorOpdCaseDetailPage() {
 
     const [caseData, setCaseData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [actionLoading, setActionLoading] = useState(false);
+
+    // Modal Visibility States
+    const [isVitalsModalOpen, setIsVitalsModalOpen] = useState(false);
+    const [isMedicinesModalOpen, setIsMedicinesModalOpen] = useState(false);
+    const [isTestsModalOpen, setIsTestsModalOpen] = useState(false);
 
     const fetchCaseDetails = useCallback(async () => {
         if (!id) return;
@@ -64,6 +71,51 @@ export default function ClinicDoctorOpdCaseDetailPage() {
         fetchCaseDetails();
     }, [fetchCaseDetails]);
 
+    // Step 1: Start OPD Consultation
+    const handleStartConsultation = async () => {
+        setActionLoading(true);
+        try {
+            const res = await ClinicDoctorAPI.startOpdConsultation(id);
+            if (res && res.success) {
+                toast.success(res.message || "Consultation started! Case is now In-Progress.");
+                fetchCaseDetails();
+            } else {
+                toast.error(res?.message || "Failed to start consultation");
+            }
+        } catch (err) {
+            console.error("Start consultation failed:", err);
+            toast.error(err?.response?.data?.message || err.message || "Could not start consultation");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    // Step 9: Complete Consultation
+    const handleCompleteConsultation = async () => {
+        const confirmComplete = window.confirm("Are you sure you want to conclude this consultation and notify the next waiting token?");
+        if (!confirmComplete) return;
+
+        setActionLoading(true);
+        try {
+            const payload = {
+                consultationNotes: "Consultation successfully completed with clinical prescriptions/referrals.",
+                advice: "Follow up as instructed"
+            };
+            const res = await ClinicDoctorAPI.completeOpdConsultation(id, payload);
+            if (res && res.success) {
+                toast.success(res.message || "Consultation marked as Completed!");
+                fetchCaseDetails();
+            } else {
+                toast.error(res?.message || "Failed to complete consultation");
+            }
+        } catch (err) {
+            console.error("Complete consultation failed:", err);
+            toast.error(err?.response?.data?.message || err.message || "Could not complete consultation");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center p-6 text-center">
@@ -86,7 +138,7 @@ export default function ClinicDoctorOpdCaseDetailPage() {
                 </p>
                 <button
                     onClick={() => router.push('/vendors/clinicdoctor/dashboard/OPDAppointments')}
-                    className="mt-4 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-2xl"
+                    className="mt-4 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-2xl cursor-pointer"
                 >
                     Return to OPD Schedule
                 </button>
@@ -108,7 +160,9 @@ export default function ClinicDoctorOpdCaseDetailPage() {
     const timeline = caseData.treatmentHistory || [];
     const billing = caseData.billingSummary || {};
     const doctor = caseData.doctorId || {};
-    const clinic = caseData.clinicId || {};
+
+    const isInProgress = (caseData.status || '').toLowerCase() === 'in-progress';
+    const isCompleted = (caseData.status || '').toLowerCase() === 'completed';
 
     return (
         <div className="min-h-screen text-slate-800 pb-20">
@@ -120,7 +174,7 @@ export default function ClinicDoctorOpdCaseDetailPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <button
                         onClick={() => router.push('/vendors/clinicdoctor/dashboard/OPDAppointments')}
-                        className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 px-4 py-2 rounded-2xl border border-slate-200 transition shadow-2xs self-start"
+                        className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 px-4 py-2 rounded-2xl border border-slate-200 transition shadow-2xs self-start cursor-pointer"
                     >
                         <ArrowLeft size={14} /> Back to OPD Roster
                     </button>
@@ -132,6 +186,85 @@ export default function ClinicDoctorOpdCaseDetailPage() {
                         >
                             <Printer size={14} /> Print Dossier
                         </button>
+                    </div>
+                </div>
+
+                {/* Clinical Lifecycle Action Strip */}
+                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-black uppercase tracking-wider text-indigo-600">
+                                Consultation Lifecycle Flow
+                            </span>
+                            {caseData.tokenNumber && (
+                                <span className="font-mono text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                                    Token #{caseData.tokenNumber}
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-xs text-slate-500 font-medium">
+                            {isCompleted
+                                ? "This OPD encounter has concluded and doctor shift time is logged."
+                                : isInProgress
+                                ? "Consultation is currently In-Progress. Perform vitals check, prescriptions, and lab orders."
+                                : "Patient has checked in. Accept the consultation to mark In-Progress and summon token."}
+                        </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2.5">
+                        {!isInProgress && !isCompleted && (
+                            <button
+                                onClick={handleStartConsultation}
+                                disabled={actionLoading}
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition shadow-xs cursor-pointer disabled:opacity-50"
+                            >
+                                <Play size={14} />
+                                <span>Start Consultation</span>
+                            </button>
+                        )}
+
+                        {isInProgress && (
+                            <>
+                                <button
+                                    onClick={() => setIsVitalsModalOpen(true)}
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition cursor-pointer"
+                                >
+                                    <Activity size={14} />
+                                    <span>{vitals.bp ? "Edit Vitals" : "Record Vitals"}</span>
+                                </button>
+
+                                <button
+                                    onClick={() => setIsMedicinesModalOpen(true)}
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition cursor-pointer"
+                                >
+                                    <Pill size={14} />
+                                    <span>{primaryRx ? "Edit Prescription" : "Prescribe Rx"}</span>
+                                </button>
+
+                                <button
+                                    onClick={() => setIsTestsModalOpen(true)}
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition cursor-pointer"
+                                >
+                                    <FlaskConical size={14} />
+                                    <span>Order Lab Tests</span>
+                                </button>
+
+                                <button
+                                    onClick={handleCompleteConsultation}
+                                    disabled={actionLoading}
+                                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition cursor-pointer disabled:opacity-50"
+                                >
+                                    <FileCheck size={14} />
+                                    <span>Complete Consultation</span>
+                                </button>
+                            </>
+                        )}
+
+                        {isCompleted && (
+                            <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <CheckCircle2 size={14} /> Completed &amp; Archived
+                            </span>
+                        )}
                     </div>
                 </div>
 
@@ -278,25 +411,25 @@ export default function ClinicDoctorOpdCaseDetailPage() {
                             <div className="p-3 rounded-2xl bg-rose-50/60 border border-rose-200 text-center">
                                 <span className="block text-[10px] font-black uppercase text-rose-500">Blood Pressure</span>
                                 <span className="text-base font-black font-mono text-rose-950 mt-1 block">
-                                    {vitals.bp || '120/80'}
+                                    {vitals.bp || '—'}
                                 </span>
                             </div>
                             <div className="p-3 rounded-2xl bg-amber-50/60 border border-amber-200 text-center">
                                 <span className="block text-[10px] font-black uppercase text-amber-500">Pulse (BPM)</span>
                                 <span className="text-base font-black font-mono text-amber-950 mt-1 block">
-                                    {vitals.pulse || '72'}
+                                    {vitals.pulse || '—'}
                                 </span>
                             </div>
                             <div className="p-3 rounded-2xl bg-blue-50/60 border border-blue-200 text-center">
                                 <span className="block text-[10px] font-black uppercase text-blue-500">SpO2</span>
                                 <span className="text-base font-black font-mono text-blue-950 mt-1 block">
-                                    {vitals.spo2 || '99%'}
+                                    {vitals.spo2 || '—'}
                                 </span>
                             </div>
                             <div className="p-3 rounded-2xl bg-indigo-50/60 border border-indigo-200 text-center">
                                 <span className="block text-[10px] font-black uppercase text-indigo-500">Temperature</span>
                                 <span className="text-base font-black font-mono text-indigo-950 mt-1 block">
-                                    {vitals.temp || '98.6 F'}
+                                    {vitals.temp || '—'}
                                 </span>
                             </div>
                         </div>
@@ -328,7 +461,7 @@ export default function ClinicDoctorOpdCaseDetailPage() {
                                 <div>
                                     <h2 className="text-sm font-black text-slate-900">Rx Prescriptions &amp; Posology</h2>
                                     <span className="text-[11px] text-slate-400 font-medium">
-                                        Issued by {primaryRx.doctorId?.name || doctor.name}
+                                        Prescribed by {primaryRx.doctorId?.name || doctor.name}
                                     </span>
                                 </div>
                             </div>
@@ -337,7 +470,7 @@ export default function ClinicDoctorOpdCaseDetailPage() {
                                     href={primaryRx.pdfUrl}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition border border-indigo-100"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition border border-indigo-100 cursor-pointer"
                                 >
                                     <Download size={13} /> Download PDF
                                 </a>
@@ -359,23 +492,23 @@ export default function ClinicDoctorOpdCaseDetailPage() {
                                     {(primaryRx.medicines || []).map((med, idx) => (
                                         <tr key={idx} className="hover:bg-slate-50/50">
                                             <td className="py-3 px-3 font-bold text-slate-900">{med.name}</td>
-                                            <td className="py-3 px-3 font-mono font-bold text-indigo-600">{med.dose}</td>
-                                            <td className="py-3 px-3 text-slate-600">{med.time}</td>
+                                            <td className="py-3 px-3 font-mono font-bold text-indigo-600">{med.dose || med.doseInterval}</td>
+                                            <td className="py-3 px-3 text-slate-600">{med.time || med.frequency}</td>
                                             <td className="py-3 px-3 font-mono text-slate-700">{med.duration}</td>
-                                            <td className="py-3 px-3 text-slate-500 italic">{med.instructions}</td>
+                                            <td className="py-3 px-3 text-slate-500 italic">{med.instructions || med.administrationTiming}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
 
-                        {(primaryRx.adviceGiven || primaryRx.specialInstructions) && (
+                        {(primaryRx.doctorSuggestions || primaryRx.adviceGiven) && (
                             <div className="p-4 bg-indigo-50/40 rounded-2xl border border-indigo-100/70 text-xs space-y-1">
+                                {primaryRx.doctorSuggestions && (
+                                    <p><strong className="text-indigo-950 font-bold">Doctor Suggestions:</strong> {primaryRx.doctorSuggestions}</p>
+                                )}
                                 {primaryRx.adviceGiven && (
                                     <p><strong className="text-indigo-950 font-bold">Doctor Advice:</strong> {primaryRx.adviceGiven}</p>
-                                )}
-                                {primaryRx.specialInstructions && (
-                                    <p><strong className="text-indigo-950 font-bold">Special Note:</strong> {primaryRx.specialInstructions}</p>
                                 )}
                             </div>
                         )}
@@ -419,14 +552,14 @@ export default function ClinicDoctorOpdCaseDetailPage() {
                                 {labRef?.priority || labRef?.status || 'None'}
                             </span>
                         </div>
-                        {labRef && labRef.labId ? (
+                        {labRef && (labRef.labId || (labRef.tests && labRef.tests.length > 0)) ? (
                             <div className="space-y-2 text-xs">
                                 <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
-                                    <strong className="block text-slate-800 font-bold">{labRef.labId.name}</strong>
+                                    <strong className="block text-slate-800 font-bold">{labRef.labId?.name || "Clinic Diagnostic Lab"}</strong>
                                     <span className="text-[11px] text-slate-400 block">{labRef.notes || "Standard Investigations"}</span>
                                 </div>
                                 <span className="text-[11px] text-slate-500 font-medium block">
-                                    {labRef.tests?.length || 0} diagnostic test(s) prescribed.
+                                    {labRef.tests?.length || 0} diagnostic order(s) placed.
                                 </span>
                             </div>
                         ) : (
@@ -444,10 +577,10 @@ export default function ClinicDoctorOpdCaseDetailPage() {
                                 {admissionRef?.status || 'None'}
                             </span>
                         </div>
-                        {admissionRef && admissionRef.status !== 'None' ? (
+                        {admissionRef && admissionRef.status && admissionRef.status !== 'None' ? (
                             <div className="p-3 bg-indigo-50/50 rounded-2xl border border-indigo-100 text-xs space-y-1">
-                                <span className="font-bold text-indigo-950 block">Stay: {admissionRef.stayDuration} Day(s)</span>
-                                <p className="text-slate-600 text-[11px]">{admissionRef.reason || 'Ward admission required.'}</p>
+                                <span className="font-bold text-indigo-950 block">Stay: {admissionRef.stayDuration || 1} Day(s)</span>
+                                <p className="text-slate-600 text-[11px]">{admissionRef.reason || 'Ward admission indicated.'}</p>
                             </div>
                         ) : (
                             <p className="text-xs text-slate-400 italic">No admission recommendations active.</p>
@@ -548,6 +681,30 @@ export default function ClinicDoctorOpdCaseDetailPage() {
                 </div>
 
             </div>
+
+            {/* Modals */}
+            <AddVitals
+                isOpen={isVitalsModalOpen}
+                onClose={() => setIsVitalsModalOpen(false)}
+                appointmentId={id}
+                initialVitals={vitals}
+                onSuccess={fetchCaseDetails}
+            />
+
+            <AddMedicines
+                isOpen={isMedicinesModalOpen}
+                onClose={() => setIsMedicinesModalOpen(false)}
+                appointmentId={id}
+                initialPrescription={primaryRx}
+                onSuccess={fetchCaseDetails}
+            />
+
+            <AddTests
+                isOpen={isTestsModalOpen}
+                onClose={() => setIsTestsModalOpen(false)}
+                appointmentId={id}
+                onSuccess={fetchCaseDetails}
+            />
         </div>
     );
 }
