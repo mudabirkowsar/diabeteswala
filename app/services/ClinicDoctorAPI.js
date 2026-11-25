@@ -76,7 +76,7 @@ const ClinicDoctorAPI = {
             params,
         });
         return response.data;
-    },
+    }, 
 
     // 2. Get complete 360° clinical, prescription, referral & vitals details of a single OPD visit
     // id: MongoDB _id or custom bookingId (e.g., 'DI-ORD-742794')
